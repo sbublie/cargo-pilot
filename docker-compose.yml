@@ -1,0 +1,7 @@
+version: "3.9"
+services:
+  cp-control:
+    container_name: cp-control
+    build: ./cp-control
+    ports:
+      - 3000:80
