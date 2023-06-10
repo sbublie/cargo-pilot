@@ -2,7 +2,6 @@ import {
   MapContainer,
   TileLayer,
   Marker,
-  Popup,
   Polyline,
 } from "react-leaflet";
 import React, { useState, useEffect } from "react";
@@ -24,11 +23,6 @@ const DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon;
 
 function OsmMap() {
-  const latlngs: [number, number][] = [
-    [49, 8],
-    [49, 7],
-    [34.04, -118.2],
-  ];
 
   const [data, setData] = useState<any[]>([]);
   // Function to make the API call
