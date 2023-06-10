@@ -12,7 +12,7 @@ services:
     build: ./cp-control
     ports:
       - '80:80'
-  db:
+  cp-db:
     container_name: cp-db
     image: postgres
     restart: always
