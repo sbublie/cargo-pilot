@@ -1,0 +1,277 @@
+openapi: 3.0.3
+info:
+  title: Cargo Pilot API
+  version: 1.0.0
+servers:
+  - url: http://localhost:5001
+paths:
+  /clusters:
+    get:
+      summary: Get all clusters
+      tags:
+        - "Clusters"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Cluster'
+    post:
+      summary: Add a new cluster
+      tags:
+        - "Clusters"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClusterInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cluster'
+  /clusters/{id}:
+    get:
+      summary: Get a single cluster by ID
+      tags:
+        - "Clusters"
+      parameters:
+        - name: id
+          in: path
+          description: Cluster ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cluster'
+        '404':
+          description: Cluster not found
+    put:
+      summary: Modify a cluster by ID
+      tags:
+        - "Clusters"
+      parameters:
+        - name: id
+          in: path
+          description: Cluster ID
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClusterInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cluster'
+        '404':
+          description: Cluster not found
+    delete:
+      summary: Delete a cluster by ID
+      tags:
+        - "Clusters"
+      parameters:
+        - name: id
+          in: path
+          description: Cluster ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+  /trips:
+    get:
+      summary: Get all trips
+      tags:
+        - "Trips"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Trip'
+    post:
+      summary: Add a new trip
+      tags:
+        - "Trips"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TripInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+  /trips/{id}:
+    get:
+      summary: Get a single trip by ID
+      tags:
+        - "Trips"
+      parameters:
+        - name: id
+          in: path
+          description: Trip ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+        '404':
+          description: Trip not found
+    put:
+      summary: Modify a trip by ID
+      tags:
+        - "Trips"
+      parameters:
+        - name: id
+          in: path
+          description: Trip ID
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TripInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+        '404':
+          description: Trip not found
+    delete:
+      summary: Delete a trip by ID
+      tags:
+        - "Trips"
+      parameters:
+        - name: id
+          in: path
+          description: Trip ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+components:
+  schemas:
+    Cluster:
+      type: object
+      properties:
+        cluster_id:
+          type: integer
+        cluster_name:
+          type: string
+        center_lat:
+          type: number
+        center_long:
+          type: number
+    ClusterInput:
+      type: object
+      properties:
+        cluster_name:
+          type: string
+        center_lat:
+          type: number
+        center_long:
+          type: number
+      required:
+        - cluster_name
+        - center_lat
+        - center_long
+    Trip:
+      type: object
+      properties:
+        trip_id:
+          type: integer
+        load:
+          type: number
+        origin_lat:
+          type: number
+        origin_long:
+          type: number
+        destination_lat:
+          type: number
+        destination_long:
+          type: number
+        timestamp:
+          type: string
+          format: date-time
+        cluster_ID:
+          type: integer
+    TripInput:
+      type: object
+      properties:
+        load:
+          type: number
+        origin_lat:
+          type: number
+        origin_long:
+          type: number
+        destination_lat:
+          type: number
+        destination_long:
+          type: number
+        timestamp:
+          type: string
+          format: date-time
+        cluster_ID:
+          type: integer
+      required:
+        - load
+        - origin_lat
+        - origin_long
+        - destination_lat
+        - destination_long
+        - timestamp
+        - cluster_ID

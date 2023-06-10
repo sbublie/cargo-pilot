@@ -5,3 +5,16 @@ services:
     build: ./cp-control
     ports:
       - 3000:80
+  db:
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=pguser
+      - POSTGRES_PASSWORD=pdb&3Xif
+    ports:
+      - '5432:5432'
+    volumes: 
+      - db:/var/lib/postgresql/data
+volumes:
+  db:
+    driver: local
