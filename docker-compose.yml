@@ -1,11 +1,19 @@
-version: "3.9"
+version: "3.4"
 services:
+  cp-gateway:
+    container_name: cp-gateway
+    restart: always
+    build: ./cp-gateway
+    ports:
+      - '443:5001'
   cp-control:
     container_name: cp-control
+    restart: always
     build: ./cp-control
     ports:
       - '80:80'
   db:
+    container_name: cp-db
     image: postgres
     restart: always
     environment:
