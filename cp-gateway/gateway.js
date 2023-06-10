@@ -20,6 +20,7 @@ const port = 5001
 // Parse JSON request bodies
 app.use(bodyParser.json());
 app.use(cors());
+app.options('*', cors())
 
 // Get all clusters
 app.get('/clusters', async (req, res) => {
