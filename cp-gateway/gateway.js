@@ -2,6 +2,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const { Pool } = require('pg');
+const cors = require('cors')
 
 // PostgreSQL database configuration
 const pool = new Pool({
@@ -18,6 +19,7 @@ const port = 5001
 
 // Parse JSON request bodies
 app.use(bodyParser.json());
+app.use(cors());
 
 // Get all clusters
 app.get('/clusters', async (req, res) => {
