@@ -7,7 +7,7 @@ const cors = require('cors')
 // PostgreSQL database configuration
 const pool = new Pool({
   user: 'pguser',
-  host: 'localhost',
+  host: 'cp-db',
   database: 'cargo_database',
   password: 'pdb&3Xif',
   port: 5432, // Change if your PostgreSQL server runs on a different port
