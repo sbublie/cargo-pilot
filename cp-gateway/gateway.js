@@ -17,6 +17,14 @@ const pool = new Pool({
 const app = express();
 const port = 5001
 
+// Additional CORS headers
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  next();
+});
+
 // Parse JSON request bodies
 app.use(bodyParser.json());
 app.use(cors());
