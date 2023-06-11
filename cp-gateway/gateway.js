@@ -15,20 +15,11 @@ const pool = new Pool({
 
 // Create Express application
 const app = express();
-const port = 5001
-
-// Additional CORS headers
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-  next();
-});
+const port = 443
 
 // Parse JSON request bodies
-app.use(bodyParser.json());
+app.use(express.json());
 app.use(cors());
-app.options('*', cors())
 
 // Get all clusters
 app.get('/clusters', async (req, res) => {
