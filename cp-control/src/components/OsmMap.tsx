@@ -28,7 +28,7 @@ function OsmMap() {
   // Function to make the API call
   const fetchData = async () => {
     try {
-      const response = await fetch("http://cp-gateway:5001/trips");
+      const response = await fetch("http://localhost:443/trips");
       const jsonData = await response.json();
       setData(jsonData);
       console.log(jsonData);
