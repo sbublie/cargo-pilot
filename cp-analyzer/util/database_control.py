@@ -8,7 +8,6 @@ conn = psycopg2.connect(
     password="pdb&3Xif"
 )
 
-
 cur = conn.cursor()
 
 query = "CREATE TABLE clusters (cluster_id SERIAL PRIMARY KEY, cluster_name VARCHAR(30), center_lat FLOAT, center_long FLOAT);"
