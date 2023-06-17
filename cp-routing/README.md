@@ -8,17 +8,17 @@ To change the routing data (e.g. use the Europe map) new graphs need to be calcu
 
 To use CP-Routing and start calculating routes, you need to follow these steps:
 
-    1. Obtain the OpenStreetMap (OSM) file for Germany. You can download it from the OpenStreetMap website or other reliable sources.
+1. Obtain the OpenStreetMap (OSM) file for Germany. You can download it from the OpenStreetMap website or other reliable sources.
 
-    2. Create a directory named maps in the /data directory.
+2. Create a directory named maps in the /data directory.
 
-    3. Place the downloaded OSM file for Germany in the /data/maps directory. Ensure that the file has the correct name as stated in the top-level docker compose file.
+3. Place the downloaded OSM file for Germany in the /data/maps directory. Ensure that the file has the correct name as stated in the top-level docker compose file.
 
-    4. Start the cp-routing container using the top-level docker compose file:
-    ```
-    docker compose up -d cp-routing
-    ```
-    
+4. Start the cp-routing container using the top-level docker compose file:
+```
+docker compose up -d cp-routing
+```
+
 ## Usage 
 
 Please refer to the [openrouteservice API specification](https://openrouteservice.org/dev/#/api-docs) for more information on how to calculate routes.
