@@ -11,7 +11,7 @@ services:
     restart: always
     build: ./cp-gateway
     ports:
-      - '5001:443'
+      - '5001:5001'
   cp-control:
     container_name: cp-control
     restart: always

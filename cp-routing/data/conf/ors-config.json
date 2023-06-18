@@ -13,7 +13,7 @@
         "maximum_routes": 100,
         "maximum_routes_flexible": 25,
         "maximum_search_radius": 5000,
-        "maximum_visited_nodes": 100000,
+        "maximum_visited_nodes": 1000000,
         "allow_resolve_locations": true,
         "attribution": "openrouteservice.org, OpenStreetMap contributors"
       },
@@ -26,7 +26,7 @@
           },
           {
             "profiles": "driving-car, driving-hgv",
-            "value": 100000
+            "value": 1000000
           }
         ],
         "maximum_range_time": [
@@ -101,16 +101,16 @@
             "elevation_cache_path": "/home/ors/ors-core/data/elevation_cache",
             "elevation_cache_clear": false,
             "instructions": true,
-            "maximum_distance": 100000,
-            "maximum_distance_dynamic_weights": 100000,
-            "maximum_distance_avoid_areas": 100000,
+            "maximum_distance": 1000000,
+            "maximum_distance_dynamic_weights": 1000000,
+            "maximum_distance_avoid_areas": 1000000,
             "maximum_waypoints": 50,
             "maximum_snapping_radius": 400,
             "maximum_avoid_polygon_area": 200000000,
             "maximum_avoid_polygon_extent": 20000,
-            "maximum_distance_alternative_routes": 100000,
+            "maximum_distance_alternative_routes": 1000000,
             "maximum_alternative_routes": 3,
-            "maximum_distance_round_trip_routes": 100000,
+            "maximum_distance_round_trip_routes": 1000000,
             "maximum_speed_lower_bound": 80,
             "preparation": {
               "min_network_size": 200,
@@ -137,7 +137,7 @@
             "parameters": {
               "encoder_flags_size": 8,
               "encoder_options": "turn_costs=true|block_fords=false|use_acceleration=true",
-              "maximum_distance": 100000,
+              "maximum_distance": 1000000,
               "elevation": true,
               "maximum_snapping_radius": 350,
               "preparation": {
@@ -190,7 +190,7 @@
             "parameters": {
               "encoder_flags_size": 8,
               "encoder_options": "turn_costs=true|block_fords=false|use_acceleration=true",
-              "maximum_distance": 100000,
+              "maximum_distance": 1000000,
               "elevation": true,
               "preparation": {
                 "min_network_size": 200,

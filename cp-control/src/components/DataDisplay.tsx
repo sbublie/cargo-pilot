@@ -1,13 +1,30 @@
+import './display_style.css';
+import Form from 'react-bootstrap/Form';
+
 function DataDisplay() {
+  
+
+  
   return (
     <>
-      <ul className="list-group">
-        <li className="list-group-item">An item</li>
-        <li className="list-group-item">A second item</li>
-        <li className="list-group-item">A third item</li>
-        <li className="list-group-item">A fourth item</li>
-        <li className="list-group-item">And a fifth one</li>
-      </ul>
+      <div className='custom-form'>
+      <Form>
+          <Form.Check
+            type='switch'
+            id='custom-switch'
+            label='Show all empty tours'
+            className='switch-label-left'
+
+          />
+          <Form.Check
+            type='switch'
+            label='Show matches'
+            id='disabled-custom-switch'
+            className='switch-label-left'
+
+          />
+        </Form>
+    </div>
     </>
   );
 }
