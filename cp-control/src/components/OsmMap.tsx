@@ -224,7 +224,7 @@ function OsmMap() {
                     Cluster: Friedrichshafen
                   </Popup>
                 </Marker>
-                <Marker position={offering.destinationLatLong}>
+                <Marker icon={redIcon} position={offering.destinationLatLong}>
                   <Popup>
                     <b>Location #{offering.destinationLocation.location_id}</b>
                     <br />
