@@ -44,7 +44,7 @@ function OsmMap() {
       const jsonData = await response.json();
 
       const tripsWithRoutes = await Promise.all(
-        jsonData.map(async (trip) => {
+        jsonData.map(async (trip:any) => {
           const originResponse = await fetch(
             `http://localhost:5001/locations/${trip.origin_location_id}`
           );
@@ -104,7 +104,7 @@ function OsmMap() {
         const jsonData = await response.json();
   
         const tripsWithRoutes = await Promise.all(
-          jsonData.map(async (offering) => {
+          jsonData.map(async (offering:any) => {
             const originResponse = await fetch(
               `http://localhost:5001/locations/${offering.origin_location_id}`
             );
