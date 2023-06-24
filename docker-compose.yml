@@ -18,6 +18,7 @@ services:
     build: ./cp-control
     ports:
       - '80:80'
+      - '443:443'
   cp-db:
     container_name: cp-db
     image: postgres

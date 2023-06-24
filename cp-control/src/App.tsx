@@ -14,7 +14,8 @@ function App() {
           />
         </div>
       </div> */}
-
+      <h1>Cargo Pilot</h1>
+      <h3>Match View</h3>
       <div className="row">
         <OsmMap />
       </div>

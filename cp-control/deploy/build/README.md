@@ -1,0 +1,1 @@
+Webpage files are placed in this folder.
