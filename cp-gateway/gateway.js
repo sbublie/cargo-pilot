@@ -387,11 +387,11 @@ app.delete("/offerings/:id", (req, res) => {
 const httpServer = http.createServer(app);
 const httpsServer = https.createServer(credentials, app);
 
-httpServer.listen(5005, () => {
+httpServer.listen(port, () => {
   console.log('HTTP Server started')
 })
 
-httpsServer.listen(port, () => {
+httpsServer.listen(5005, () => {
   console.log('HTTPS Server started')
 })
 

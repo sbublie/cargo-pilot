@@ -17,9 +17,9 @@ const credentials = {
 };
 
 // Redirect all http traffic to https 
-app.all('*',(req, res, next) => {
-req.secure ? next() : res.redirect('https://' + req.headers.host + req.url)
-});
+//app.all('*',(req, res, next) => {
+//req.secure ? next() : res.redirect('https://' + req.headers.host + req.url)
+//});
 
 // Tell express to use publish the index.html file from the build folder on the base URL
 app.use(express.static(path.join(__dirname, 'build')));
