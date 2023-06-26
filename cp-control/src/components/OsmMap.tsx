@@ -14,7 +14,7 @@ import { decode } from "@googlemaps/polyline-codec";
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
 
-const addrPath = "http://"
+const addrPath = "https://"
 
 const DefaultIcon = L.icon({
   iconUrl: icon,

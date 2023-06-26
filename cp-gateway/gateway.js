@@ -385,9 +385,14 @@ app.delete("/offerings/:id", (req, res) => {
 
 // Create and start https server to handle all incoming traffic
 const httpServer = http.createServer(app);
+const httpsServer = https.createServer(credentials, app);
 
-
-httpServer.listen(port, () => {
+httpServer.listen(5005, () => {
   console.log('HTTP Server started')
 })
+
+httpsServer.listen(port, () => {
+  console.log('HTTPS Server started')
+})
+
 
