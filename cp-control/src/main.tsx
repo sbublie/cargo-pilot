@@ -6,6 +6,7 @@ import "bootstrap/dist/css/bootstrap.css";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests"></meta>
     <BrowserRouter>
       <App />
     </BrowserRouter>
