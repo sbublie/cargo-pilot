@@ -6,15 +6,15 @@ const path = require('path')
 
 const app = express();
 
-const privateKey = fs.readFileSync('./cert/privkey.pem', 'utf8')
-const certificate = fs.readFileSync('./cert/cert.pem', 'utf8')
-const ca = fs.readFileSync('./cert/chain.pem', 'utf8')
+//const privateKey = fs.readFileSync('./cert/privkey.pem', 'utf8')
+//const certificate = fs.readFileSync('./cert/cert.pem', 'utf8')
+//const ca = fs.readFileSync('./cert/chain.pem', 'utf8')
 
-const credentials = {
-  key: privateKey,
-  cert: certificate,
-  ca: ca
-};
+//const credentials = {
+//  key: privateKey,
+//  cert: certificate,
+//  ca: ca
+//};
 
 // Redirect all http traffic to https 
 //app.all('*',(req, res, next) => {
@@ -29,12 +29,12 @@ app.get('/', function(req, res){
 
 // Create and start both http and https server to handle all incoming traffic
 const httpServer = http.createServer(app);
-const httpsServer = https.createServer(credentials, app);
+//const httpsServer = https.createServer(credentials, app);
 
 httpServer.listen(80, () => {
   console.log('HTTP Server started')
 })
 
-httpsServer.listen(443, () => {
-  console.log('HTTPS Server started')
-})
+//httpsServer.listen(443, () => {
+//  console.log('HTTPS Server started')
+//})

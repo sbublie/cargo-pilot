@@ -8,11 +8,6 @@ services:
       - "80:80"
     volumes:
       - /var/run/docker.sock:/tmp/docker.sock:ro
-  cp-analyzer:
-    container_name: cp-analyzer
-    build: ./cp-analyzer
-    ports:
-      - '5000:5000'
   cp-gateway:
     container_name: cp-gateway
     restart: always
