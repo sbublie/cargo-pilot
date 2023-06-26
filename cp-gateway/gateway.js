@@ -1,6 +1,7 @@
 // Import dependencies
 const express = require("express");
 const https = require('https');
+const http = require('http');
 const fs = require('fs')
 const { Pool } = require("pg");
 const cors = require("cors");
@@ -383,11 +384,10 @@ app.delete("/offerings/:id", (req, res) => {
 });
 
 // Create and start https server to handle all incoming traffic
-const httpsServer = https.createServer(credentials, app);
+const httpServer = http.createServer(app);
 
 
-httpsServer.listen(port, () => {
-  console.log('HTTPS Server started')
+httpServer.listen(port, () => {
+  console.log('HTTP Server started')
 })
-
 
