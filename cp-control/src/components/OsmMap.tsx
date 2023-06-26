@@ -42,13 +42,13 @@ function OsmMap() {
   // Function to make the API call
   const fetchTrips = async () => {
     try {
-      const response = await fetch(addrPath + "cp-gateway:5001/trips");
+      const response = await fetch(addrPath + "localhost:5001/trips");
       const jsonData = await response.json();
 
       const tripsWithRoutes = await Promise.all(
         jsonData.map(async (trip:any) => {
           const originResponse = await fetch(
-            addrPath + `cp-gateway:5001/locations/${trip.origin_location_id}`
+            addrPath + `localhost:5001/locations/${trip.origin_location_id}`
           );
           const originLocation = await originResponse.json();
           const originLatLong = [
@@ -57,7 +57,7 @@ function OsmMap() {
           ];
 
           const destinationResponse = await fetch(
-            addrPath + `cp-gateway:5001/locations/${trip.destination_location_id}`
+            addrPath + `localhost:5001/locations/${trip.destination_location_id}`
           );
           const destinationLocation = await destinationResponse.json();
           const destinationLatLong = [
@@ -102,13 +102,13 @@ function OsmMap() {
     // Function to make the API call
     const fetchOfferings = async () => {
       try {
-        const response = await fetch(addrPath + "cp-gateway:5001/offerings");
+        const response = await fetch(addrPath + "localhost:5001/offerings");
         const jsonData = await response.json();
   
         const tripsWithRoutes = await Promise.all(
           jsonData.map(async (offering:any) => {
             const originResponse = await fetch(
-              addrPath + `cp-gateway:5001/locations/${offering.origin_location_id}`
+              addrPath + `localhost:5001/locations/${offering.origin_location_id}`
             );
             const originLocation = await originResponse.json();
             const originLatLong = [
@@ -117,7 +117,7 @@ function OsmMap() {
             ];
   
             const destinationResponse = await fetch(
-              addrPath + `cp-gateway:5001/locations/${offering.destination_location_id}`
+              addrPath + `localhost:5001/locations/${offering.destination_location_id}`
             );
             const destinationLocation = await destinationResponse.json();
             const destinationLatLong = [
