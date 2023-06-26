@@ -13,6 +13,16 @@ const pool = new Pool({
   port: 5432, // Change if your PostgreSQL server runs on a different port
 });
 
+const privateKey = fs.readFileSync('./cert/privkey.pem', 'utf8')
+const certificate = fs.readFileSync('./cert/cert.pem', 'utf8')
+const ca = fs.readFileSync('./cert/chain.pem', 'utf8')
+
+const credentials = {
+  key: privateKey,
+  cert: certificate,
+  ca: ca
+};
+
 // Create Express application
 const app = express();
 const port = 5001;
@@ -371,6 +381,12 @@ app.delete("/offerings/:id", (req, res) => {
   );
 });
 
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-});
+// Create and start https server to handle all incoming traffic
+const httpsServer = https.createServer(credentials, app);
+
+
+httpsServer.listen(port, () => {
+  console.log('HTTPS Server started')
+})
+
+
