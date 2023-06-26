@@ -102,7 +102,7 @@ function OsmMap() {
     // Function to make the API call
     const fetchOfferings = async () => {
       try {
-        const response = await fetch(addrPath + "localhost:5001/offerings");
+        const response = await fetch(addrPath + "/api/offerings");
         const jsonData = await response.json();
   
         const tripsWithRoutes = await Promise.all(
