@@ -1,6 +1,13 @@
 version: "3.4"
 services:
-
+  nginx-proxy:
+    container_name: nginx-proxy
+    image: jwilder/nginx-proxy
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
   cp-analyzer:
     container_name: cp-analyzer
     build: ./cp-analyzer
@@ -18,8 +25,7 @@ services:
     restart: always
     build: ./cp-control
     ports:
-      - '80:80'
-      - '443:443'
+      - '5006:80'
   cp-db:
     container_name: cp-db
     image: postgres
