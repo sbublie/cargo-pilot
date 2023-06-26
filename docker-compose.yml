@@ -12,9 +12,8 @@ services:
     container_name: cp-gateway
     restart: always
     build: ./cp-gateway
-    ports:
-      - '5001:5001'
-      - '5005:5005'
+    environment:
+    - VIRTUAL_HOST=api.cargo-pilot.de
   cp-control:
     container_name: cp-control
     restart: always
