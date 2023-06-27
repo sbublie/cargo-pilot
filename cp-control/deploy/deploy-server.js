@@ -21,6 +21,12 @@ if (process.env.ENABLE_HTTPS === "true") {
   app.all("*", (req, res, next) => {
     req.secure ? next() : res.redirect("https://" + req.headers.host + req.url);
   });
+
+  const httpsServer = https.createServer(credentials, app);
+
+  httpsServer.listen(443, () => {
+    console.log("HTTPS Server started");
+  });
 }
 
 // Configure proxy for API access
@@ -40,10 +46,6 @@ httpServer.listen(80, () => {
   console.log("HTTP Server started");
 });
 
-if (process.env.ENABLE_SSL === "true") {
-  const httpsServer = https.createServer(credentials, app);
+if (process.env.ENABLE_HTTPS === "true") {
 
-  httpsServer.listen(443, () => {
-    console.log("HTTPS Server started");
-  });
 }
