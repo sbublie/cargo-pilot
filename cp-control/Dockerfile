@@ -10,7 +10,11 @@ COPY . ./
 RUN npm run build
 
 # production environment
-FROM nginx:stable-alpine
-COPY --from=build /app/dist /usr/share/nginx/html
+FROM node:18-alpine
+WORKDIR /app
+COPY ./deploy .
+RUN npm install
+COPY --from=build /app/dist ./build
 EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+EXPOSE 443
+CMD ["npm", "start"]
