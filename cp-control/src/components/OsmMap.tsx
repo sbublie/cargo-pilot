@@ -14,8 +14,6 @@ import { decode } from "@googlemaps/polyline-codec";
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
 
-const addrPath = "http://"
-
 const DefaultIcon = L.icon({
   iconUrl: icon,
   shadowUrl: iconShadow,
@@ -48,7 +46,7 @@ function OsmMap() {
       const tripsWithRoutes = await Promise.all(
         jsonData.map(async (trip:any) => {
           const originResponse = await fetch(
-            addrPath + `localhost:5001/locations/${trip.origin_location_id}`
+            `/api/locations/${trip.origin_location_id}`
           );
           const originLocation = await originResponse.json();
           const originLatLong = [
@@ -57,7 +55,7 @@ function OsmMap() {
           ];
 
           const destinationResponse = await fetch(
-            addrPath + `localhost:5001/locations/${trip.destination_location_id}`
+            `/api/locations/${trip.destination_location_id}`
           );
           const destinationLocation = await destinationResponse.json();
           const destinationLatLong = [
@@ -66,7 +64,7 @@ function OsmMap() {
           ];
 
           const routeResponse = await fetch(
-            addrPath + "cp-routing:5002/ors/v2/directions/driving-car/json",
+            "/routing/ors/v2/directions/driving-car/json",
             {
               method: "POST",
               headers: {
@@ -102,13 +100,13 @@ function OsmMap() {
     // Function to make the API call
     const fetchOfferings = async () => {
       try {
-        const response = await fetch(addrPath + "/api/offerings");
+        const response = await fetch("/api/offerings");
         const jsonData = await response.json();
   
         const tripsWithRoutes = await Promise.all(
           jsonData.map(async (offering:any) => {
             const originResponse = await fetch(
-              addrPath + `localhost:5001/locations/${offering.origin_location_id}`
+              `/api/locations/${offering.origin_location_id}`
             );
             const originLocation = await originResponse.json();
             const originLatLong = [
@@ -117,7 +115,7 @@ function OsmMap() {
             ];
   
             const destinationResponse = await fetch(
-              addrPath + `localhost:5001/locations/${offering.destination_location_id}`
+              `/api/locations/${offering.destination_location_id}`
             );
             const destinationLocation = await destinationResponse.json();
             const destinationLatLong = [
@@ -126,7 +124,7 @@ function OsmMap() {
             ];
   
             const routeResponse = await fetch(
-              addrPath + `cp-routing:5002/ors/v2/directions/driving-car/json`,
+              `/routing/ors/v2/directions/driving-car/json`,
               {
                 method: "POST",
                 headers: {
