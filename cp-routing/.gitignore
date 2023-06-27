@@ -1,0 +1,6 @@
+*.pbf
+*.osm
+logs/
+.log
+ors/
+tomcat/

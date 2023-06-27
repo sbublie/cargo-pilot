@@ -1,0 +1,16 @@
+{
+    "name": "cp-control-deployment-server",
+    "version": "1.0.0",
+    "description": "",
+    "main": "deploy-server.js",
+    "scripts": {
+      "test": "echo \"Error: no test specified\" && exit 1",
+      "start": "node deploy-server.js"
+    },
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+      "express": "^4.18.2",
+      "express-http-proxy": "^1.6.3"
+    }
+  }
