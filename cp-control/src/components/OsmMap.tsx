@@ -23,12 +23,14 @@ const DefaultIcon = L.icon({
 });
 
 var redIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+  iconUrl:
+    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
-  shadowSize: [41, 41]
+  shadowSize: [41, 41],
 });
 
 L.Marker.prototype.options.icon = DefaultIcon;
@@ -40,13 +42,22 @@ function OsmMap() {
   // Function to make the API call
   const fetchTrips = async () => {
     try {
-      const response = await fetch("/api/trips");
+      const response = await fetch("/api/trips", {
+        headers: new Headers({
+          "Authorization": "c3a4ff56b380976d4e8f27bea7c4a7f9",
+        }),
+      });
       const jsonData = await response.json();
 
       const tripsWithRoutes = await Promise.all(
-        jsonData.map(async (trip:any) => {
+        jsonData.map(async (trip: any) => {
           const originResponse = await fetch(
-            `/api/locations/${trip.origin_location_id}`
+            `/api/locations/${trip.origin_location_id}`,
+            {
+              headers: new Headers({
+                "Authorization": "c3a4ff56b380976d4e8f27bea7c4a7f9",
+              }),
+            }
           );
           const originLocation = await originResponse.json();
           const originLatLong = [
@@ -55,7 +66,12 @@ function OsmMap() {
           ];
 
           const destinationResponse = await fetch(
-            `/api/locations/${trip.destination_location_id}`
+            `/api/locations/${trip.destination_location_id}`,
+            {
+              headers: new Headers({
+                "Authorization": "c3a4ff56b380976d4e8f27bea7c4a7f9",
+              }),
+            }
           );
           const destinationLocation = await destinationResponse.json();
           const destinationLatLong = [
@@ -64,11 +80,12 @@ function OsmMap() {
           ];
 
           const routeResponse = await fetch(
-            "/routing/ors/v2/directions/driving-car/json",
+            "/api/routing/ors/v2/directions/driving-car/json",
             {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
+                "Authorization": "c3a4ff56b380976d4e8f27bea7c4a7f9",
               },
               body: JSON.stringify({
                 coordinates: [
@@ -97,67 +114,80 @@ function OsmMap() {
     }
   };
 
-    // Function to make the API call
-    const fetchOfferings = async () => {
-      try {
-        const response = await fetch("/api/offerings");
-        const jsonData = await response.json();
-  
-        const tripsWithRoutes = await Promise.all(
-          jsonData.map(async (offering:any) => {
-            const originResponse = await fetch(
-              `/api/locations/${offering.origin_location_id}`
-            );
-            const originLocation = await originResponse.json();
-            const originLatLong = [
-              originLocation.center_lat,
-              originLocation.center_long,
-            ];
-  
-            const destinationResponse = await fetch(
-              `/api/locations/${offering.destination_location_id}`
-            );
-            const destinationLocation = await destinationResponse.json();
-            const destinationLatLong = [
-              destinationLocation.center_lat,
-              destinationLocation.center_long,
-            ];
-  
-            const routeResponse = await fetch(
-              `/routing/ors/v2/directions/driving-car/json`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  coordinates: [
-                    originLatLong.reverse(),
-                    destinationLatLong.reverse(),
-                  ],
-                }),
-              }
-            );
-            const routeData = await routeResponse.json();
-            const decodedCoordinates = decode(routeData.routes[0].geometry, 5);
-            return {
-              ...offering,
-              originLocation: originLocation,
-              destinationLocation: destinationLocation,
-              originLatLong: originLatLong.reverse(),
-              destinationLatLong: destinationLatLong.reverse(),
-              route: decodedCoordinates,
-            };
-          })
-        );
-  
-        setOfferings(tripsWithRoutes);
-      } catch (error) {
-        console.log("Error:", error);
-      }
-    };
+  // Function to make the API call
+  const fetchOfferings = async () => {
+    try {
+      const response = await fetch("/api/offerings", {
+        headers: new Headers({
+          "Authorization": "c3a4ff56b380976d4e8f27bea7c4a7f9",
+        }),
+      });
+      const jsonData = await response.json();
 
-  
+      const tripsWithRoutes = await Promise.all(
+        jsonData.map(async (offering: any) => {
+          const originResponse = await fetch(
+            `/api/locations/${offering.origin_location_id}`,
+            {
+              headers: new Headers({
+                "Authorization": "c3a4ff56b380976d4e8f27bea7c4a7f9",
+              }),
+            }
+          );
+          const originLocation = await originResponse.json();
+          const originLatLong = [
+            originLocation.center_lat,
+            originLocation.center_long,
+          ];
+
+          const destinationResponse = await fetch(
+            `/api/locations/${offering.destination_location_id}`,
+            {
+              headers: new Headers({
+                "Authorization": "c3a4ff56b380976d4e8f27bea7c4a7f9",
+              }),
+            }
+          );
+          const destinationLocation = await destinationResponse.json();
+          const destinationLatLong = [
+            destinationLocation.center_lat,
+            destinationLocation.center_long,
+          ];
+
+          const routeResponse = await fetch(
+            `/api/routing/ors/v2/directions/driving-car/json`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": "c3a4ff56b380976d4e8f27bea7c4a7f9",
+              },
+              body: JSON.stringify({
+                coordinates: [
+                  originLatLong.reverse(),
+                  destinationLatLong.reverse(),
+                ],
+              }),
+            }
+          );
+          const routeData = await routeResponse.json();
+          const decodedCoordinates = decode(routeData.routes[0].geometry, 5);
+          return {
+            ...offering,
+            originLocation: originLocation,
+            destinationLocation: destinationLocation,
+            originLatLong: originLatLong.reverse(),
+            destinationLatLong: destinationLatLong.reverse(),
+            route: decodedCoordinates,
+          };
+        })
+      );
+
+      setOfferings(tripsWithRoutes);
+    } catch (error) {
+      console.log("Error:", error);
+    }
+  };
 
   useEffect(() => {
     fetchTrips();
@@ -179,7 +209,7 @@ function OsmMap() {
         {trips ? (
           <>
             {trips.map((trip) => (
-              <React.Fragment key={"trip"+trip.trip_id}>
+              <React.Fragment key={"trip" + trip.trip_id}>
                 <Marker position={trip.originLatLong}>
                   <Popup>
                     <b>Location #{trip.originLocation.location_id}</b>
@@ -211,12 +241,11 @@ function OsmMap() {
           <p>Loading...</p>
         )}
 
-
         {offerings ? (
           <>
             {offerings.map((offering) => (
-              <React.Fragment key={"offering"+offering.trip_id}>
-                <Marker icon={redIcon}  position={offering.originLatLong}>
+              <React.Fragment key={"offering" + offering.trip_id}>
+                <Marker icon={redIcon} position={offering.originLatLong}>
                   <Popup>
                     <b>Location #{offering.originLocation.location_id}</b>
                     <br />

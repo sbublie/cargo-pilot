@@ -5,6 +5,10 @@ const fs = require("fs");
 const path = require("path");
 const app = express();
 const proxy = require("express-http-proxy");
+const authenticateToken = require('./authMiddleware');
+const dotenv = require('dotenv');
+
+dotenv.config();
 
 if (process.env.ENABLE_HTTPS === "true") {
   const privateKey = fs.readFileSync("./cert/privkey.pem", "utf8");
@@ -30,8 +34,10 @@ if (process.env.ENABLE_HTTPS === "true") {
 }
 
 // Configure proxy for API access
-app.use("/api", proxy("http://cp-gateway:5001"));
-app.use("/routing", proxy("http://cp-routing:8080"));
+// The order of the use commands here is important as the routes have a common base path
+app.use("/api/routing", authenticateToken, proxy("http://cp-routing:8080"));
+app.use("/api", authenticateToken, proxy("http://cp-gateway:5001"));
+
 
 // Tell express to use publish the index.html file from the build folder on the base URL
 app.use(express.static(path.join(__dirname, "build")));
