@@ -1,0 +1,66 @@
+@startuml
+
+skinparam linetype polyline
+skinparam linetype ortho
+
+
+
+
+node "Docker Compose ZDM Server" {
+    frame "CP-Control" {
+        component [     CP-Control Server    ] as control1 <<Node.js>>
+        component [CP-Control Frontend] as control2 <<React>>
+    }
+
+    component [CP-Routing] as routing <<Openrouteservice>>
+    component [CP-Analyzer] as analyzer <<Python App>>
+    component [CP-Gateway] as gateway <<Node.js>>
+    database "SQL Database" {
+        component [CP-DB] as db <<Postgres>>
+    }
+
+    note right of gateway
+        Database abstraction via API
+    end note
+
+    note right of analyzer
+        Data aggregation
+        Pattern analysis
+        Cluster analysis
+    end note
+
+    note left of control1
+        Internet-facing gateway
+    end note
+}
+
+component [CP-Uploader] as uploader <<Python App>>
+
+interface "Freight Market" as market
+interface "File (.csv, .geojson, .xslx)" as file
+interface "API" as api
+
+
+control1 <-> control2
+uploader --> control1
+control1 <--> routing
+control1 ---> analyzer
+control1 <--> gateway
+analyzer <--> gateway
+gateway <--> db
+market <--> analyzer
+file --> uploader
+api --> control1
+
+note left of uploader
+    File input handling and uploading
+    from local machines.
+end note
+
+
+note right of control2
+    Frontend dashboard
+end note
+
+
+@enduml

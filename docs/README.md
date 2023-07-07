@@ -17,3 +17,5 @@ The project consists of multiple components:
 * **cp-analyzer**: Python application for performing all necessary calculations like pattern and cluster analysis
 * **cp-routing**: Self-hosted instance of openrouteservice
 * **cp-db**: Postgres SQL database for consistent data storage
+
+![](highlevel_components.svg)
