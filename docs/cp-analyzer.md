@@ -1,15 +1,21 @@
 # CP-Analyzer
 
-CP-Analyzer is the project component that performs all the calculations necessary to link a freight offer and empty journey pattern. The steps that are required to provide a meaningful result are listed below.
+CP-Analyzer is a Python application that performs all the necessary calculations to provide added value to the user. A set of operations is carried out very time the user adds new data to the application. These steps are described in the sections below.
 
-## Input Handling
+## 1. Input Handling
 
 The first step is to handle the raw data set that is provided by the user. There are two main ways to feed the data into a running Cargo Pilot instance:
 
 * **Via the customer-facing API**: The API can be used to directly modify the datasets used by Cargo Pilot. The interface description is provided as an [OpenAPI Specification](https://swagger.io/specification/).
 * **Via CP-Uploader**: If the data is saved in .csv, .xslx or .geojson format the CP-Uploader program can help with the task of uploading all data contained in the file. More details can be found in the `cp-uploader` subfolder.
 
-## Clustering
+Once the data is transmitted to CP-Analyzer via the internet gateway CP-Control Server it is verified and transferred to internal data objects to enable further processing.
+
+The following data sets are created in this step:
+* Locations: Simple location a map
+* Tours: Cargo tour from location A to B including metadata like load
+
+## 2. Clustering
 
 It is necessary to group the tour locations provided in Cargo Pilot to improve the pattern analysis and to enable a cluster analysis (more on that later). One of the most common and widely used clustering algorithm is [DBSCAN](https://en.wikipedia.org/wiki/DBSCAN). The results fit the Cargo Pilot's use case as it can identify groups within a large set of data while it's also able to find outlier points.
 
@@ -18,11 +24,35 @@ To perform a DBSCAN cluster analysis two parameters are needed:
 1. **Epsilon (ε) or the radius**: This parameter determines the neighborhood around each data point. It defines the maximum distance between two points for them to be considered neighbors. Points within this distance are said to be directly reachable. If a point has enough neighbors within its ε-neighborhood, it is considered a core point. The value of ε influences the size and shape of the clusters discovered. A smaller ε will result in more clusters, while a larger ε will merge neighboring clusters into larger ones.&#x20;
 2. **Minimum Points**: This parameter defines the minimum number of points required to form a dense region or cluster. The value influences the algorithm's sensitivity to noise and its ability to differentiate between dense regions and sparse regions. A higher MinPts value will result in fewer clusters and better noise resistance, while a lower MinPts value can create more clusters and be more permissive towards noise.
 
-Both parameters need to be adapted to the use case and it's individual data points.&#x20;
+Currently the best results are created when using all locations to create the clusters. To ensure that CP-Analyzer gets all saved locations from the database to cluster them together with the new data points. This operation needs a lot of resources and is therefore triggered only when a substantial amount of new data is received.
 
-## Cluster Analysis
+The following data point is created here:
+* Cluster: Set of Locations inclusing metadata like city or region
 
-With all locations assigned to thier respective cluster it's now possible to analyse the relation between these clusters.&#x20;
+## 3. Cluster Analysis
 
-## Key data points
+With all locations assigned to thier respective cluster it's now possible to analyse the relation between these clusters. Currently the amount of tours from cluster A to B is counted. This can be used to create more advanced analysis like a source and sink map in the future.
+
+The following data point is created here:
+* Cluster Relation: Relation of two clusters including metadata like the amount of load transferred
+
+## 4. Pattern analysis
+
+To identify potential in improving the amount of cargo transported it is necessary to analize the history of recorded tours. These two parameters are the most important in the current implemenation of the pattern analysis: 
+
+* Start time and cluster
+* End time and cluster
+
+The algorithm checks if occurrences of the same parameter combination can be found in the database. For example it can detect the following pattern: Every Thursdays afternoon there is a tour from cluster A to B with the average load of 5%.
+
+The following data points is created here:
+* Detected Pattern: Repetitive occurrence of a tour with metadata like cluster and time with average load
+
+## 5. Matching of demand and offering
+
+The last step in the data analysis is to combine the detected pattern that indicate a low capacity utilisation with the offerings of a external cargo tour marketplace. With the current implementation the offerings are predefined but can be pulled automatically via an external API.
+
+The following data points is created here:
+* Cargo offerings: Available space in a planned cargo tour including relevant metadata like location and time
+* Tour Matches: Detected matches of demand and offering
 
