@@ -1,0 +1,116 @@
+openapi: 3.0.3
+info:
+  title: Cargo Pilot Uploader API
+  description: >-
+    An API for uploading data to the online instance of Cargo Pilot
+  version: 1.0.0
+  contact:
+    name: name
+    email: mail@domain.com
+servers:
+  - url: https://cargo-pilot.de/api/uploader
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  /tours:
+    post:
+      tags:
+        - Tour
+      requestBody:
+        description: A list of available models
+        content:
+          application/json:
+            schema:
+                $ref: "#/components/schemas/TourCollection"
+        required: true
+      responses:
+        "200":
+          description: Successful operation
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+  schemas:
+    TourCollection:
+      type: object
+      properties:
+        tours:
+          type: array
+          items:
+            $ref: "#/components/schemas/Tour"
+
+    Tour:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - standstill
+            - driving
+            - preparing_to_depart
+            - traffic_jam
+            - fuelling
+            - preparing
+            - connect
+            - disconnect
+            - inspection
+            - loading
+            - unloading
+            - break
+            - resting
+            - ferry_train
+            - report
+            - waiting
+            - garage
+        origin:
+          $ref: "#/components/schemas/Waypoint"
+        destination:
+          $ref: "#/components/schemas/Waypoint"
+        load:
+          $ref: "#/components/schemas/Load"
+        source:
+          type: string
+        vehicle_id:
+          type: string
+        customer_id:
+          type: string
+        route_waypoints:
+          type: array
+          items:
+            $ref: "#/components/schemas/Waypoint"
+
+    Load:
+      type: object
+      properties:
+        weight:
+          type: integer
+          format: float
+        loading_meter:
+          type: integer
+          format: float
+        capacity_percentage:
+          type: integer
+          format: float
+          example: 12.6
+          description: Load in percent
+
+    Waypoint:
+      type: object
+      properties:
+        lat:
+          type: integer
+          format: float
+          example: 49.43534
+        long:
+          type: integer
+          format: float
+          example: 8.34633
+        timestamp:
+          type: integer
+          format: int32
+          example: 1689435073
