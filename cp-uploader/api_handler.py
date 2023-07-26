@@ -3,7 +3,7 @@ from env import REMOTE_API_ENDPOINT, REMOTE_CP_INSTANCE_URL, API_KEY
 
 class APIHandler:
     def __init__(self) -> None:
-        self.remote_URL = REMOTE_API_ENDPOINT + REMOTE_CP_INSTANCE_URL
+        self.remote_URL = REMOTE_CP_INSTANCE_URL + REMOTE_API_ENDPOINT
         self.headers = {
             "Authorization": API_KEY,
             "Content-Type": "application/json"

@@ -1,12 +1,12 @@
 import os
 import pandas as pd
-from tour import Tour, Waypoint
+from tour import Tour, Waypoint, Load
 from datetime import datetime
 
 class InputConverter:
 
    
-    def process_file(self, filename) -> list[Tour]: 
+    def process_file(self, filename, source) -> list[Tour]: 
         '''
         Process a given .csv, .geojson or .xlsc/.xls file and return the extracted data as list of Tour 
         '''
@@ -16,7 +16,7 @@ class InputConverter:
             extension = extension.lower()
 
             if extension == '.csv':
-                return self.__handle_csv_file(filename)
+                return self.__handle_csv_file(filename, source)
             elif extension == '.geojson':
                 return self.__handle_geojson_file(filename)
             elif extension == '.xls' or extension == '.xlsx':
@@ -26,7 +26,7 @@ class InputConverter:
         else:
             raise ValueError("Invalid file: {}".format(filename))
 
-    def __handle_csv_file(self, filename):
+    def __handle_csv_file(self, filename, source):
         df = pd.read_csv(filename)
         tours = []
         for index, row in df.iterrows():
@@ -44,10 +44,13 @@ class InputConverter:
                         load = 100
 
                     new_tour = Tour(
-                        row['ActivityName'],
-                        Waypoint(latitude, longitude, self.__convert_timestamp(row['ActionDateTimeBegin'], "%m/%d/%Y %H:%M:%S")),
-                        Waypoint(next_latitude, next_longitude, self.__convert_timestamp(next_row['ActionDateTimeEnd'], "%m/%d/%Y %H:%M:%S")),
-                        load=load
+                        type=row['ActivityName'],
+                        origin=Waypoint(lat=latitude, long=longitude, timestamp=self.__convert_timestamp(row['ActionDateTimeBegin'], "%m/%d/%Y %H:%M:%S")),
+                        destination=Waypoint(lat=next_latitude, long=next_longitude, timestamp=self.__convert_timestamp(next_row['ActionDateTimeEnd'], "%m/%d/%Y %H:%M:%S")),
+                        route_waypoints=[],
+                        load=Load(capacity_percentage=load),
+                        source=source,
+                        vehicle_id=row['VehicleId_hash']
                     )
                     tours.append(new_tour.toJSON())
 
