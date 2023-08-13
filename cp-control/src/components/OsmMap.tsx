@@ -40,29 +40,45 @@ function OsmMap() {
   // Function to make the API call
   const fetchTrips = async () => {
     try {
-      const response = await fetch("/api/trips");
+      const response = await fetch("http://localhost:5003/trips");
       const jsonData = await response.json();
 
       const tripsWithRoutes = await Promise.all(
         jsonData.map(async (trip:any) => {
           const originResponse = await fetch(
-            `/api/locations/${trip.origin_location_id}`
+            `http://localhost:5003/locations/${trip.origin_id}`
           );
           const originLocation = await originResponse.json();
           const originLatLong = [
-            originLocation.center_lat,
-            originLocation.center_long,
+            originLocation.lat,
+            originLocation.long,
           ];
 
           const destinationResponse = await fetch(
-            `/api/locations/${trip.destination_location_id}`
+            `http://localhost:5003/locations/${trip.destination_id}`
           );
           const destinationLocation = await destinationResponse.json();
           const destinationLatLong = [
-            destinationLocation.center_lat,
-            destinationLocation.center_long,
+            destinationLocation.lat,
+            destinationLocation.long,
           ];
+          const clusterResponse = await fetch(
+            `http://localhost:5003/clusters`
+          );
+          const allCluster = await clusterResponse.json();
+          let originClusterId = -1
+          let destinationClusterId = -1
 
+          for (const cluster of allCluster) {
+            
+            if (cluster.location_ids.indexOf(originLocation.id) !== -1) {
+              originClusterId = cluster.id
+            } 
+            if (cluster.location_ids.indexOf(destinationLocation.id) !== -1) {
+              destinationClusterId = cluster.id
+            } 
+          }
+          /*
           const routeResponse = await fetch(
             "/routing/ors/v2/directions/driving-car/json",
             {
@@ -77,16 +93,18 @@ function OsmMap() {
                 ],
               }),
             }
-          );
-          const routeData = await routeResponse.json();
-          const decodedCoordinates = decode(routeData.routes[0].geometry, 5);
+          );*/
+          //const routeData = await routeResponse.json();
+          //const decodedCoordinates = decode(routeData.routes[0].geometry, 5);
           return {
             ...trip,
             originLocation: originLocation,
             destinationLocation: destinationLocation,
-            originLatLong: originLatLong.reverse(),
-            destinationLatLong: destinationLatLong.reverse(),
-            route: decodedCoordinates,
+            originLatLong: originLatLong,
+            destinationLatLong: destinationLatLong,
+            route: [originLatLong, destinationLatLong],
+            originClusterId: originClusterId,
+            destinationClusterId: destinationClusterId
           };
         })
       );
@@ -96,7 +114,7 @@ function OsmMap() {
       console.log("Error:", error);
     }
   };
-
+    /*
     // Function to make the API call
     const fetchOfferings = async () => {
       try {
@@ -157,11 +175,11 @@ function OsmMap() {
       }
     };
 
-  
+  */
 
   useEffect(() => {
     fetchTrips();
-    fetchOfferings();
+    //fetchOfferings();
   }, []);
 
   return (
@@ -179,29 +197,29 @@ function OsmMap() {
         {trips ? (
           <>
             {trips.map((trip) => (
-              <React.Fragment key={"trip"+trip.trip_id}>
+              <React.Fragment key={"trip"+trip.id}>
                 <Marker position={trip.originLatLong}>
                   <Popup>
-                    <b>Location #{trip.originLocation.location_id}</b>
+                    <b>Location #{trip.originLocation.id}</b>
                     <br />
-                    Type: Origin <br />
-                    Cluster: Friedrichshafen
+                    Type: {trip.originLocation.type} <br />
+                    Cluster: {trip.originClusterId}
                   </Popup>
                 </Marker>
                 <Marker position={trip.destinationLatLong}>
                   <Popup>
-                    <b>Location #{trip.destinationLocation.location_id}</b>
+                    <b>Location #{trip.destinationLocation.id}</b>
                     <br />
-                    Type: Destination <br />
-                    Cluster: Stuttgart
+                    Type: {trip.destinationLocation.type} <br />
+                    Cluster: {trip.destinationClusterId}
                   </Popup>
                 </Marker>
                 <Polyline positions={trip.route}>
                   <Popup>
-                    <b>Recurring Trip #{trip.trip_id}</b>
+                    <b>Recurring Trip #{trip.id}</b>
                     <br />
-                    Detected pattern: "thu_aftn" <br />
-                    Average load: 0.4t
+                    Detected pattern: TBD <br />
+                    Average load: {trip.load}
                   </Popup>
                 </Polyline>
               </React.Fragment>
@@ -211,41 +229,6 @@ function OsmMap() {
           <p>Loading...</p>
         )}
 
-
-        {offerings ? (
-          <>
-            {offerings.map((offering) => (
-              <React.Fragment key={"offering"+offering.trip_id}>
-                <Marker icon={redIcon}  position={offering.originLatLong}>
-                  <Popup>
-                    <b>Location #{offering.originLocation.location_id}</b>
-                    <br />
-                    Type: Origin <br />
-                    Cluster: Friedrichshafen
-                  </Popup>
-                </Marker>
-                <Marker icon={redIcon} position={offering.destinationLatLong}>
-                  <Popup>
-                    <b>Location #{offering.destinationLocation.location_id}</b>
-                    <br />
-                    Type: Destination <br />
-                    Cluster: Stuttgart
-                  </Popup>
-                </Marker>
-                <Polyline color="red" positions={offering.route}>
-                  <Popup>
-                    <b>Offering #{offering.offering_id}</b>
-                    <br />
-                    Time: {offering.timestamp} <br />
-                    Available load: 1.5t
-                  </Popup>
-                </Polyline>
-              </React.Fragment>
-            ))}
-          </>
-        ) : (
-          <p>Loading...</p>
-        )}
       </MapContainer>
     </div>
   );
