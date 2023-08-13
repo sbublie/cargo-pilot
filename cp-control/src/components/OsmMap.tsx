@@ -22,7 +22,7 @@ const DefaultIcon = L.icon({
   popupAnchor: [2, -40],
 });
 
-var redIcon = new L.Icon({
+const redIcon = new L.Icon({
   iconUrl:
     "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
   shadowUrl:

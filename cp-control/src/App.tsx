@@ -1,4 +1,5 @@
 import OsmMap from "./components/OsmMap";
+import MapboxMap from "./components/MapboxMap";
 import { Link, NavLink, Routes, Route } from 'react-router-dom'
 import { Navbar, Nav } from 'react-bootstrap'
 function App() {
@@ -22,7 +23,7 @@ function App() {
       <div className="row">
         <Routes>
           <Route path="/" element={<h1>Moin</h1>} />
-          <Route path="/map" element={<OsmMap />} />
+          <Route path="/map" element={<MapboxMap />} />
         </Routes>
       </div>
     </div>
