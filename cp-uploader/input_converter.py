@@ -31,28 +31,32 @@ class InputConverter:
         tours = []
         for index, row in df.iterrows():
             # TODO Consider other activities
-            if row['ActivityName'] == "Driving":
-                if index+1 < len(df.index):
-                    next_row = df.iloc[index+1]
-                    # Convert row['Latitude'] and row['Longitude'] to float if necessary
-                    latitude = float(row['Latitude'])
-                    longitude = float(row['Longitude'])
-                    next_latitude = float(next_row['Latitude'])
-                    next_longitude = float(next_row['Longitude'])
-                    load = 0
-                    if row['VehicleState'] == "LOADED":
-                        load = 100
-
-                    new_tour = Tour(
-                        type=row['ActivityName'],
-                        origin=Waypoint(lat=latitude, long=longitude, timestamp=self.__convert_timestamp(row['ActionDateTimeBegin'], "%m/%d/%Y %H:%M:%S")),
-                        destination=Waypoint(lat=next_latitude, long=next_longitude, timestamp=self.__convert_timestamp(next_row['ActionDateTimeEnd'], "%m/%d/%Y %H:%M:%S")),
-                        route_waypoints=[],
-                        load=Load(capacity_percentage=load),
-                        source=source,
-                        vehicle_id=row['VehicleId_hash']
-                    )
-                    tours.append(new_tour.toJSON())
+            if index < 5000:
+                
+                if row['ActivityName'] == "Driving":
+                    if index+1 < len(df.index):
+                        next_row = df.iloc[index+1]
+                        # Convert row['Latitude'] and row['Longitude'] to float if necessary
+                        latitude = float(row['Latitude'])
+                        longitude = float(row['Longitude'])
+                        next_latitude = float(next_row['Latitude'])
+                        next_longitude = float(next_row['Longitude'])
+                        load = 0
+                        if row['VehicleState'] == "LOADED":
+                            load = 100
+                        
+                        new_tour = Tour(
+                            type=row['ActivityName'],
+                            origin=Waypoint(lat=latitude, long=longitude, timestamp=self.__convert_timestamp(row['ActionDateTimeBegin'], "%m/%d/%Y %H:%M:%S")),
+                            destination=Waypoint(lat=next_latitude, long=next_longitude, timestamp=self.__convert_timestamp(next_row['ActionDateTimeEnd'], "%m/%d/%Y %H:%M:%S")),
+                            route_waypoints=[],
+                            load=Load(capacity_percentage=load),
+                            source=source,
+                            vehicle_id=row['VehicleId_hash'],
+                            customer_id=row['CustomerId_hash']
+                        )
+                        
+                        tours.append(new_tour.toJSON())
 
         return tours
 
