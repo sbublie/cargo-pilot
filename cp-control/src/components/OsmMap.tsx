@@ -44,7 +44,7 @@ function OsmMap() {
       const jsonData = await response.json();
 
       const tripsWithRoutes = await Promise.all(
-        jsonData.map(async (trip:any) => {
+        jsonData.map(async (trip: any) => {
           const originResponse = await fetch(
             `/api/db/locations/${trip.origin_id}`
           );
@@ -80,11 +80,12 @@ function OsmMap() {
           }
           /*
           const routeResponse = await fetch(
-            "/routing/ors/v2/directions/driving-car/json",
+            "/api/routing/ors/v2/directions/driving-car/json",
             {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
+                "Authorization": "c3a4ff56b380976d4e8f27bea7c4a7f9",
               },
               body: JSON.stringify({
                 coordinates: [
@@ -197,7 +198,7 @@ function OsmMap() {
         {trips ? (
           <>
             {trips.map((trip) => (
-              <React.Fragment key={"trip"+trip.id}>
+              <React.Fragment key={"trip" + trip.trip_id}>
                 <Marker position={trip.originLatLong}>
                   <Popup>
                     <b>Location #{trip.originLocation.id}</b>
