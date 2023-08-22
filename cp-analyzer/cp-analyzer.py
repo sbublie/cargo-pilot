@@ -12,7 +12,7 @@ def process_trip_data():
     return 'Data received successfully'
 
 @app.route('/cluster', methods=['GET'])
-def process_trip_data():
+def cluster_locations_from_db():
     ClusterHandler().cluster_locations_from_db()
     return 'Clustering successful'
 
