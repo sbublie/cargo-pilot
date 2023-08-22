@@ -1,3 +1,5 @@
 *.jar
 *.csv
 *venv
+*/cert
+*workspace

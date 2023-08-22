@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: Cargo Pilot Uploader API
+  title: Cargo Pilot Analyzer API
   description: >-
     An API for uploading data to the online instance of Cargo Pilot
   version: 1.0.0
@@ -8,23 +8,32 @@ info:
     name: name
     email: mail@domain.com
 servers:
-  - url: https://cargo-pilot.de/api/uploader
+  - url: https://cargo-pilot.de/api/analyzer
 
 security:
   - ApiKeyAuth: []
 
 paths:
-  /tours:
+  /upload:
     post:
       tags:
-        - Tour
+        - Trip
+      description: "Upload trips to the Cargo Pilot instance"
       requestBody:
         description: A list of available models
         content:
           application/json:
             schema:
-                $ref: "#/components/schemas/TourCollection"
+              $ref: "#/components/schemas/TripCollection"
         required: true
+      responses:
+        "200":
+          description: Successful operation
+  /cluster:
+    get:
+      tags:
+        - "Commands"
+      description: "Trigger the clustering of all locations"
       responses:
         "200":
           description: Successful operation
@@ -36,15 +45,15 @@ components:
       in: header
       name: Authorization
   schemas:
-    TourCollection:
+    TripCollection:
       type: object
       properties:
-        tours:
+        trips:
           type: array
           items:
-            $ref: "#/components/schemas/Tour"
+            $ref: "#/components/schemas/Trip"
 
-    Tour:
+    Trip:
       type: object
       properties:
         type:

@@ -1,11 +1,11 @@
 {
-  "name": "cp-gateway",
+  "name": "cp-db",
   "version": "1.0.0",
   "description": "",
-  "main": "gateway.js",
+  "main": "cp-db.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node gateway.js"
+    "start": "node cp-db.js"
   },
   "author": "",
   "license": "ISC",

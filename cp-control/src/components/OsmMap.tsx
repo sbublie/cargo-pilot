@@ -9,7 +9,7 @@ import React, { useState, useEffect } from "react";
 import "leaflet/dist/leaflet.css";
 import "./osm_style.css";
 import L from "leaflet";
-import { decode } from "@googlemaps/polyline-codec";
+//import { decode } from "@googlemaps/polyline-codec";
 
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
@@ -22,31 +22,31 @@ const DefaultIcon = L.icon({
   popupAnchor: [2, -40],
 });
 
-var redIcon = new L.Icon({
+/*var redIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
   shadowSize: [41, 41]
-});
+});*/
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
 function OsmMap() {
   const [trips, setTrips] = useState<any[]>([]);
-  const [offerings, setOfferings] = useState<any[]>([]);
+  //const [offerings, setOfferings] = useState<any[]>([]);
 
   // Function to make the API call
   const fetchTrips = async () => {
     try {
-      const response = await fetch("http://localhost:5003/trips");
+      const response = await fetch("/api/db/trips");
       const jsonData = await response.json();
 
       const tripsWithRoutes = await Promise.all(
         jsonData.map(async (trip:any) => {
           const originResponse = await fetch(
-            `http://localhost:5003/locations/${trip.origin_id}`
+            `/api/db/locations/${trip.origin_id}`
           );
           const originLocation = await originResponse.json();
           const originLatLong = [
@@ -55,7 +55,7 @@ function OsmMap() {
           ];
 
           const destinationResponse = await fetch(
-            `http://localhost:5003/locations/${trip.destination_id}`
+            `/api/db/locations/${trip.destination_id}`
           );
           const destinationLocation = await destinationResponse.json();
           const destinationLatLong = [
@@ -63,7 +63,7 @@ function OsmMap() {
             destinationLocation.long,
           ];
           const clusterResponse = await fetch(
-            `http://localhost:5003/clusters`
+            `/api/db/clusters`
           );
           const allCluster = await clusterResponse.json();
           let originClusterId = -1

@@ -5,17 +5,18 @@ from database_handler import DatabaseHandler
 
 app = Flask(__name__)
 
-@app.route('/api/uploader', methods=['POST'])
-def receive_data():
+@app.route('/upload', methods=['POST'])
+def process_trip_data():
     json_data = request.get_json()  
-   
     TripHandler().process_trip_data(json_data)
-    ClusterHandler().cluster_locations_from_db()
-   
-
     return 'Data received successfully'
+
+@app.route('/cluster', methods=['GET'])
+def process_trip_data():
+    ClusterHandler().cluster_locations_from_db()
+    return 'Clustering successful'
 
 
 if __name__ == "__main__":
-    app.run(port=5000)
+    app.run(port=5000, host='0.0.0.0')
     

@@ -2,7 +2,7 @@ const { Sequelize } = require("sequelize");
 
 // Replace with your PostgreSQL database credentials
 const sequelize = new Sequelize("cargo_database", "pguser", "pdb&3Xif", {
-  host: "localhost",
+  host: "cp-postgres",
   dialect: "postgres",
 });
 
