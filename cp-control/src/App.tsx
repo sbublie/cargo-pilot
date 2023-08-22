@@ -1,4 +1,4 @@
-import OsmMap from "./components/OsmMap";
+//import OsmMap from "./components/OsmMap";
 import MapboxMap from "./components/MapboxMap";
 import { Link, NavLink, Routes, Route } from 'react-router-dom'
 import { Navbar, Nav } from 'react-bootstrap'

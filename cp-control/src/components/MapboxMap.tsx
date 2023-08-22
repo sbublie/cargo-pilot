@@ -1,20 +1,20 @@
-import React, { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, } from "react";
 
 import mapboxgl from "mapbox-gl";
 import "./mapbox_style.css"
 
-import germany_boundaries from "./germany_boundaries"
+//import germany_boundaries from "./germany_boundaries"
 mapboxgl.accessToken = "";
 
 function MapboxMap() {
   const mapContainer = useRef(null);
-  const map = useRef(null);
-  const [lng, setLng] = useState(8);
-  const [lat, setLat] = useState(49);
-  const [zoom, setZoom] = useState(9);
+  const map = useRef<mapboxgl.Map | null>(null);
+  const lng = 8;
+  const lat = 49;
+  const zoom = 9
 
   useEffect(() => {
-    if (map.current) return; // initialize map only once
+    if (!map.current && mapContainer.current) {
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: "mapbox://styles/mapbox/streets-v12",
@@ -23,7 +23,7 @@ function MapboxMap() {
     });
 
     map.current.on('load', () => {
-        map.current.addSource('floorplan', {
+        map.current?.addSource('floorplan', {
         'type': 'geojson',
         /*
         * Each feature in this GeoJSON file contains values for
@@ -32,11 +32,11 @@ function MapboxMap() {
         * In `addLayer` you will use expressions to set the new
         * layer's paint properties based on these values.
         */
-        'data': germany_boundaries
+        //'data': germany_boundaries
 
         });
 
-        map.current.addLayer({
+        map.current?.addLayer({
         'id': 'room-extrusion',
         'type': 'fill-extrusion',
         'source': 'floorplan',
@@ -55,10 +55,8 @@ function MapboxMap() {
         }
         });
         });
-
+      }
   });
-
-  
 
   return (
     <div>
