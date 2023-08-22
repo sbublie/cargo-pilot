@@ -1,0 +1,16 @@
+{
+    "name": "cp-proxy",
+    "version": "1.0.0",
+    "description": "",
+    "main": "cp-proxy.js",
+    "scripts": {
+      "test": "echo \"Error: no test specified\" && exit 1",
+      "start": "node cp-proxy.js"
+    },
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+      "express": "^4.18.2",
+      "express-http-proxy": "^1.6.3"
+    }
+  }

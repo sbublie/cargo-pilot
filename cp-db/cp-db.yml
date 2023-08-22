@@ -1,0 +1,409 @@
+openapi: 3.0.3
+info:
+  title: Cargo Pilot Database Gateway
+  version: 1.0.0
+servers:
+  - url: http://localhost:5001
+paths:
+  /locations:
+    get:
+      summary: Get all locations
+      tags:
+        - "Locations"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Location"
+    post:
+      summary: Add a new location
+      tags:
+        - "Locations"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Location"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Location"
+  /locations/{id}:
+    get:
+      summary: Get a single location by ID
+      tags:
+        - "Locations"
+      parameters:
+        - name: id
+          in: path
+          description: Location ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Location"
+        "404":
+          description: Location not found
+    put:
+      summary: Modify a location by ID
+      tags:
+        - "Locations"
+      parameters:
+        - name: id
+          in: path
+          description: Location ID
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Location"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Location"
+        "404":
+          description: Location not found
+    delete:
+      summary: Delete a location by ID
+      tags:
+        - "Locations"
+      parameters:
+        - name: id
+          in: path
+          description: Location ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /clusters:
+    get:
+      summary: Get all clusters
+      tags:
+        - "Clusters"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Cluster"
+    post:
+      summary: Add a new cluster
+      tags:
+        - "Clusters"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Cluster"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cluster"
+  /clusters/{id}:
+    get:
+      summary: Get a single cluster by ID
+      tags:
+        - "Clusters"
+      parameters:
+        - name: id
+          in: path
+          description: Cluster ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cluster"
+        "404":
+          description: Cluster not found
+    put:
+      summary: Modify a cluster by ID
+      tags:
+        - "Clusters"
+      parameters:
+        - name: id
+          in: path
+          description: Cluster ID
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Cluster"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cluster"
+        "404":
+          description: Cluster not found
+    delete:
+      summary: Delete a cluster by ID
+      tags:
+        - "Clusters"
+      parameters:
+        - name: id
+          in: path
+          description: Cluster ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+  /trips:
+    get:
+      summary: Get all trips
+      tags:
+        - "Trips"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Trip"
+    post:
+      summary: Add a new trip
+      tags:
+        - "Trips"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Trip"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trip"
+  /trips/{id}:
+    get:
+      summary: Get a single trip by ID
+      tags:
+        - "Trips"
+      parameters:
+        - name: id
+          in: path
+          description: Trip ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trip"
+        "404":
+          description: Trip not found
+    put:
+      summary: Modify a trip by ID
+      tags:
+        - "Trips"
+      parameters:
+        - name: id
+          in: path
+          description: Trip ID
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Trip"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trip"
+        "404":
+          description: Trip not found
+    delete:
+      summary: Delete a trip by ID
+      tags:
+        - "Trips"
+      parameters:
+        - name: id
+          in: path
+          description: Trip ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+components:
+  schemas:
+    Cluster:
+      type: object
+      properties:
+        center_lat:
+          type: number
+          format: float
+        center_long:
+          type: number
+          format: float
+        location_ids:
+          type: array
+          items:
+            type: integer
+        name:
+          type: string
+
+    Location:
+      type: object
+      properties:
+        lat:
+          type: number
+          format: float
+        long:
+          type: number
+          format: float
+        type:
+          type: string
+        timestamp:
+          type: integer
+        id:
+          type: integer
+      required:
+        - lat
+        - long
+        - type
+        - timestamp
+    Waypoint:
+      type: object
+      properties:
+        lat:
+          type: number
+          format: float
+        long:
+          type: number
+          format: float
+        street:
+          type: string
+        post_code:
+          type: integer
+        city:
+          type: string
+        country_code:
+          type: string
+        timestamp:
+          type: integer
+      required:
+        - lat
+        - long
+    Load:
+      type: object
+      properties:
+        weight:
+          type: number
+          format: float
+        loading_meter:
+          type: number
+          format: float
+        capacity_percentage:
+          type: number
+          format: float
+    Trip:
+      type: object
+      properties:
+        id:
+          type: integer
+        customer_id:
+          type: integer
+        destination_id:
+          type: integer
+        load:
+          $ref: "#/components/schemas/Load"
+        origin_id:
+          type: integer
+        route_waypoints:
+          type: array
+          items:
+            $ref: "#/components/schemas/Waypoint"
+        source:
+          type: string
+        type:
+          type: string
+        vehicle_id:
+          type: integer
+      required:
+        - customer_id
+        - destination
+        - load
+        - origin
+        - route_waypoints
+        - source
+        - type
+        - vehicle_id

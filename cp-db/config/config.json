@@ -1,0 +1,23 @@
+{
+  "development": {
+    "username": "pguser",
+    "password": "pdb&3Xif",
+    "database": "cargo_database",
+    "host": "localhost",
+    "dialect": "postgres"
+  },
+  "test": {
+    "username": "pguser",
+    "password": "pdb&3Xif",
+    "database": "cargo_database",
+    "host": "localhost",
+    "dialect": "postgres"
+  },
+  "production": {
+    "username": "pguser",
+    "password": "pdb&3Xif",
+    "database": "cargo_database",
+    "host": "localhost",
+    "dialect": "postgres"
+  }
+}
