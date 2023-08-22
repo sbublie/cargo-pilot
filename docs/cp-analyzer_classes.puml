@@ -1,0 +1,45 @@
+@startuml
+
+
+
+class Location {
+    int id
+    float latitude
+    float longitude
+}
+
+class Tour {
+    int id
+    int origin_location_id
+    int destination_location_id
+    int timestamp
+    float load
+}
+
+class Cluster {
+    int id
+    string name
+    float center_lat
+    float center_long
+    list[location_id] locations
+}
+
+class ClusterRelation {
+    int id
+    int start_cluster_id
+    int end_cluster_id
+}
+
+class TourPattern {
+
+}
+
+class Offering {
+
+}
+
+class TourMatch {
+
+}
+
+@enduml

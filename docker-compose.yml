@@ -1,35 +1,39 @@
 version: "3.4"
 services:
-  cp-control:
-    container_name: cp-control
+  cp-proxy:
+    container_name: cp-proxy
     restart: always
-    build: ./cp-control
+    build: ./cp-proxy
     ports:
       - 80:80
       - 443:443
     environment:
       - ENABLE_HTTPS=true
-  cp-gateway:
-    container_name: cp-gateway
+  cp-control:
+    container_name: cp-control
     restart: always
-    build: ./cp-gateway
-    ports:
-      - 5001:5001
+    build: ./cp-control
   cp-db:
     container_name: cp-db
+    restart: always
+    build: ./cp-db
+  cp-analyzer:
+    container_name: cp-analyzer
+    restart: always
+    build: ./cp-analyzer
+    ports:
+      - 5000:5000
+  cp-postgres:
+    container_name: cp-postgres
     image: postgres
     restart: always
     environment:
       - POSTGRES_USER=pguser
       - POSTGRES_PASSWORD=pdb&3Xif
-    ports:
-      - "5432:5432"
     volumes:
       - db:/var/lib/postgresql/data
   cp-routing:
     container_name: cp-routing
-    ports:
-      - "5002:8080"
     image: openrouteservice/openrouteservice:latest
     user: "${UID:-0}:${GID:-0}"
     #build:
