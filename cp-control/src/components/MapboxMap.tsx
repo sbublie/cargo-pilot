@@ -3,14 +3,14 @@ import { useRef, useEffect, } from "react";
 import mapboxgl from "mapbox-gl";
 import "./mapbox_style.css"
 
-//import germany_boundaries from "./germany_boundaries"
+import germany_boundaries from "./germany_boundaries"
 mapboxgl.accessToken = "";
 
 function MapboxMap() {
   const mapContainer = useRef(null);
   const map = useRef<mapboxgl.Map | null>(null);
-  const lng = 8;
-  const lat = 49;
+  const lng = 9.446113815133662;
+  const lat = 47.66559693227496;
   const zoom = 9
 
   useEffect(() => {
@@ -20,6 +20,7 @@ function MapboxMap() {
       style: "mapbox://styles/mapbox/streets-v12",
       center: [lng, lat],
       zoom: zoom,
+      pitch: 50,
     });
 
     map.current.on('load', () => {
@@ -32,7 +33,8 @@ function MapboxMap() {
         * In `addLayer` you will use expressions to set the new
         * layer's paint properties based on these values.
         */
-        //'data': germany_boundaries
+        // @ts-ignore
+        'data': germany_boundaries
 
         });
 
