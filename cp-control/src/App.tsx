@@ -1,12 +1,14 @@
 //import OsmMap from "./components/OsmMap";
 import MapboxMap from "./components/MapboxMap";
+import StartPage from "./components/StartPage";
 import { Link, NavLink, Routes, Route } from 'react-router-dom'
 import { Navbar, Nav } from 'react-bootstrap'
 function App() {
   return (
     <div className="container text-center">
-      <Navbar>
+      <Navbar bg="dark" variant="dark">
         {/* "Link" in brand component since just redirect is needed */}
+        <div><h5>&nbsp;&nbsp;</h5></div>
         <Navbar.Brand as={Link} to="/">
           Cargo Pilot
         </Navbar.Brand>
@@ -22,7 +24,7 @@ function App() {
       </Navbar>
       <div className="row">
         <Routes>
-          <Route path="/" element={<h1>Moin</h1>} />
+        <Route path="/" element={<StartPage/>} />
           <Route path="/map" element={<MapboxMap />} />
         </Routes>
       </div>
