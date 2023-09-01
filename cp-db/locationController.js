@@ -13,19 +13,41 @@ async function getAllLocations(req, res) {
 
 async function addLocation(req, res) {
   try {
-    const { lat, long, type, timestamp } = req.body;
+    const { lat, long, type, timestamp, zip_code, city, street } = req.body;
 
     // Validate that all required fields are present in the request body
-    if (!lat || !long || !type || !timestamp) {
-      return res
-        .status(400)
-        .json({ message: `lat, long, and type are required fields.` });
+    if (!type) {
+      return res.status(400).json({ message: `type is a required field.` });
     }
-    const newLocation = await Location.create({ lat, long, type, timestamp });
+
+    const locationData =  {
+      type
+    }
+
+    if (lat != undefined) {
+      locationData.lat = lat
+    }
+    if (long != undefined) {
+      locationData.long = long
+    }
+    if (timestamp) {
+      locationData.timestamp = timestamp
+    }
+    if (zip_code) {
+      locationData.zip_code = zip_code
+    }
+    if (city) {
+      locationData.city = city
+    }
+    if (street) {
+      locationData.street = street
+    }
+
+    const newLocation = await Location.create(locationData);
     res.status(201).json(newLocation);
   } catch (error) {
-    console.log(error)
-    res.status(500).json({ message: "Internal server error: "+error });
+    console.log(error);
+    res.status(500).json({ message: "Internal server error: " + error });
   }
 }
 
@@ -66,5 +88,5 @@ module.exports = {
   getAllLocations,
   addLocation,
   getLocation,
-  deleteLocation
+  deleteLocation,
 };

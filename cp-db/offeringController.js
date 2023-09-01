@@ -1,17 +1,17 @@
-const { Trip } = require("./models");
+const { Offering } = require("./models");
 
-// Function to get all trips
-async function getAllTrips(req, res) {
+// Function to get all offerings
+async function getAllOfferings(req, res) {
   try {
-    const trips = await Trip.findAll();
-    res.json(trips);
+    const offerings = await Offering.findAll();
+    res.json(offerings);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
   }
 }
 
-async function addTrip(req, res) {
+async function addOffering(req, res) {
   try {
     const {
       customer,
@@ -38,8 +38,7 @@ async function addTrip(req, res) {
     }
 
     // Create an object with the required and optional fields
-    const tripData = {
-
+    const offeringData = {
       destination_id,
       origin_id,
       source,
@@ -48,57 +47,57 @@ async function addTrip(req, res) {
 
     // Include optional fields if they exist in the request body
     if (customer) {
-      tripData.customer = customer;
+      offeringData.customer = customer;
     }
     if (vehicle) {
-      tripData.vehicle = vehicle;
+      offeringData.vehicle = vehicle;
     }
     if (load_percentage !== undefined) {
-      tripData.load_percentage = load_percentage;
+      offeringData.load_percentage = load_percentage;
     }
     if (load_meter !== undefined) {
-      tripData.load_meter = load_meter;
+      offeringData.load_meter = load_meter;
     }
     if (load_weight !== undefined) {
-      tripData.load_weight = load_weight;
+      offeringData.load_weight = load_weight;
     }
 
-    const newTrip = await Trip.create(tripData);
+    const newOffering = await Offering.create(offeringData);
 
-    res.status(201).json(newTrip);
+    res.status(201).json(newOffering);
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Internal server error: " + error });
   }
 }
 
-async function getTrip(req, res) {
+async function getOffering(req, res) {
   try {
-    const tripId = req.params.id;
-    const trip = await Trip.findByPk(tripId);
+    const offeringId = req.params.id;
+    const offering = await Offering.findByPk(offeringId);
 
-    if (!trip) {
-      return res.status(404).json({ message: "Trip not found" });
+    if (!offering) {
+      return res.status(404).json({ message: "Offering not found" });
     }
 
-    res.json(trip);
+    res.json(offering);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
   }
 }
 
-async function deleteTrip(req, res) {
+async function deleteOffering(req, res) {
   try {
-    const tripId = req.params.id;
-    const trip = await Trip.findByPk(tripId);
+    const offeringId = req.params.id;
+    const offering = await Offering.findByPk(offeringId);
 
-    if (!trip) {
-      return res.status(404).json({ message: "Trip not found" });
+    if (!offering) {
+      return res.status(404).json({ message: "Offering not found" });
     }
 
-    await trip.destroy();
-    res.json({ message: "Trip deleted successfully" });
+    await offering.destroy();
+    res.json({ message: "Offering deleted successfully" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
@@ -106,8 +105,8 @@ async function deleteTrip(req, res) {
 }
 
 module.exports = {
-  getAllTrips,
-  addTrip,
-  getTrip,
-  deleteTrip,
+  getAllOfferings,
+  addOffering,
+  getOffering,
+  deleteOffering,
 };

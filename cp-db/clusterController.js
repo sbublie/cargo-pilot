@@ -16,16 +16,24 @@ async function addCluster(req, res) {
     const { center_lat, center_long, location_ids } = req.body;
 
     // Validate that all required fields are present in the request body
-    if (!center_lat || !center_long || !location_ids) {
+    if (!location_ids) {
       return res.status(400).json({
-        message: `center_lat, center_long and location_ids are required fields.`,
+        message: `location_ids is a required field.`,
       });
     }
-    const newCluster = await Cluster.create({
-      center_lat,
-      center_long,
+
+    const clusterData = {
       location_ids,
-    });
+    };
+
+    if (center_lat !== undefined) {
+      clusterData.center_lat = center_lat;
+    }
+    if (center_long !== undefined) {
+      clusterData.center_long = center_long;
+    }
+
+    const newCluster = await Cluster.create(clusterData);
     res.status(201).json(newCluster);
   } catch (error) {
     console.log(error);
