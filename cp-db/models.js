@@ -10,7 +10,7 @@ const Location = sequelize.define("Location", {
   zip_code: { type: DataTypes.INTEGER, allowNull: true },
   city: { type: DataTypes.STRING, allowNull: true },
   street: { type: DataTypes.STRING, allowNull: true },
-  // TODO: Country
+  country: { type: DataTypes.STRING, allowNull: true },
 });
 
 const Cluster = sequelize.define("Cluster", {

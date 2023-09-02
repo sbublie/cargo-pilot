@@ -303,107 +303,459 @@ paths:
                 properties:
                   message:
                     type: string
+
+  /offerings:
+    get:
+      summary: Get all offerings
+      tags:
+        - "Offerings"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Offering"
+    post:
+      summary: Add a new offering
+      tags:
+        - "Offerings"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Offering"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Offering"
+  /offerings/{id}:
+    get:
+      summary: Get a single offering by ID
+      tags:
+        - "Offerings"
+      parameters:
+        - name: id
+          in: path
+          description: Offering ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Offering"
+        "404":
+          description: Offering not found
+    put:
+      summary: Modify a offering by ID
+      tags:
+        - "Offerings"
+      parameters:
+        - name: id
+          in: path
+          description: Offering ID
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Offering"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Offering"
+        "404":
+          description: Offering not found
+    delete:
+      summary: Delete a offering by ID
+      tags:
+        - "Offerings"
+      parameters:
+        - name: id
+          in: path
+          description: Offering ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /trip-pattern:
+    get:
+      summary: Get all trip pattern
+      tags:
+        - "Trip Pattern"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TripPattern"
+    post:
+      summary: Add a new trip pattern
+      tags:
+        - "Trip Pattern"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TripPattern"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TripPattern"
+  /trip-pattern/{id}:
+    get:
+      summary: Get a single trip pattern by ID
+      tags:
+        - "Trip Pattern"
+      parameters:
+        - name: id
+          in: path
+          description: Trip Pattern ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TripPattern"
+        "404":
+          description: Trip Pattern not found
+    put:
+      summary: Modify a trip pattern by ID
+      tags:
+        - "Trip Pattern"
+      parameters:
+        - name: id
+          in: path
+          description: Trip Pattern ID
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TripPattern"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TripPattern"
+        "404":
+          description: Trip Pattern not found
+    delete:
+      summary: Delete a trip pattern by ID
+      tags:
+        - "Trip Pattern"
+      parameters:
+        - name: id
+          in: path
+          description: Trip Pattern ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+
+  /trip-patternes:
+    get:
+      summary: Get all trip patternes
+      tags:
+        - "Trip Matches"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TripMatch"
+    post:
+      summary: Add a new trip pattern
+      tags:
+        - "Trip Matches"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TripMatch"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TripMatch"
+  /trip-patternes/{id}:
+    get:
+      summary: Get a single trip pattern by ID
+      tags:
+        - "Trip Matches"
+      parameters:
+        - name: id
+          in: path
+          description: Trip Match ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TripMatch"
+        "404":
+          description: Offering not found
+    put:
+      summary: Modify a trip pattern by ID
+      tags:
+        - "Trip Matches"
+      parameters:
+        - name: id
+          in: path
+          description: Trip Match ID
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TripMatch"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TripMatch"
+        "404":
+          description: Trip Match not found
+    delete:
+      summary: Delete a trip pattern by ID
+      tags:
+        - "Trip Matches"
+      parameters:
+        - name: id
+          in: path
+          description: Trip Match ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+
 components:
   schemas:
-    Cluster:
-      type: object
-      properties:
-        center_lat:
-          type: number
-          format: float
-        center_long:
-          type: number
-          format: float
-        location_ids:
-          type: array
-          items:
-            type: integer
-        name:
-          type: string
-
     Location:
       type: object
       properties:
         lat:
           type: number
           format: float
+          nullable: true
         long:
           type: number
           format: float
+          nullable: true
         type:
           type: string
         timestamp:
           type: integer
+          nullable: true
         id:
           type: integer
-      required:
-        - lat
-        - long
-        - type
-        - timestamp
-    Waypoint:
-      type: object
-      properties:
-        lat:
-          type: number
-          format: float
-        long:
-          type: number
-          format: float
-        street:
-          type: string
-        post_code:
+          format: int64
+          readOnly: true
+        zip_code:
           type: integer
+          nullable: true
         city:
           type: string
-        country_code:
+          nullable: true
+        street:
           type: string
-        timestamp:
-          type: integer
-      required:
-        - lat
-        - long
-    Load:
+          nullable: true
+        country:
+          type: string
+          nullable: true
+
+    Cluster:
       type: object
       properties:
-        weight:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+        center_lat:
           type: number
           format: float
-        loading_meter:
+          nullable: true
+        center_long:
           type: number
           format: float
-        capacity_percentage:
-          type: number
-          format: float
+          nullable: true
+        location_ids:
+          type: array
+          items:
+            type: integer
+          nullable: false
+
     Trip:
       type: object
       properties:
         id:
           type: integer
-        customer_id:
-          type: integer
+          format: int64
+          readOnly: true
+        customer:
+          type: string
+          nullable: true
         destination_id:
           type: integer
-        load:
-          $ref: "#/components/schemas/Load"
         origin_id:
           type: integer
-        route_waypoints:
-          type: array
-          items:
-            $ref: "#/components/schemas/Waypoint"
         source:
           type: string
         type:
           type: string
-        vehicle_id:
+        vehicle:
+          type: string
+          nullable: true
+        load_percentage:
+          type: number
+          format: float
+          nullable: true
+        load_meter:
+          type: number
+          format: float
+          nullable: true
+        load_weight:
+          type: number
+          format: float
+          nullable: true
+
+    Offering:
+      type: object
+      properties:
+        id:
           type: integer
-      required:
-        - customer_id
-        - destination
-        - load
-        - origin
-        - route_waypoints
-        - source
-        - type
-        - vehicle_id
+          format: int64
+          readOnly: true
+        customer:
+          type: string
+          nullable: true
+        destination_id:
+          type: integer
+        origin_id:
+          type: integer
+        source:
+          type: string
+        type:
+          type: string
+        vehicle:
+          type: string
+          nullable: true
+        load_percentage:
+          type: number
+          format: float
+          nullable: true
+        load_meter:
+          type: number
+          format: float
+          nullable: true
+        load_weight:
+          type: number
+          format: float
+          nullable: true
+
+    TripPattern:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+        detectedPattern:
+          type: string
+        relatedTripIds:
+          type: array
+          items:
+            type: integer
+          nullable: false
+
+    TripMatch:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+        relatedTripPatternId:
+          type: integer
+        relatedOfferings:
+          type: array
+          items:
+            type: integer
+          nullable: false

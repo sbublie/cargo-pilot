@@ -35,15 +35,15 @@ app.post("/offerings", offeringController.addOffering);
 app.get("/offerings/:id", offeringController.getOffering);
 app.delete("/offerings/:id", offeringController.deleteOffering);
 
-app.get("/tripPattern", tripPatternController.getAllTripPatterns);
-app.post("/tripPattern", tripPatternController.addTripPattern);
-app.get("/tripPattern/:id", tripPatternController.getTripPattern);
-app.delete("/tripPattern/:id", tripPatternController.deleteTripPattern);
+app.get("/trip-pattern", tripPatternController.getAllTripPatterns);
+app.post("/trip-pattern", tripPatternController.addTripPattern);
+app.get("/trip-pattern/:id", tripPatternController.getTripPattern);
+app.delete("/trip-pattern/:id", tripPatternController.deleteTripPattern);
 
-app.get("/tripMatches", tripMatchController.getAllTripMatches);
-app.post("/tripMatches", tripMatchController.addTripMatch);
-app.get("/tripMatches/:id", tripMatchController.getTripMatch);
-app.delete("/tripMatches/:id", tripMatchController.deleteTripMatch);
+app.get("/trip-matches", tripMatchController.getAllTripMatches);
+app.post("/trip-matches", tripMatchController.addTripMatch);
+app.get("/trip-matches/:id", tripMatchController.getTripMatch);
+app.delete("/trip-matches/:id", tripMatchController.deleteTripMatch);
 
 sequelize
   .sync()
