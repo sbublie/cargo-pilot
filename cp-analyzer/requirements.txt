@@ -2,3 +2,4 @@ flask
 requests
 scikit-learn
 pandas
+geopy==2.4.0
