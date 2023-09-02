@@ -69,15 +69,14 @@ class TripHandler:
                 "timestamp": offering_dict['destination']['timestamp'],
                 "type": "destination"
             }
-            print(origin_location)
-            print(destination_location)
-            #origin_id = self.database_handler.add_location(origin_location)
-            #destination_id = self.database_handler.add_location(destination_location)
+
+            origin_id = self.database_handler.add_location(origin_location)
+            destination_id = self.database_handler.add_location(destination_location)
 
             offering = {
                 "customer": offering_dict['customer_id'],
-                #"destination_id": destination_id,
-                #"origin_id": origin_id,
+                "destination_id": destination_id,
+                "origin_id": origin_id,
                 "source": offering_dict['source'],
                 "vehicle": offering_dict['vehicle_id'],
                 "load_percentage": offering_dict['load']['capacity_percentage'],
@@ -85,7 +84,7 @@ class TripHandler:
                 "load_weight": offering_dict['load']['weight']
             }
 
-            #self.database_handler.add_offering(offering)
+            self.database_handler.add_offering(offering)
 
     def __get_location_from_zip_code(self, zip_code, country):
         try:
