@@ -13,7 +13,7 @@ async function getAllLocations(req, res) {
 
 async function addLocation(req, res) {
   try {
-    const { lat, long, type, timestamp, zip_code, city, street } = req.body;
+    const { lat, long, type, timestamp, zip_code, city, street, country } = req.body;
 
     // Validate that all required fields are present in the request body
     if (!type) {
@@ -41,6 +41,9 @@ async function addLocation(req, res) {
     }
     if (street) {
       locationData.street = street
+    }
+    if (country) {
+      locationData.country = country
     }
 
     const newLocation = await Location.create(locationData);

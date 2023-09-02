@@ -23,8 +23,14 @@ const Cluster = sequelize.define("Cluster", {
 const Trip = sequelize.define("Trip", {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   customer: { type: DataTypes.STRING, allowNull: true },
-  destination_id: { type: DataTypes.INTEGER, allowNull: false },
-  origin_id: { type: DataTypes.INTEGER, allowNull: false },
+  destination_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
+  origin_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
   source: { type: DataTypes.STRING, allowNull: false },
   type: { type: DataTypes.STRING, allowNull: false },
   vehicle: { type: DataTypes.STRING, allowNull: true },
@@ -36,10 +42,15 @@ const Trip = sequelize.define("Trip", {
 const Offering = sequelize.define("Offering", {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   customer: { type: DataTypes.STRING, allowNull: true },
-  destination_id: { type: DataTypes.INTEGER, allowNull: false },
-  origin_id: { type: DataTypes.INTEGER, allowNull: false },
+  destination_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
+  origin_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
   source: { type: DataTypes.STRING, allowNull: false },
-  type: { type: DataTypes.STRING, allowNull: false },
   vehicle: { type: DataTypes.STRING, allowNull: true },
   load_percentage: { type: DataTypes.FLOAT, allowNull: true },
   load_meter: { type: DataTypes.FLOAT, allowNull: true },
@@ -49,14 +60,20 @@ const Offering = sequelize.define("Offering", {
 const TripPattern = sequelize.define("TripPattern", {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   detectedPattern: { type: DataTypes.STRING, allowNull: false },
-  relatedTripIds: { type: DataTypes.ARRAY(DataTypes.INTEGER), allowNull: false },
-})
+  relatedTripIds: {
+    type: DataTypes.ARRAY(DataTypes.INTEGER),
+    allowNull: false,
+  },
+});
 
 const TripMatch = sequelize.define("TripMatch", {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   relatedTripPatternId: { type: DataTypes.INTEGER, allowNull: false },
-  relatedOfferings: { type: DataTypes.ARRAY(DataTypes.INTEGER), allowNull: false },
-})
+  relatedOfferings: {
+    type: DataTypes.ARRAY(DataTypes.INTEGER),
+    allowNull: false,
+  },
+});
 
 module.exports = {
   Location,
@@ -64,5 +81,5 @@ module.exports = {
   Trip,
   Offering,
   TripPattern,
-  TripMatch
+  TripMatch,
 };

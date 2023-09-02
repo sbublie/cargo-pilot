@@ -36,4 +36,16 @@ class Tour:
         return json.dumps(self, default=lambda o: o.__dict__,
                           sort_keys=True, indent=4)
 
+@dataclass
+class Offering:
+    origin: Waypoint
+    destination: Waypoint
+    load: Load
+    source: str
+    vehicle_id: Optional[str] = None
+    customer_id: Optional[str] = None
+    route_waypoints: Optional[list[Waypoint]] = None
 
+    def toJSON(self):
+        return json.dumps(self, default=lambda o: o.__dict__,
+                          sort_keys=True, indent=4)

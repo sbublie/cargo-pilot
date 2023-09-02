@@ -1,14 +1,24 @@
 import requests
-from env import REMOTE_API_ENDPOINT, REMOTE_CP_INSTANCE_URL, API_KEY
+from env import API_ENDPOINT, REMOTE_CP_INSTANCE_URL, LOCAL_CP_INSTANCE_URL, API_KEY
 
 class APIHandler:
     def __init__(self) -> None:
-        self.remote_URL = REMOTE_CP_INSTANCE_URL + REMOTE_API_ENDPOINT
         self.headers = {
             "Authorization": API_KEY,
             "Content-Type": "application/json"
         }
 
-    def upload_data(self, data):
+    def upload_data(self, data, data_type, instance):
         # TODO: Error handling
-        response = requests.post(self.remote_URL, data=data, headers=self.headers)
+        url = REMOTE_CP_INSTANCE_URL + API_ENDPOINT
+        if instance == "Local":
+            url = LOCAL_CP_INSTANCE_URL + API_ENDPOINT
+
+        if data_type == "Offerings":
+            url += "/offerings"
+        elif data_type == "Trips":
+            url += "/trips"
+            
+        response = requests.post(url=url, data=data, headers=self.headers)
+        print(url)
+        print(response.text)
