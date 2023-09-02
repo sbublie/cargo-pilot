@@ -31,25 +31,14 @@ def main():
                           exists=True),
         ]
         answers = inquirer.prompt(questions)
-        # Convert the file to the internal data model
 
-        processed_data = None
-        if answers["source"] == "Transics":
-            processed_data = InputConverter().process_transics_file(filename=answers["file"])
-
-        if answers["source"] == "DB":
-            processed_data = InputConverter().process_db_file(filename=answers["file"])
+        processed_data = InputConverter().convert_data_from_file(filename=answers["file"], source=answers["source"], data_type=answers["data_type"])
 
         if processed_data:
             data = json.dumps(processed_data)
-            if answers['Trips']:
-                APIHandler().upload_trips(data)
-            if answers['Offerings']:
-                APIHandler().upload_offerings(data)
-    else:
-        # TODO: Delete manual option for Prod
-        data = json.dumps(InputConverter().process_file(filename="20230706_05Jan.csv", source="Transics"))
-        APIHandler().upload_data(data)
+            APIHandler().upload_data(data=data, instance=answers["instance"], data_type=answers["data_type"])
+
+
 
 
 if __name__ == "__main__":

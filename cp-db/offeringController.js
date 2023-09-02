@@ -18,7 +18,6 @@ async function addOffering(req, res) {
       destination_id,
       origin_id,
       source,
-      type,
       vehicle,
       load_percentage,
       load_meter,
@@ -29,11 +28,10 @@ async function addOffering(req, res) {
     if (
       !destination_id ||
       !origin_id ||
-      !source ||
-      !type
+      !source
     ) {
       return res.status(400).json({
-        message: `destination_id, origin_id, source, and type are required fields.`,
+        message: `destination_id, origin_id and source are required fields.`,
       });
     }
 
@@ -41,8 +39,7 @@ async function addOffering(req, res) {
     const offeringData = {
       destination_id,
       origin_id,
-      source,
-      type,
+      source
     };
 
     // Include optional fields if they exist in the request body
