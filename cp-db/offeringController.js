@@ -1,9 +1,15 @@
-const { Offering } = require("./models");
+const { Offering, Location } = require("./models");
 
 // Function to get all offerings
 async function getAllOfferings(req, res) {
   try {
-    const offerings = await Offering.findAll();
+    const offerings = await Offering.findAll({
+      attributes: ['id', 'customer', 'source', 'vehicle', 'load_percentage', 'load_meter', 'load_weight'],
+      include: [
+        { model: Location, as: "destination"},
+        { model: Location, as: "origin"},
+      ],
+    });
     res.json(offerings);
   } catch (error) {
     console.error(error);

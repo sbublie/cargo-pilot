@@ -26,10 +26,18 @@ const Trip = sequelize.define("Trip", {
   destination_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    references: {
+      model: Location, 
+      key: "id", 
+    },
   },
   origin_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    references: {
+      model: Location, 
+      key: "id", 
+    },
   },
   source: { type: DataTypes.STRING, allowNull: false },
   type: { type: DataTypes.STRING, allowNull: false },
@@ -39,16 +47,27 @@ const Trip = sequelize.define("Trip", {
   load_weight: { type: DataTypes.FLOAT, allowNull: true },
 });
 
+Trip.belongsTo(Location, { foreignKey: "destination_id", as: "destination" });
+Trip.belongsTo(Location, { foreignKey: "origin_id", as: "origin" });
+
 const Offering = sequelize.define("Offering", {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   customer: { type: DataTypes.STRING, allowNull: true },
   destination_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    references: {
+      model: Location, 
+      key: "id", 
+    },
   },
   origin_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    references: {
+      model: Location, 
+      key: "id",
+    },
   },
   source: { type: DataTypes.STRING, allowNull: false },
   vehicle: { type: DataTypes.STRING, allowNull: true },
@@ -56,6 +75,10 @@ const Offering = sequelize.define("Offering", {
   load_meter: { type: DataTypes.FLOAT, allowNull: true },
   load_weight: { type: DataTypes.FLOAT, allowNull: true },
 });
+
+Offering.belongsTo(Location, { foreignKey: "destination_id", as: "destination" });
+Offering.belongsTo(Location, { foreignKey: "origin_id", as: "origin" });
+
 
 const TripPattern = sequelize.define("TripPattern", {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
