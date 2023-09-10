@@ -1,5 +1,5 @@
 //import OsmMap from "./components/OsmMap";
-import MapboxMap from "./components/MapboxMap";
+import MapboxMap from "./components/mapbox/MapboxMap";
 import StartPage from "./components/StartPage";
 import { Link, NavLink, Routes, Route } from "react-router-dom";
 import { Navbar, Nav } from "react-bootstrap";
