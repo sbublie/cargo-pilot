@@ -1,36 +1,65 @@
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 import Form from "react-bootstrap/Form";
-import { useState } from "react";
 
-function MapSettingsModal({ show, onHide, onApplySettings }) {
-  const [settings, setSettings] = useState({
+import { useState, ChangeEvent, FC } from 'react';
+
+interface MapSettingsModalProps {
+  show: boolean;
+  onHide: () => void;
+  onApplySettings: (settings: Settings) => void;
+}
+
+interface Settings {
+  mapMode: "cluster" | "offering" | "trip" | "match";
+  dataSource: "db" | "transics";
+  animateRoutes: boolean;
+}
+
+const MapSettingsModal: FC<MapSettingsModalProps> = ({ show, onHide, onApplySettings }) => {
+  const [settings, setSettings] = useState<Settings>({
     mapMode: "cluster",
     dataSource: "db",
     animateRoutes: false,
   });
 
-  // Function to handle changes in the map mode radio button selection
-  const handleMapModeChange = (event) => {
-    setSettings((prevSettings) => ({
-      ...prevSettings,
-      mapMode: event.target.id,
-    }));
+  const handleMapModeChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const mapModes: Record<string, Settings['mapMode']> = {
+      cluster: "cluster",
+      offering: "offering",
+      trip: "trip",
+      match: "match",
+    };
+    const newMapMode = mapModes[event.target.id];
+    
+    if (newMapMode) {
+      setSettings((prevSettings) => ({
+        ...prevSettings,
+        mapMode: newMapMode,
+      }));
+    } else {
+      console.error("Invalid map mode selected");
+    }
   };
 
-  // Function to handle changes in the data source checkbox selection
-  const handleDataSourceChange = (event) => {
-    const newDataSource = event.target.id;
-    setSettings((prevSettings) => ({
-      ...prevSettings,
-      dataSource: prevSettings.dataSource.includes(newDataSource)
-        ? prevSettings.dataSource.replace(newDataSource, "").trim()
-        : [prevSettings.dataSource, newDataSource].join(" ").trim(),
-    }));
+  const handleDataSourceChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const dataSources: Record<string, Settings['dataSource']> = {
+      db: "db",
+      transics: "transics"
+    };
+    const newDataSource = dataSources[event.target.id];
+    
+    if (newDataSource) {
+      setSettings((prevSettings) => ({
+        ...prevSettings,
+        dataSource: newDataSource,
+      }));
+    } else {
+      console.error("Invalid data source selected");
+    }
   };
 
-  // Function to handle changes in the options checkbox selection
-  const handleOptionsChange = (event) => {
+  const handleOptionsChange = (event: ChangeEvent<HTMLInputElement>) => {
     setSettings((prevSettings) => ({
       ...prevSettings,
       animateRoutes: event.target.checked,

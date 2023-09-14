@@ -76,7 +76,7 @@ class InputConverter:
         if data_type == "Offerings":
             offerings = []
             for index, row in df.iterrows():
-                if index < 110:
+                if index < 100000:
                     origin = Waypoint(
                         post_code=row['Versender Postleitzahl'],
                         city=row['Versender Stadt'],

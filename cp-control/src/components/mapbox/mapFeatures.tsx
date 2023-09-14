@@ -1,55 +1,71 @@
 import { Map as MapboxMap } from "mapbox-gl";
 import mapboxgl from "mapbox-gl";
 import germany_boundaries from "./germany_boundaries";
+import { FeatureCollection, Point, Feature, LineString } from "geojson";
 
-const heightFactor = 1000
+const heightFactor = 500;
 
-export const setupMapFeatures = (map: MapboxMap, offerings) => {
+interface Offering {
+  origin: {
+    zip_code: number;
+    city: string;
+    long: number;
+    lat: number;
+  };
+  destination: {
+    zip_code: number;
+    city: string;
+    long: number;
+    lat: number;
+  };
+}
+
+export const setupMapFeatures = (map: MapboxMap, offerings: Offering[]) => {
   map.addControl(new mapboxgl.NavigationControl(), "top-left");
 
-  const markerData = {
+  const markerData: FeatureCollection<Point> = {
     type: "FeatureCollection",
     features: [],
   };
 
-  const lineData = {
+  const lineData: FeatureCollection<LineString> = {
     type: "FeatureCollection",
     features: [],
   };
 
-  let cityCodes = {};
+  const cityCodes: Record<string, number> = {};
 
-  const incrementCityCodeCount = (zipCode) => {
+  const incrementCityCodeCount = (zipCode: number) => {
     cityCodes[zipCode] = (cityCodes[zipCode] || 0) + 1;
   };
-  
-  
+
   offerings.forEach((offering) => {
-
-
     incrementCityCodeCount(offering.origin.zip_code);
     incrementCityCodeCount(offering.destination.zip_code);
 
-    
-    markerData.features.push({
+    const origin_marker: Feature<Point> = {
       type: "Feature",
       properties: { color: "green", city: offering.origin.city },
       geometry: {
         type: "Point",
         coordinates: [offering.origin.long, offering.origin.lat],
       },
-    });
+    };
 
-    markerData.features.push({
+    const destination_marker: Feature<Point> = {
       type: "Feature",
       properties: { color: "red", city: offering.destination.city },
       geometry: {
         type: "Point",
         coordinates: [offering.destination.long, offering.destination.lat],
       },
-    });
+    };
 
-    lineData.features.push({
+    markerData.features.push(origin_marker);
+
+    markerData.features.push(destination_marker);
+
+    const newLine: Feature<LineString> = {
       type: "Feature",
       properties: {},
       geometry: {
@@ -59,16 +75,17 @@ export const setupMapFeatures = (map: MapboxMap, offerings) => {
           [offering.destination.long, offering.destination.lat],
         ],
       },
-    });
+    };
+    lineData.features.push(newLine);
   });
-
-  console.log(cityCodes);
 
   map.loadImage(
     "https://docs.mapbox.com/mapbox-gl-js/assets/custom_marker.png",
-    (error, image) => {
+    (error?: Error, image?: HTMLImageElement | ImageBitmap) => {
       if (error) throw error;
-      map.addImage("custom-marker", image);
+      if (image) {
+        map.addImage("custom-marker", image);
+      }
     }
   );
 
@@ -115,7 +132,7 @@ export const setupMapFeatures = (map: MapboxMap, offerings) => {
     },
   });
 
-  const newFeatures = germany_boundaries.features.filter((feature, index) => {
+  const newFeatures = germany_boundaries.features.filter((feature) => {
     const numberOfCityCodes =
       cityCodes[parseInt(feature.properties.postcode, 10)];
     if (numberOfCityCodes) {
@@ -136,12 +153,11 @@ export const setupMapFeatures = (map: MapboxMap, offerings) => {
     buffer: 500,
     tolerance: 2,
 
-     //Each feature in this GeoJSON file contains values for
-     // `properties.height`, `properties.base_height`,
-     // and `properties.color`.
-     // In `addLayer` you will use expressions to set the new
-     // layer's paint properties based on these values.
-      
+    //Each feature in this GeoJSON file contains values for
+    // `properties.height`, `properties.base_height`,
+    // and `properties.color`.
+    // In `addLayer` you will use expressions to set the new
+    // layer's paint properties based on these values.
 
     // @ts-ignore
     data: germany_boundaries,
@@ -169,35 +185,50 @@ export const setupMapFeatures = (map: MapboxMap, offerings) => {
   // When a click event occurs on a feature in the places layer, open a popup at the
   // location of the feature, with description HTML from its properties.
   map.on("click", "markers", (e) => {
-    // Copy coordinates array.
-    const coordinates = e.features[0].geometry.coordinates.slice();
-    const description = e.features[0].properties.city;
+    const feature = e.features?.[0];
+    if (feature) {
+      // Assert that geometry is of a type that has coordinates
+      const geometry =
+        feature.geometry as mapboxgl.MapboxGeoJSONFeature["geometry"];
+      const description = feature.properties?.city;
 
-    // Ensure that if the map is zoomed out such that multiple
-    // copies of the feature are visible, the popup appears
-    // over the copy being pointed to.
-    while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-      coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+      if (geometry.type !== "GeometryCollection" && geometry.coordinates && description) {
+      
+        if (geometry.type === "Point") {
+          let coordinates = geometry.coordinates.slice() as [number, number];
+        
+          while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+            coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+          }
+          
+          new mapboxgl.Popup()
+            .setLngLat(coordinates)
+            .setHTML(description)
+            .addTo(map);
+        } else {
+          console.error("Geometry type is not a Point");
+        }
+      } else {
+        console.error("Feature geometry or properties are undefined");
+      }
     }
-
-    new mapboxgl.Popup().setLngLat(coordinates).setHTML(description).addTo(map);
   });
 
   map.on("click", "germany_overlay", (e) => {
-    // Copy coordinates array.
-    //const coordinates = e.features[0].geometry.coordinates[0][0].slice();
-    const coordinates = [e.lngLat["lng"], e.lngLat["lat"]];
-    //const description = e.features[0].properties.name;
-
-    const description = `<b><h7>${e.features[0].properties.name}</h7></b><br /><h7>Postcode: ${e.features[0].properties.postcode}</h7><br /><h7>No. Trips: ${((e.features[0].properties.height)/heightFactor)}</h7>`;
-    // Ensure that if the map is zoomed out such that multiple
-    // copies of the feature are visible, the popup appears
-    // over the copy being pointed to.
+    if (!e.features || !e.features[0]?.properties) {
+      console.error("Feature properties are undefined");
+      return;
+    }
+  
+    const coordinates = [e.lngLat.lng, e.lngLat.lat];
+    const { name, postcode, height } = e.features[0].properties;
+  
+    const description = `<b><h7>${name}</h7></b><br /><h7>Postcode: ${postcode}</h7><br /><h7>No. Trips: ${height / heightFactor}</h7>`;
+  
     while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
       coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
     }
-
-    new mapboxgl.Popup().setLngLat(coordinates).setHTML(description).addTo(map);
-  });
   
+    new mapboxgl.Popup().setLngLat(coordinates as [number, number]).setHTML(description).addTo(map);
+  });
 };

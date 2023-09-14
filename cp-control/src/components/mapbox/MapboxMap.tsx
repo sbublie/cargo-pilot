@@ -1,20 +1,28 @@
 import { useRef, useEffect, useState } from "react";
 import { useOfferings } from "../../contexts/OfferingsContext";
 import MapSettingsModal from "./MapSettingsModal";
-import Button from "react-bootstrap/Button";
+import MapStatisticsModal from "./MapStatisticsModal";
+import { Button, Container, Row, Col } from 'react-bootstrap';
 
 import mapboxgl from "mapbox-gl";
 import "./mapbox_style.css";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { setupMapFeatures } from "./mapFeatures";
 
-mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_API_KEY
+mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_API_KEY;
+
+interface Settings {
+  mapMode: "cluster" | "offering" | "trip" | "match";
+  dataSource: "db" | "transics";
+  animateRoutes: boolean;
+}
 
 function MapboxMap() {
-  const mapContainerRef = useRef<mapboxgl.Map | null>(null);
-  const [map, setMap] = useState(null);
-  const [show, setShow] = useState(false);
-  const [settings, setSettings] = useState({
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const [map, setMap] = useState<mapboxgl.Map | null>(null);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showStatisticsModal, setShowStatisticsModal] = useState(false);
+  const [settings, setSettings] = useState<Settings>({
     mapMode: "cluster",
     dataSource: "db",
     animateRoutes: false,
@@ -23,13 +31,17 @@ function MapboxMap() {
   const lng = 9.446113815133662;
   const lat = 47.66559693227496;
   const zoom = 9;
-  const { offerings, mapState, setNewMapState } = useOfferings();
+  const { offerings } = useOfferings();
 
-  const handleClose = () => setShow(false);
-  const handleShow = () => setShow(true);
+  const handleCloseSettingsModal = () => setShowSettingsModal(false);
+  const handleShowSettingsModal = () => setShowSettingsModal(true);
+
+  const handleCloseStatisticsModal = () => setShowStatisticsModal(false);
+  const handleShowStatisticsModal = () => setShowStatisticsModal(true);
 
   // Initialize map when component mounts
   useEffect(() => {
+    if (mapContainerRef.current) {
     const mapInstance = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: "mapbox://styles/mapbox/streets-v12",
@@ -43,7 +55,7 @@ function MapboxMap() {
 
       // technique based on https://jsfiddle.net/2mws8y3q/
       // an array of valid line-dasharray values, specifying the lengths of the alternating dashes and gaps that form the dash pattern
-      
+
       const dashArraySequence = [
         [0, 4, 3],
         [0.5, 4, 2.5],
@@ -66,7 +78,7 @@ function MapboxMap() {
       const animateDashArray = (timestamp: number) => {
         // Update line-dasharray using the next value in dashArraySequence. The
         // divisor in the expression `timestamp / 50` controls the animation speed.
-        const newStep = parseInt((timestamp / 50) % dashArraySequence.length);
+        const newStep = Math.floor((timestamp / 50) % dashArraySequence.length);
 
         if (newStep !== step) {
           mapInstance.setPaintProperty(
@@ -80,28 +92,26 @@ function MapboxMap() {
         // Request the next frame of the animation.
         requestAnimationFrame(animateDashArray);
       };
-      
 
       animateDashArray(0);
-      
+
       setMap(mapInstance);
     });
 
     // Clean up on unmount
     return () => mapInstance.remove();
+  }
   }, [offerings]);
 
-  const applySettings = (settings) => {
+  const applySettings = (settings:Settings) => {
     setSettings(settings);
-   
-    handleClose();
+
+    handleCloseSettingsModal();
   };
 
   useEffect(() => {
     if (map) {
-      console.log(settings);
       if (settings.mapMode === "offering") {
-        
         map.setLayoutProperty("germany_overlay", "visibility", "none");
         map.setLayoutProperty("lines", "visibility", "visible");
         if (settings.animateRoutes) {
@@ -110,19 +120,14 @@ function MapboxMap() {
           map.setLayoutProperty("line-dashed", "visibility", "none");
         }
         map.setLayoutProperty("markers", "visibility", "visible");
-        
+        map.moveLayer('line-dashed', 'markers');
+        map.moveLayer('lines', 'markers');
       }
       if (settings.mapMode === "cluster") {
-        
         map.setLayoutProperty("germany_overlay", "visibility", "visible");
-        map.setLayoutProperty("lines", "visibility", "visible");
-        if (settings.animateRoutes) {
-          map.setLayoutProperty("line-dashed", "visibility", "visible");
-        } else {
-          map.setLayoutProperty("line-dashed", "visibility", "none");
-        }
+        map.setLayoutProperty("lines", "visibility", "none");
+        map.setLayoutProperty("line-dashed", "visibility", "none");
         map.setLayoutProperty("markers", "visibility", "none");
-        
       }
     }
   }, [map, settings]);
@@ -130,15 +135,31 @@ function MapboxMap() {
   return (
     <>
       <MapSettingsModal
-        show={show}
-        onHide={handleClose}
+        show={showSettingsModal}
+        onHide={handleCloseSettingsModal}
         onApplySettings={applySettings}
       ></MapSettingsModal>
-      <div className="right-align">
-        <Button onClick={handleShow} variant="primary">
-          Open Settings
-        </Button>{" "}
-      </div>
+      <MapStatisticsModal
+        show={showStatisticsModal}
+        onHide={handleCloseStatisticsModal}
+      ></MapStatisticsModal>
+      <Container fluid>
+        <Row>
+          <Col className="d-flex justify-content-start">
+            <Button className="m-3" variant="primary" onClick={handleShowStatisticsModal}>
+              Open Statistics
+            </Button>
+          </Col>
+          <Col className="d-flex justify-content-center">
+            <h2 className="m-3">Cargo Pilot Map View</h2>
+          </Col>
+          <Col className="d-flex justify-content-end">
+            <Button className="m-3" variant="primary" onClick={handleShowSettingsModal}>
+              Open Settings
+            </Button>
+          </Col>
+        </Row>
+      </Container>
       <div className="map-container" ref={mapContainerRef} />
     </>
   );
