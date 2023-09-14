@@ -2,3 +2,6 @@ flask
 requests
 scikit-learn
 pandas
+geopy==2.4.0
+pgeocode
+flask-cors

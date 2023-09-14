@@ -1,8 +1,11 @@
 from flask import Flask, request
 from trip_handler import TripHandler
 from cluster_handler import ClusterHandler
+from statistic_engine import StatisticsEngine
 
+from flask_cors import CORS
 app = Flask(__name__)
+CORS(app)
 
 @app.route('/upload/trips', methods=['POST'])
 def process_trips_data():
@@ -15,6 +18,12 @@ def process_offerings_data():
     json_data = request.get_json()  
     TripHandler().process_offering_data(json_data)
     return 'Data received successfully'
+
+@app.route('/statistics', methods=['GET'])
+def get_statistics():
+    
+    return StatisticsEngine().get_statistics()
+    
 
 @app.route('/cluster', methods=['GET'])
 def cluster_locations_from_db():

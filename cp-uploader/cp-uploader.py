@@ -34,9 +34,6 @@ def main():
 
         processed_data = InputConverter().convert_data_from_file(filename=answers["file"], source=answers["source"], data_type=answers["data_type"])
 
-        if processed_data:
-            data = json.dumps(processed_data)
-            APIHandler().upload_data(data=data, instance=answers["instance"], data_type=answers["data_type"])
 
 
 

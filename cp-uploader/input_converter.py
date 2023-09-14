@@ -2,7 +2,8 @@ import os
 import pandas as pd
 from tour import Tour, Waypoint, Load, Offering
 from datetime import datetime
-
+import json
+from api_handler import APIHandler
 
 class InputConverter:
 
@@ -75,14 +76,30 @@ class InputConverter:
         if data_type == "Offerings":
             offerings = []
             for index, row in df.iterrows():
-                if index < 20:
-                    origin = Waypoint(post_code=row['Versender Postleitzahl'], city=row['Versender Stadt'], country_code=row['Versender Land'], timestamp=self.__convert_timestamp(timestamp=row['Leistungsdatum (Datum)'], pattern="%Y-%m-%d %H:%M:%S"))
-                    destination = Waypoint(post_code=row['Empfänger Postleitzahl'], city=row['Empfänger Stadt'], country_code=row['Empfänger Land'], timestamp=self.__convert_timestamp(timestamp=row['Leistungsdatum (Datum)'], pattern="%Y-%m-%d %H:%M:%S"))
+                if index < 100000:
+                    origin = Waypoint(
+                        post_code=row['Versender Postleitzahl'],
+                        city=row['Versender Stadt'],
+                        country_code=row['Versender Land'],
+                        timestamp=self.__convert_timestamp(timestamp=row['Leistungsdatum (Datum)'],
+                                                        pattern="%Y-%m-%d %H:%M:%S"))
+                    destination = Waypoint(
+                        post_code=row['Empfänger Postleitzahl'],
+                        city=row['Empfänger Stadt'],
+                        country_code=row['Empfänger Land'],
+                        timestamp=self.__convert_timestamp(timestamp=row['Leistungsdatum (Datum)'],
+                                                        pattern="%Y-%m-%d %H:%M:%S"))
                     load = Load(weight=row['Gewicht (Wirklich)'], loading_meter=row['Lademeter'])
 
                     offerings.append(
                         Offering(origin=origin, destination=destination, source="DB", load=load).toJSON()
                     )
+
+                    if len(offerings) == 100 :
+                        data = json.dumps(offerings)
+                        APIHandler().upload_data(data=data, instance="Local", data_type=data_type)
+                        offerings.clear()
+                
             return offerings
 
     def __convert_timestamp(self, timestamp, pattern):

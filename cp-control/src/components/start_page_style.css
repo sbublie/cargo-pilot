@@ -1,0 +1,6 @@
+.align-center {
+    display: flex;
+    justify-content: center; /* This centers the button horizontally */
+    align-items: center; /* This centers the button vertically */
+    height: 100vh; /* This ensures the container takes up the full viewport height */
+}

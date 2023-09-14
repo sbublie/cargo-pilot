@@ -6,7 +6,7 @@ import json
 class DatabaseHandler:
 
     def __init__(self) -> None:
-        self.BASE_URL = "http://localhost:5003"
+        self.BASE_URL = "http://cp-db:5000"
 
     def add_location(self, location) -> int:
 
@@ -29,6 +29,10 @@ class DatabaseHandler:
         except (ValueError, KeyError):
             print("Error: Unable to parse JSON response or missing key in the JSON data.")
         return locations
+
+    def get_offerings(self):
+        response = requests.get(self.BASE_URL + "/offerings")
+        return response.json()
 
     def add_trip(self, trip: Trip) -> int:
         new_trip = {"customer_id": 123, "destination_id": trip.destination_id,
