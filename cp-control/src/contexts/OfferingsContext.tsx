@@ -1,4 +1,5 @@
 import React, { useContext, useState, ReactNode } from "react";
+import { FeatureCollection, Polygon } from "geojson";
 
 interface Stats {
   offerings?: {
@@ -14,6 +15,8 @@ interface OfferingsContextProps {
   setNewOfferings: (offerings: any[]) => void; // Replace any with the correct type if known
   stats: Stats;
   setNewStats: (stats: Stats) => void;
+  boundaries: FeatureCollection<Polygon>;
+  setNewBoundaries: (boundaries: FeatureCollection<Polygon>) => void;
 }
 
 const OfferingsContext = React.createContext<OfferingsContextProps | undefined>(undefined);
@@ -33,6 +36,10 @@ interface OfferingsProviderProps {
 export function OfferingsProvider({ children }: OfferingsProviderProps) {
   const [offerings, setOfferings] = useState<any[]>([]); // Replace any with the correct type if known
   const [stats, setStats] = useState<Stats>({});
+  const [boundaries, setBoundaries] = useState<FeatureCollection<Polygon>>({
+    type: "FeatureCollection",
+    features: [],
+  });
 
   function setNewOfferings(newOfferings: any[]) { // Replace any with the correct type if known
     setOfferings(newOfferings);
@@ -42,11 +49,17 @@ export function OfferingsProvider({ children }: OfferingsProviderProps) {
     setStats(newStats)
   }
 
+  function setNewBoundaries(newBoundaries: FeatureCollection<Polygon>) {
+    setBoundaries(newBoundaries)
+  }
+
   const contextValue: OfferingsContextProps = {
     offerings,
     setNewOfferings,
     stats,
     setNewStats,
+    boundaries,
+    setNewBoundaries
   };
 
   return (

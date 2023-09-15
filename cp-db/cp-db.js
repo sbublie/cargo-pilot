@@ -14,6 +14,7 @@ const tripController = require("./tripController");
 const offeringController = require("./offeringController");
 const tripPatternController = require("./tripPatternController");
 const tripMatchController = require("./tripMatchController");
+const geoController = require("./geoController")
 
 app.get("/locations", locationController.getAllLocations);
 app.post("/locations", locationController.addLocation);
@@ -44,6 +45,8 @@ app.get("/trip-matches", tripMatchController.getAllTripMatches);
 app.post("/trip-matches", tripMatchController.addTripMatch);
 app.get("/trip-matches/:id", tripMatchController.getTripMatch);
 app.delete("/trip-matches/:id", tripMatchController.deleteTripMatch);
+
+app.get("/geo/germany", geoController.getGeo);
 
 sequelize
   .sync()

@@ -1,7 +1,6 @@
 import { Map as MapboxMap } from "mapbox-gl";
 import mapboxgl from "mapbox-gl";
-import germany_boundaries from "./germany_boundaries";
-import { FeatureCollection, Point, Feature, LineString } from "geojson";
+import { FeatureCollection, Point, Feature, LineString, Polygon } from "geojson";
 
 const heightFactor = 500;
 
@@ -20,7 +19,13 @@ interface Offering {
   };
 }
 
-export const setupMapFeatures = (map: MapboxMap, offerings: Offering[]) => {
+export const setupMapFeatures = (
+  map: MapboxMap,
+  offerings: Offering[],
+  boundaries: FeatureCollection<Polygon>
+) => {
+  console.log(boundaries);
+
   map.addControl(new mapboxgl.NavigationControl(), "top-left");
 
   const markerData: FeatureCollection<Point> = {
@@ -132,55 +137,57 @@ export const setupMapFeatures = (map: MapboxMap, offerings: Offering[]) => {
     },
   });
 
-  const newFeatures = germany_boundaries.features.filter((feature) => {
-    const numberOfCityCodes =
-      cityCodes[parseInt(feature.properties.postcode, 10)];
-    if (numberOfCityCodes) {
-      feature.properties.height = numberOfCityCodes * heightFactor;
-      feature.properties.base_height = 0;
-      feature.properties.color = "#4287f5";
-      return true;
-    } else {
-      feature.properties.color = "white";
-      return false;
-    }
-  });
+  if (boundaries.features) {
+    const newFeatures = boundaries.features.filter((feature) => {
+      const numberOfCityCodes =
+        cityCodes[parseInt(feature?.properties?.postcode, 10)];
+      if (numberOfCityCodes && feature?.properties) {
+        feature.properties.height = numberOfCityCodes * heightFactor;
+        feature.properties.base_height = 0;
+        feature.properties.color = "#4287f5";
+        return true;
+      } else if (feature?.properties) {
+        feature.properties.color = "white";
+        return false;
+      }
+    });
 
-  germany_boundaries.features = newFeatures;
+    boundaries.features = newFeatures;
 
-  map.addSource("germany", {
-    type: "geojson",
-    buffer: 500,
-    tolerance: 2,
+    map.addSource("germany", {
+      type: "geojson",
+      buffer: 500,
+      tolerance: 2,
 
-    //Each feature in this GeoJSON file contains values for
-    // `properties.height`, `properties.base_height`,
-    // and `properties.color`.
-    // In `addLayer` you will use expressions to set the new
-    // layer's paint properties based on these values.
+      //Each feature in this GeoJSON file contains values for
+      // `properties.height`, `properties.base_height`,
+      // and `properties.color`.
+      // In `addLayer` you will use expressions to set the new
+      // layer's paint properties based on these values.
 
-    // @ts-ignore
-    data: germany_boundaries,
-  });
+      // @ts-ignore
+      data: boundaries,
+    });
 
-  map.addLayer({
-    id: "germany_overlay",
-    type: "fill-extrusion",
-    source: "germany",
-    paint: {
-      // Get the `fill-extrusion-color` from the source `color` property.
-      "fill-extrusion-color": ["get", "color"],
+    map.addLayer({
+      id: "germany_overlay",
+      type: "fill-extrusion",
+      source: "germany",
+      paint: {
+        // Get the `fill-extrusion-color` from the source `color` property.
+        "fill-extrusion-color": ["get", "color"],
 
-      // Get `fill-extrusion-height` from the source `height` property.
-      "fill-extrusion-height": ["get", "height"],
+        // Get `fill-extrusion-height` from the source `height` property.
+        "fill-extrusion-height": ["get", "height"],
 
-      // Get `fill-extrusion-base` from the source `base_height` property.
-      "fill-extrusion-base": ["get", "base_height"],
+        // Get `fill-extrusion-base` from the source `base_height` property.
+        "fill-extrusion-base": ["get", "base_height"],
 
-      // Make extrusions slightly opaque to see through indoor walls.
-      "fill-extrusion-opacity": 1,
-    },
-  });
+        // Make extrusions slightly opaque to see through indoor walls.
+        "fill-extrusion-opacity": 1,
+      },
+    });
+  }
 
   // When a click event occurs on a feature in the places layer, open a popup at the
   // location of the feature, with description HTML from its properties.
@@ -192,15 +199,18 @@ export const setupMapFeatures = (map: MapboxMap, offerings: Offering[]) => {
         feature.geometry as mapboxgl.MapboxGeoJSONFeature["geometry"];
       const description = feature.properties?.city;
 
-      if (geometry.type !== "GeometryCollection" && geometry.coordinates && description) {
-      
+      if (
+        geometry.type !== "GeometryCollection" &&
+        geometry.coordinates &&
+        description
+      ) {
         if (geometry.type === "Point") {
           let coordinates = geometry.coordinates.slice() as [number, number];
-        
+
           while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
             coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
           }
-          
+
           new mapboxgl.Popup()
             .setLngLat(coordinates)
             .setHTML(description)
@@ -219,16 +229,21 @@ export const setupMapFeatures = (map: MapboxMap, offerings: Offering[]) => {
       console.error("Feature properties are undefined");
       return;
     }
-  
+
     const coordinates = [e.lngLat.lng, e.lngLat.lat];
     const { name, postcode, height } = e.features[0].properties;
-  
-    const description = `<b><h7>${name}</h7></b><br /><h7>Postcode: ${postcode}</h7><br /><h7>No. Trips: ${height / heightFactor}</h7>`;
-  
+
+    const description = `<b><h7>${name}</h7></b><br /><h7>Postcode: ${postcode}</h7><br /><h7>No. Trips: ${
+      height / heightFactor
+    }</h7>`;
+
     while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
       coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
     }
-  
-    new mapboxgl.Popup().setLngLat(coordinates as [number, number]).setHTML(description).addTo(map);
+
+    new mapboxgl.Popup()
+      .setLngLat(coordinates as [number, number])
+      .setHTML(description)
+      .addTo(map);
   });
 };

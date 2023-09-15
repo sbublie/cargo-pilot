@@ -31,7 +31,7 @@ function MapboxMap() {
   const lng = 9.446113815133662;
   const lat = 47.66559693227496;
   const zoom = 9;
-  const { offerings } = useOfferings();
+  const { offerings, boundaries } = useOfferings();
 
   const handleCloseSettingsModal = () => setShowSettingsModal(false);
   const handleShowSettingsModal = () => setShowSettingsModal(true);
@@ -51,7 +51,7 @@ function MapboxMap() {
     });
 
     mapInstance.on("load", () => {
-      setupMapFeatures(mapInstance, offerings);
+      setupMapFeatures(mapInstance, offerings, boundaries);
 
       // technique based on https://jsfiddle.net/2mws8y3q/
       // an array of valid line-dasharray values, specifying the lengths of the alternating dashes and gaps that form the dash pattern
@@ -92,6 +92,7 @@ function MapboxMap() {
         // Request the next frame of the animation.
         requestAnimationFrame(animateDashArray);
       };
+      
 
       animateDashArray(0);
 
@@ -101,7 +102,7 @@ function MapboxMap() {
     // Clean up on unmount
     return () => mapInstance.remove();
   }
-  }, [offerings]);
+  }, [offerings, boundaries]);
 
   const applySettings = (settings:Settings) => {
     setSettings(settings);
@@ -110,7 +111,7 @@ function MapboxMap() {
   };
 
   useEffect(() => {
-    if (map) {
+    if (map && boundaries?.features) {
       if (settings.mapMode === "offering") {
         map.setLayoutProperty("germany_overlay", "visibility", "none");
         map.setLayoutProperty("lines", "visibility", "visible");
