@@ -7,10 +7,13 @@ from api_handler import APIHandler
 
 class InputConverter:
 
-    def convert_data_from_file(self, filename, source, data_type) -> list[Tour]:
+    def convert_data_from_file(self, filename, source, data_type, instance) -> list[Tour]:
         '''
         Process a given .csv, .geojson or .xlsc/.xls file and return the extracted data as list of Tour 
         '''
+
+        self.instance = instance
+
         _, extension = os.path.splitext(filename)
         if extension:
             extension = extension.lower()
@@ -97,7 +100,7 @@ class InputConverter:
 
                     if len(offerings) == 100 :
                         data = json.dumps(offerings)
-                        APIHandler().upload_data(data=data, instance="Local", data_type=data_type)
+                        APIHandler().upload_data(data=data, instance=self.instance, data_type=data_type)
                         offerings.clear()
                 
             return offerings

@@ -14,11 +14,12 @@ class APIHandler:
         if instance == "Local":
             url = LOCAL_CP_INSTANCE_URL + API_ENDPOINT
 
+        print(url)
         if data_type == "Offerings":
             url += "/offerings"
         elif data_type == "Trips":
             url += "/trips"
             
         response = requests.post(url=url, data=data, headers=self.headers)
-        print(url)
+        
         print(response.text)
