@@ -15,6 +15,4 @@ WORKDIR /app
 COPY ./deploy .
 RUN npm install
 COPY --from=build /app/dist ./build
-EXPOSE 80
-EXPOSE 443
 CMD ["npm", "start"]

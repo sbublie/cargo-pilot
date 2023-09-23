@@ -2,43 +2,46 @@ import os
 import pandas as pd
 from tour import Tour, Waypoint, Load, Offering
 from datetime import datetime
-import json
-from api_handler import APIHandler
+from data_mapping import db_data_mapping
+
 
 class InputConverter:
 
-    def convert_data_from_file(self, filename, source, data_type, instance) -> list[Tour]:
+    def convert_data_from_file(self, filename, source, data_type, instance) -> list:
         '''
         Process a given .csv, .geojson or .xlsc/.xls file and return the extracted data as list of Tour 
         '''
+        df = self.__get_df_from_file(filename=filename)
+        
+        if data_type == "Offerings":
+            return self.__get_offerings_from_df(df=df, source=source)
+        elif data_type == "Trips":
+            return self.__get_trips_from_df(df=df, source=source)
+        else:
+            raise ValueError("Unsupported data_type: {}".format(data_type))
 
-        self.instance = instance
-
+    def __get_df_from_file(self, filename):
         _, extension = os.path.splitext(filename)
         if extension:
             extension = extension.lower()
 
             if extension == '.csv':
-                return self.__handle_csv_file(filename, source)
+                return pd.read_csv(filename)
 
             elif extension == '.geojson':
-                return self.__handle_geojson_file(filename)
+                raise ValueError("Geojson not yet supported!")
 
             elif extension == '.xls' or extension == '.xlsx':
-                if source == "DB":
-                    return self.__handle_db_excel_file(filename, data_type)
+                return pd.read_excel(filename, sheet_name=0)
 
             else:
                 raise ValueError("Unsupported file format: {}".format(extension))
         else:
             raise ValueError("Invalid file: {}".format(filename))
 
-    def __handle_csv_file(self, filename, source):
-        df = pd.read_csv(filename)
+    def __get_trips_from_df(self, df, source):
         tours = []
         for index, row in df.iterrows():
-            # TODO Consider other activities
-            if index < 5000:
 
                 if row['ActivityName'] == "Driving":
                     if index+1 < len(df.index):
@@ -70,40 +73,30 @@ class InputConverter:
 
         return tours
 
-    def __handle_geojson_file(self):
-        # TODO: Implement geojson handling
-        pass
+    def __get_offerings_from_df(self, df, source):
 
-    def __handle_db_excel_file(self, filename, data_type):
-        df = pd.read_excel(filename, sheet_name=0)
-        if data_type == "Offerings":
-            offerings = []
-            for index, row in df.iterrows():
-                if index < 100000:
-                    origin = Waypoint(
-                        post_code=row['Versender Postleitzahl'],
-                        city=row['Versender Stadt'],
-                        country_code=row['Versender Land'],
-                        timestamp=self.__convert_timestamp(timestamp=row['Leistungsdatum (Datum)'],
-                                                        pattern="%Y-%m-%d %H:%M:%S"))
-                    destination = Waypoint(
-                        post_code=row['Empfänger Postleitzahl'],
-                        city=row['Empfänger Stadt'],
-                        country_code=row['Empfänger Land'],
-                        timestamp=self.__convert_timestamp(timestamp=row['Leistungsdatum (Datum)'],
-                                                        pattern="%Y-%m-%d %H:%M:%S"))
-                    load = Load(weight=row['Gewicht (Wirklich)'], loading_meter=row['Lademeter'])
+        offerings = []
+        for index, row in df.iterrows():
+            origin = Waypoint(
+                post_code=row[db_data_mapping['origin_postal_code']],
+                city=row[db_data_mapping['origin_city']],
+                country_code=row[db_data_mapping['origin_country_code']],
+                timestamp=self.__convert_timestamp(timestamp=row[db_data_mapping['origin_timestamp']],
+                                                   pattern=db_data_mapping['origin_timestamp_pattern']))
+            destination = Waypoint(
+                post_code=row[db_data_mapping['destination_postal_code']],
+                city=row[db_data_mapping['destination_city']],
+                country_code=row[db_data_mapping['destination_country_code']],
+                timestamp=self.__convert_timestamp(timestamp=row[db_data_mapping['destination_timestamp']],
+                                                   pattern=db_data_mapping['destination_timestamp_pattern']))
+            load = Load(weight=row[db_data_mapping['weight']], loading_meter=row[db_data_mapping['loading_meter']])
 
-                    offerings.append(
-                        Offering(origin=origin, destination=destination, source="DB", load=load).toJSON()
-                    )
+            offerings.append(
+                Offering(origin=origin, destination=destination, source=source, load=load)
+            )
 
-                    if len(offerings) == 100 :
-                        data = json.dumps(offerings)
-                        APIHandler().upload_data(data=data, instance=self.instance, data_type=data_type)
-                        offerings.clear()
-                
-            return offerings
+        return offerings
+
 
     def __convert_timestamp(self, timestamp, pattern):
 

@@ -22,7 +22,7 @@ class Load:
 
 
 @dataclass
-class Tour:
+class Trip:
     type: str
     origin: Waypoint
     destination: Waypoint
@@ -32,7 +32,7 @@ class Tour:
     customer_id: Optional[str] = None
     route_waypoints: Optional[list[Waypoint]] = None
 
-    def toJSON(self):
+    def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__,
                           sort_keys=True, indent=4)
 
@@ -46,6 +46,6 @@ class Offering:
     customer_id: Optional[str] = None
     route_waypoints: Optional[list[Waypoint]] = None
 
-    def toJSON(self):
+    def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__,
                           sort_keys=True, indent=4)

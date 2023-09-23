@@ -1,9 +1,8 @@
-from input_converter import InputConverter
-from env import SHOW_PROMPT
-from api_handler import APIHandler
-
-import json
 import inquirer
+
+from env import SHOW_PROMPT
+from input_converter import InputConverter
+from api_handler import APIHandler
 
 def main():
 
@@ -33,9 +32,7 @@ def main():
         answers = inquirer.prompt(questions)
 
         processed_data = InputConverter().convert_data_from_file(filename=answers["file"], source=answers["source"], data_type=answers["data_type"], instance=answers["instance"])
-
-
-
+        APIHandler().upload_data(data=processed_data, data_type=answers["data_type"],instance=answers["instance"] )
 
 
 if __name__ == "__main__":
