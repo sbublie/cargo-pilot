@@ -18,17 +18,17 @@ db_data_mapping = {
 }
 
 transics_data_mapping = {
-    "origin_lat":"",
-    "origin_long":"",
-    "origin_timestamp":"",
-    "origin_timestamp_pattern": "%m/%d/%Y %H:%M:%S",
+    "origin_lat": "origin_lat",
+    "origin_long": "origin_long",
+    "origin_timestamp": "ActionDateTimeBegin",
+    "origin_timestamp_pattern": "%d/%m/%Y %H:%M:%S",
 
-    "destination_lat":"",
-    "destination_long":"",
-    "destination_timestamp":"",
-    "destination_timestamp_pattern": "%m/%d/%Y %H:%M:%S",
+    "destination_lat": "destination_lat",
+    "destination_long": "destination_long",
+    "destination_timestamp": "ActionDateTimeEnd",
+    "destination_timestamp_pattern": "%d/%m/%Y %H:%M:%S",
 
-    "vehicle_state": "",
-    "vehicle_id":"",
-    "customer_id":"",
+    "vehicle_state": "VehicleState",
+    "vehicle_id": "VehicleId_hash",
+    "customer_id": "CustomerId_hash",
 }
