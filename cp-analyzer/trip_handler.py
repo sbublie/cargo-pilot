@@ -1,15 +1,11 @@
 import json
-import time
 import math
 
 from database_handler import DatabaseHandler
-from models import Trip, Location, Offering
-import pgeocode
+from models import Trip, Location
 
-
-# Initialize the Nominatim geocoder
-nomi = pgeocode.Nominatim('de')
-
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 class TripHandler:
     def __init__(self) -> None:
@@ -22,17 +18,30 @@ class TripHandler:
             trip_dict = json.loads(trip)
             trip_obj = Trip(**trip_dict)
 
-            origin_location = Location(lat=trip_obj.origin.lat, long=trip_obj.origin.long, type="origin", timestamp=trip_obj.origin.timestamp)
+            # TODO: Delete temp addition of one year
+            dt_object = datetime.fromtimestamp(trip_obj.origin.timestamp)
+            new_dt_object = dt_object + relativedelta(years=1)
+            origin_timestamp = int(new_dt_object.timestamp())
+
+            origin_location = Location(lat=trip_obj.origin.lat, long=trip_obj.origin.long, type="origin", timestamp=origin_timestamp)
             origin_id = self.database_handler.add_location(origin_location)
 
+            # TODO: Delete temp addition of one year
+            dt_object = datetime.fromtimestamp(trip_obj.destination.timestamp)
+            new_dt_object = dt_object + relativedelta(years=1)
+            destination_timestamp = int(new_dt_object.timestamp())
+
             destination_location = Location(lat=trip_obj.destination.lat, long=trip_obj.destination.long,
-                                            type="destination", timestamp=trip_obj.destination.timestamp)
+                                            type="destination", timestamp=destination_timestamp)
             destination_id = self.database_handler.add_location(destination_location)
 
             trip_obj.origin_id = origin_id
             trip_obj.destination_id = destination_id
 
-            self.database_handler.add_trip(trip_obj)
+            new_trip = {"customer": trip_obj.customer_id, "destination_id": trip_obj.destination_id,
+                    "origin_id": trip_obj.origin_id, "source": trip_obj.source, "type": "base", "vehicle": trip_obj.vehicle_id, "load_percentage": trip_obj.load.capacity_percentage}
+
+            self.database_handler.add_trip(new_trip)
 
     def process_offering_data(self, json_data) -> None:
 

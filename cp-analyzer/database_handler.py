@@ -44,10 +44,9 @@ class DatabaseHandler:
         response = requests.get(self.BASE_URL + "/offerings")
         return response.json()
 
-    def add_trip(self, trip: Trip) -> int:
-        new_trip = {"customer": trip.customer_id, "destination_id": trip.destination_id,
-                    "origin_id": trip.origin_id, "source": trip.source, "type": "base", "vehicle": trip.vehicle_id, "load_percentage": trip.load.capacity_percentage}
-        response = requests.post(self.BASE_URL + "/trips", json=new_trip)
+    def add_trip(self, trip) -> int:
+        
+        response = requests.post(self.BASE_URL + "/trips", json=trip)
         if response.status_code == 201:
             return response.json()
         else:
