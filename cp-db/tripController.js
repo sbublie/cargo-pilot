@@ -4,6 +4,7 @@ const { Trip, Location } = require("./models");
 async function getAllTrips(req, res) {
   try {
     const trips = await Trip.findAll({
+      attributes: ['id', 'customer', 'source', 'vehicle', 'load_percentage', 'load_meter', 'load_weight'],
       include: [
         { model: Location, as: "destination"},
         { model: Location, as: "origin"},
