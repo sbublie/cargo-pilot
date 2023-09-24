@@ -47,7 +47,7 @@ app.get("/trip-matches/:id", tripMatchController.getTripMatch);
 app.delete("/trip-matches/:id", tripMatchController.deleteTripMatch);
 
 app.get("/geo/germany", geoController.getGeo);
-
+app.set('json replacer', (k, v) => (v === null ? undefined : v))
 sequelize
   .sync()
   .then(() => {

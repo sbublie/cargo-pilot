@@ -9,16 +9,26 @@ class DatabaseHandler:
         self.BASE_URL = "http://cp-db:5000"
 
     def add_location(self, location) -> int:
-
+        # Convert the Lcoation object to a dict and send it to the DB server
+        location_dict = vars(location)
         response = requests.post(self.BASE_URL + "/locations",
-                                 json=location)
-
-        return json.loads(response.text)['id']
+                                 json=location_dict)
+        if response.status_code == 201:
+            return response.json()['id']
+        else:
+            print('Failed to send location to database: ', response.status_code, response.text)
+            return None
+            
     
     def add_offering(self, offering):
         response = requests.post(self.BASE_URL + "/offerings",
                                  json=offering)
-        return response
+        
+        if response.status_code == 201:
+            return response.text
+        else:
+            print('Failed to send offering to database: ', response.status_code, response.text)
+            return None
 
     def get_locations(self) -> list[Location]:
         response = requests.get(self.BASE_URL + "/locations")
@@ -34,11 +44,14 @@ class DatabaseHandler:
         response = requests.get(self.BASE_URL + "/offerings")
         return response.json()
 
-    def add_trip(self, trip: Trip) -> int:
-        new_trip = {"customer_id": 123, "destination_id": trip.destination_id,
-                    "origin_id": trip.origin_id, "source": trip.source, "type": trip.type, "vehicle_id": 123}
-        response = requests.post(self.BASE_URL + "/trips", json=new_trip)
-        return json.loads(response.text)
+    def add_trip(self, trip) -> int:
+        
+        response = requests.post(self.BASE_URL + "/trips", json=trip)
+        if response.status_code == 201:
+            return response.json()
+        else:
+            print('Failed to send trip to database: ', response.status_code, response.text)
+            return None
 
     def add_clusters(self, clusters: list[Cluster]):
         for cluster in clusters:
