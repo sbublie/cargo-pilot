@@ -4,6 +4,9 @@ const { Sequelize } = require("sequelize");
 const sequelize = new Sequelize("cargo_database", "pguser", "pdb&3Xif", {
   host: "cp-postgres",
   dialect: "postgres",
+  define: {
+    timestamps: false,
+  },
 });
 
 // Test the database connection
