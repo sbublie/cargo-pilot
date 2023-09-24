@@ -40,6 +40,6 @@ class APIHandler:
                 
             response = requests.post(url=url, json=chunk_list, headers=self.headers)
             if response.status_code == 200:
-                print(f"Chunk {index} of {num_chunks} uploaded successfully!")
+                print(f"Chunk {index+1} of {num_chunks} uploaded successfully!")
             else:
                 print(f"Failed to upload chunk! Status code: {response.status_code}")
