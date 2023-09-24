@@ -47,15 +47,31 @@ class InputConverter:
             if row[transics_data_mapping['vehicle_state']] == "LOADED":
                 load = 100
 
-            origin_lat = float(row[transics_data_mapping['origin_lat']].replace(',', '.'))
-            origin_long = float(row[transics_data_mapping['origin_long']].replace(',', '.'))
+            value = row[transics_data_mapping['origin_lat']]
+            if isinstance(value, str):
+                value = value.replace(',', '.')
+            origin_lat = float(value)
+
+            value = row[transics_data_mapping['origin_long']]
+            if isinstance(value, str):
+                value = value.replace(',', '.')
+            origin_long = float(value)
+            
             origin_timestamp = self.__convert_timestamp(
                 row[transics_data_mapping['origin_timestamp']],
                 transics_data_mapping['origin_timestamp_pattern'])
             origin = Waypoint(lat=origin_lat, long=origin_long, timestamp=origin_timestamp)
 
-            destination_lat = float(row[transics_data_mapping['destination_lat']].replace(',', '.'))
-            destination_long = float(row[transics_data_mapping['destination_long']].replace(',', '.'))
+            value = row[transics_data_mapping['destination_lat']]
+            if isinstance(value, str):
+                value = value.replace(',', '.')
+            destination_lat = float(value)
+
+            value = row[transics_data_mapping['destination_long']]
+            if isinstance(value, str):
+                value = value.replace(',', '.')
+            destination_long = float(value)
+
             destination_timestamp = self.__convert_timestamp(
                 row[transics_data_mapping['destination_timestamp']],
                 transics_data_mapping['destination_timestamp_pattern'])
@@ -66,7 +82,8 @@ class InputConverter:
                             destination=destination,
                             route_waypoints=[],
                             load=Load(capacity_percentage=load),
-                            source=source, vehicle_id=row[transics_data_mapping['vehicle_id']],
+                            source=source, 
+                            vehicle_id=row[transics_data_mapping['vehicle_id']],
                             customer_id=row[transics_data_mapping['customer_id']])
 
             tours.append(new_tour)
@@ -78,15 +95,15 @@ class InputConverter:
         offerings = []
         for index, row in df.iterrows():
             origin = Waypoint(
-                post_code=row[db_data_mapping['origin_postal_code']],
+                zip_code=row[db_data_mapping['origin_postal_code']],
                 city=row[db_data_mapping['origin_city']],
                 country_code=row[db_data_mapping['origin_country_code']],
                 timestamp=self.__convert_timestamp(timestamp=row[db_data_mapping['origin_timestamp']],
                                                    pattern=db_data_mapping['origin_timestamp_pattern']))
             destination = Waypoint(
-                post_code=row[db_data_mapping['destination_postal_code']],
+                zip_code=row[db_data_mapping['destination_postal_code']],
                 city=row[db_data_mapping['destination_city']],
-                country_code=row[db_data_mapping['destination_country_code']],
+                country=row[db_data_mapping['destination_country_code']],
                 timestamp=self.__convert_timestamp(timestamp=row[db_data_mapping['destination_timestamp']],
                                                    pattern=db_data_mapping['destination_timestamp_pattern']))
             load = Load(weight=row[db_data_mapping['weight']], loading_meter=row[db_data_mapping['loading_meter']])

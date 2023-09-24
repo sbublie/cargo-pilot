@@ -8,9 +8,9 @@ class Waypoint:
     lat: Optional[float] = None
     long: Optional[float] = None
     street: Optional[str] = None
-    post_code: Optional[int] = None
+    zip_code: Optional[int] = None
     city: Optional[str] = None
-    country_code: Optional[str] = None
+    country: Optional[str] = None
     timestamp: Optional[int] = None
 
 
@@ -42,8 +42,8 @@ class Offering:
     destination: Waypoint
     load: Load
     source: str
-    vehicle_id: Optional[str] = None
-    customer_id: Optional[str] = None
+    vehicle: Optional[str] = None
+    customer: Optional[str] = None
     route_waypoints: Optional[list[Waypoint]] = None
 
     def to_json(self):

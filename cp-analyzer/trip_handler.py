@@ -36,6 +36,7 @@ class TripHandler:
 
     def process_offering_data(self, json_data) -> None:
 
+        # TODO: Implement Europe postal codes
         with open('german-city-codes.json', "r") as infile:
             city_codes = json.load(infile)
 
@@ -45,31 +46,27 @@ class TripHandler:
             origin_lat = offering_dict['origin']['lat']
             origin_long = offering_dict['origin']['long']
 
-            # Check if origin_lat and origin_long are None
             if origin_lat is None and origin_long is None:
-                # Get the postal code from the offering_dict
+
                 origin_post_code = offering_dict['origin']['post_code']
 
-                # Check if origin_post_code is not None
                 if origin_post_code is not None:
-                    # Try to look up the coordinates in the city_codes dictionary
+
                     location = city_codes.get(str(origin_post_code))
                     if location:
                         origin_lat = location["lat"]
                         origin_long = location["long"]
                     else:
+                        # Skip entry if no postal code match was found
                         continue
 
-            origin_location = {
-                "lat": origin_lat,
-                "long": origin_long,
-                "street": offering_dict['origin']['street'],
-                "zip_code": offering_dict['origin']['post_code'],
-                "city": offering_dict['origin']['city'],
-                "country": offering_dict['origin']['country_code'],
-                "timestamp": offering_dict['origin']['timestamp'],
-                "type": "origin"
-            }
+            origin_location = Location(
+                lat=origin_lat, long=origin_long, street=offering_dict['origin']['street'],
+                zip_code=offering_dict['origin']['post_code'],
+                city=offering_dict['origin']['city'],
+                country=offering_dict['origin']['country_code'],
+                timestamp=offering_dict['origin']['timestamp'],
+                type="origin")
 
             destination_lat = offering_dict['destination']['lat']
             destination_long = offering_dict['destination']['long']
@@ -89,16 +86,13 @@ class TripHandler:
                     else:
                         continue
 
-            destination_location = {
-                "lat": destination_lat,
-                "long": destination_long,
-                "street": offering_dict['destination']['street'],
-                "zip_code": offering_dict['destination']['post_code'],
-                "city": offering_dict['destination']['city'],
-                "country": offering_dict['destination']['country_code'],
-                "timestamp": offering_dict['destination']['timestamp'],
-                "type": "destination"
-            }
+            destination_location = Location(
+                lat=destination_lat, long=destination_long, street=offering_dict['destination']['street'],
+                zip_code=offering_dict['destination']['post_code'],
+                city=offering_dict['destination']['city'],
+                country=offering_dict['destination']['country_code'],
+                timestamp=offering_dict['destination']['timestamp'],
+                type="destination")
 
             origin_id = self.database_handler.add_location(origin_location)
             destination_id = self.database_handler.add_location(destination_location)
@@ -106,7 +100,6 @@ class TripHandler:
             load_meter = offering_dict['load']['loading_meter']
             if not load_meter or math.isnan(load_meter):
                 load_meter = 0.0
-
 
             offering = {
                 "customer": offering_dict['customer_id'],
