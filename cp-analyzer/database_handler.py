@@ -16,7 +16,7 @@ class DatabaseHandler:
         if response.status_code == 201:
             return response.json()['id']
         else:
-            print('Failed to send location to database: ', response.status_code)
+            print('Failed to send location to database: ', response.status_code, response.text)
             return None
             
     
@@ -27,7 +27,7 @@ class DatabaseHandler:
         if response.status_code == 201:
             return response.text
         else:
-            print('Failed to send offering to database: ', response.status_code)
+            print('Failed to send offering to database: ', response.status_code, response.text)
             return None
 
     def get_locations(self) -> list[Location]:
@@ -51,7 +51,7 @@ class DatabaseHandler:
         if response.status_code == 201:
             return response.json()
         else:
-            print('Failed to send trip to database: ', response.status_code, response.text, )
+            print('Failed to send trip to database: ', response.status_code, response.text)
             return None
 
     def add_clusters(self, clusters: list[Cluster]):

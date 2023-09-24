@@ -97,7 +97,7 @@ class InputConverter:
             origin = Waypoint(
                 zip_code=row[db_data_mapping['origin_postal_code']],
                 city=row[db_data_mapping['origin_city']],
-                country_code=row[db_data_mapping['origin_country_code']],
+                country=row[db_data_mapping['origin_country_code']],
                 timestamp=self.__convert_timestamp(timestamp=row[db_data_mapping['origin_timestamp']],
                                                    pattern=db_data_mapping['origin_timestamp_pattern']))
             destination = Waypoint(

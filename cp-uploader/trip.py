@@ -42,8 +42,8 @@ class Offering:
     destination: Waypoint
     load: Load
     source: str
-    vehicle: Optional[str] = None
-    customer: Optional[str] = None
+    vehicle_id: Optional[str] = None
+    customer_id: Optional[str] = None
     route_waypoints: Optional[list[Waypoint]] = None
 
     def to_json(self):

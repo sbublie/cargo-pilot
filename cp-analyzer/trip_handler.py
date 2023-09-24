@@ -48,7 +48,7 @@ class TripHandler:
 
             if origin_lat is None and origin_long is None:
 
-                origin_post_code = offering_dict['origin']['post_code']
+                origin_post_code = offering_dict['origin']['zip_code']
 
                 if origin_post_code is not None:
 
@@ -62,9 +62,9 @@ class TripHandler:
 
             origin_location = Location(
                 lat=origin_lat, long=origin_long, street=offering_dict['origin']['street'],
-                zip_code=offering_dict['origin']['post_code'],
+                zip_code=origin_post_code,
                 city=offering_dict['origin']['city'],
-                country=offering_dict['origin']['country_code'],
+                country=offering_dict['origin']['country'],
                 timestamp=offering_dict['origin']['timestamp'],
                 type="origin")
 
@@ -74,7 +74,7 @@ class TripHandler:
             # Check if destination_lat and destination_long are None
             if destination_lat is None and destination_long is None:
                 # Get the postal code from the offering_dict
-                destination_post_code = offering_dict['destination']['post_code']
+                destination_post_code = offering_dict['destination']['zip_code']
 
                 # Check if destination_post_code is not None
                 if destination_post_code is not None:
@@ -88,9 +88,9 @@ class TripHandler:
 
             destination_location = Location(
                 lat=destination_lat, long=destination_long, street=offering_dict['destination']['street'],
-                zip_code=offering_dict['destination']['post_code'],
+                zip_code=destination_post_code,
                 city=offering_dict['destination']['city'],
-                country=offering_dict['destination']['country_code'],
+                country=offering_dict['destination']['country'],
                 timestamp=offering_dict['destination']['timestamp'],
                 type="destination")
 
@@ -101,12 +101,16 @@ class TripHandler:
             if not load_meter or math.isnan(load_meter):
                 load_meter = 0.0
 
+            
+            customer_id = offering_dict.get('customer_id')
+            vehicle_id = offering_dict.get('vehicle_id')
+
             offering = {
-                "customer": offering_dict['customer_id'],
+                "customer_id": customer_id,
                 "destination_id": destination_id,
                 "origin_id": origin_id,
                 "source": offering_dict['source'],
-                "vehicle": offering_dict['vehicle_id'],
+                "vehicle_id": vehicle_id,
                 "load_percentage": offering_dict['load']['capacity_percentage'],
                 "load_meter": load_meter,
                 "load_weight": offering_dict['load']['weight']
