@@ -31,7 +31,7 @@ function MapboxMap() {
   const lng = 9.446113815133662;
   const lat = 47.66559693227496;
   const zoom = 9;
-  const { offerings, boundaries } = useOfferings();
+  const { trips, offerings, boundaries } = useOfferings();
 
   const handleCloseSettingsModal = () => setShowSettingsModal(false);
   const handleShowSettingsModal = () => setShowSettingsModal(true);
@@ -51,7 +51,7 @@ function MapboxMap() {
     });
 
     mapInstance.on("load", () => {
-      setupMapFeatures(mapInstance, offerings, boundaries);
+      setupMapFeatures(mapInstance, trips, offerings, boundaries);
 
       // technique based on https://jsfiddle.net/2mws8y3q/
       // an array of valid line-dasharray values, specifying the lengths of the alternating dashes and gaps that form the dash pattern
@@ -102,7 +102,7 @@ function MapboxMap() {
     // Clean up on unmount
     return () => mapInstance.remove();
   }
-  }, [offerings, boundaries]);
+  }, [trips, offerings, boundaries]);
 
   const applySettings = (settings:Settings) => {
     setSettings(settings);
@@ -114,22 +114,42 @@ function MapboxMap() {
     if (map && boundaries?.features) {
       if (settings.mapMode === "offering") {
         map.setLayoutProperty("germany_overlay", "visibility", "none");
-        map.setLayoutProperty("lines", "visibility", "visible");
+        map.setLayoutProperty("offering_lines", "visibility", "visible");
+        map.setLayoutProperty("trip_markers", "visibility", "none");
+        map.setLayoutProperty("trip_lines", "visibility", "none");
         if (settings.animateRoutes) {
           map.setLayoutProperty("line-dashed", "visibility", "visible");
         } else {
           map.setLayoutProperty("line-dashed", "visibility", "none");
         }
-        map.setLayoutProperty("markers", "visibility", "visible");
-        map.moveLayer('line-dashed', 'markers');
-        map.moveLayer('lines', 'markers');
+        map.setLayoutProperty("offering_markers", "visibility", "visible");
+        map.moveLayer('line-dashed', 'offering_markers');
+        map.moveLayer('offering_lines', 'offering_markers');
       }
       if (settings.mapMode === "cluster") {
         map.setLayoutProperty("germany_overlay", "visibility", "visible");
-        map.setLayoutProperty("lines", "visibility", "none");
+        map.setLayoutProperty("offering_lines", "visibility", "none");
         map.setLayoutProperty("line-dashed", "visibility", "none");
-        map.setLayoutProperty("markers", "visibility", "none");
+        map.setLayoutProperty("offering_markers", "visibility", "none");
+        map.setLayoutProperty("trip_markers", "visibility", "none");
+        map.setLayoutProperty("offering_lines", "visibility", "none");
+        map.setLayoutProperty("trip_lines", "visibility", "none");
       }
+      if (settings.mapMode === "trip") {
+        map.setLayoutProperty("germany_overlay", "visibility", "none");
+        map.setLayoutProperty("offering_lines", "visibility", "none");
+        map.setLayoutProperty("offering_markers", "visibility", "none");
+        if (settings.animateRoutes) {
+          map.setLayoutProperty("line-dashed", "visibility", "visible");
+        } else {
+          map.setLayoutProperty("line-dashed", "visibility", "none");
+        }
+        map.setLayoutProperty("trip_markers", "visibility", "visible");
+        map.setLayoutProperty("trip_lines", "visibility", "visible");
+        map.moveLayer('line-dashed', 'trip_markers');
+        map.moveLayer('trip_lines', 'trip_markers');
+      }
+
     }
   }, [map, settings]);
 

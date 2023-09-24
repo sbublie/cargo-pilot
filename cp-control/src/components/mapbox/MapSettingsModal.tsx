@@ -90,7 +90,6 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({ show, onHide, onApplySett
               onChange={handleMapModeChange}
             />
             <Form.Check
-            disabled
               type="radio"
               id="trip"
               label="Trip Mode"
@@ -114,7 +113,7 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({ show, onHide, onApplySett
               type="checkbox"
               id="db"
               label="DB"
-              checked={settings.dataSource.includes("db")}
+              checked={true}
               onChange={handleDataSourceChange}
             />
             <Form.Check
@@ -122,7 +121,7 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({ show, onHide, onApplySett
               type="checkbox"
               id="transics"
               label="Transics"
-              checked={settings.dataSource.includes("transics")}
+              checked={true}
               onChange={handleDataSourceChange}
             />
           </div>
