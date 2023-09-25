@@ -106,52 +106,43 @@ function MapboxMap() {
 
   const applySettings = (settings:Settings) => {
     setSettings(settings);
-
     handleCloseSettingsModal();
   };
 
   useEffect(() => {
     if (map && boundaries?.features) {
-      if (settings.mapMode === "offering") {
-        map.setLayoutProperty("germany_overlay", "visibility", "none");
-        map.setLayoutProperty("offering_lines", "visibility", "visible");
-        map.setLayoutProperty("trip_markers", "visibility", "none");
-        map.setLayoutProperty("trip_lines", "visibility", "none");
-        if (settings.animateRoutes) {
-          map.setLayoutProperty("line-dashed", "visibility", "visible");
-        } else {
-          map.setLayoutProperty("line-dashed", "visibility", "none");
-        }
-        map.setLayoutProperty("offering_markers", "visibility", "visible");
-        map.moveLayer('line-dashed', 'offering_markers');
-        map.moveLayer('offering_lines', 'offering_markers');
+      
+      const allLayers = [
+        "germany_overlay", "offering_lines", "line-dashed", 
+        "offering_markers", "trip_markers", "trip_lines"
+      ];
+  
+      const layersByMode = {
+        offering: ["offering_lines", "offering_markers"],
+        cluster: ["germany_overlay"],
+        trip: ["trip_markers", "trip_lines"],
+        match: ["trip_markers", "trip_lines"]
+      };
+  
+      const visibleLayers = layersByMode[settings.mapMode] || [];
+  
+      if (settings.animateRoutes && (settings.mapMode === "offering" || settings.mapMode === "trip")) {
+        visibleLayers.push("line-dashed");
       }
-      if (settings.mapMode === "cluster") {
-        map.setLayoutProperty("germany_overlay", "visibility", "visible");
-        map.setLayoutProperty("offering_lines", "visibility", "none");
-        map.setLayoutProperty("line-dashed", "visibility", "none");
-        map.setLayoutProperty("offering_markers", "visibility", "none");
-        map.setLayoutProperty("trip_markers", "visibility", "none");
-        map.setLayoutProperty("offering_lines", "visibility", "none");
-        map.setLayoutProperty("trip_lines", "visibility", "none");
+  
+      allLayers.forEach(layer => {
+        map.setLayoutProperty(layer, "visibility", visibleLayers.includes(layer) ? "visible" : "none");
+      });
+  
+      if (visibleLayers.includes("line-dashed")) {
+        map.moveLayer('line-dashed', visibleLayers[0]);
       }
-      if (settings.mapMode === "trip") {
-        map.setLayoutProperty("germany_overlay", "visibility", "none");
-        map.setLayoutProperty("offering_lines", "visibility", "none");
-        map.setLayoutProperty("offering_markers", "visibility", "none");
-        if (settings.animateRoutes) {
-          map.setLayoutProperty("line-dashed", "visibility", "visible");
-        } else {
-          map.setLayoutProperty("line-dashed", "visibility", "none");
-        }
-        map.setLayoutProperty("trip_markers", "visibility", "visible");
-        map.setLayoutProperty("trip_lines", "visibility", "visible");
-        map.moveLayer('line-dashed', 'trip_markers');
-        map.moveLayer('trip_lines', 'trip_markers');
+      if (visibleLayers.includes(settings.mapMode + "_lines")) {
+        map.moveLayer(settings.mapMode + "_lines", visibleLayers[0]);
       }
-
     }
   }, [map, settings]);
+  
 
   return (
     <>
