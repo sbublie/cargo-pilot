@@ -2,7 +2,7 @@ import { useRef, useEffect, useState } from "react";
 import { useOfferings } from "../../contexts/OfferingsContext";
 import MapSettingsModal from "./MapSettingsModal";
 import MapStatisticsModal from "./MapStatisticsModal";
-import { Button, Container, Row, Col } from 'react-bootstrap';
+import { Button, Container, Row, Col, Spinner } from "react-bootstrap";
 
 import mapboxgl from "mapbox-gl";
 import "./mapbox_style.css";
@@ -22,6 +22,7 @@ function MapboxMap() {
   const [map, setMap] = useState<mapboxgl.Map | null>(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showStatisticsModal, setShowStatisticsModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [settings, setSettings] = useState<Settings>({
     mapMode: "cluster",
     dataSource: "db",
@@ -31,7 +32,7 @@ function MapboxMap() {
   const lng = 9.446113815133662;
   const lat = 47.66559693227496;
   const zoom = 9;
-  const { offerings, boundaries } = useOfferings();
+  const { trips, offerings, boundaries } = useOfferings();
 
   const handleCloseSettingsModal = () => setShowSettingsModal(false);
   const handleShowSettingsModal = () => setShowSettingsModal(true);
@@ -41,98 +42,155 @@ function MapboxMap() {
 
   // Initialize map when component mounts
   useEffect(() => {
+    if (
+      !trips ||
+      !offerings ||
+      !boundaries ||
+      trips.length === 0 ||
+      offerings.length === 0 ||
+      boundaries.features.length === 0
+    ) {
+      // If any of the data is not available, set loading to true
+      setIsLoading(true);
+      return;
+    }
+
+    // All data is available, set loading to false
+    setIsLoading(false);
+
     if (mapContainerRef.current) {
-    const mapInstance = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: "mapbox://styles/mapbox/streets-v12",
-      center: [lng, lat],
-      zoom: zoom,
-      pitch: 50,
-    });
+      const mapInstance = new mapboxgl.Map({
+        container: mapContainerRef.current,
+        style: "mapbox://styles/mapbox/streets-v12",
+        center: [lng, lat],
+        zoom: zoom,
+        pitch: 50,
+      });
 
-    mapInstance.on("load", () => {
-      setupMapFeatures(mapInstance, offerings, boundaries);
+      mapInstance.on("load", () => {
+        setupMapFeatures(mapInstance, trips, offerings, boundaries);
 
-      // technique based on https://jsfiddle.net/2mws8y3q/
-      // an array of valid line-dasharray values, specifying the lengths of the alternating dashes and gaps that form the dash pattern
+        // technique based on https://jsfiddle.net/2mws8y3q/
+        // an array of valid line-dasharray values, specifying the lengths of the alternating dashes and gaps that form the dash pattern
 
-      const dashArraySequence = [
-        [0, 4, 3],
-        [0.5, 4, 2.5],
-        [1, 4, 2],
-        [1.5, 4, 1.5],
-        [2, 4, 1],
-        [2.5, 4, 0.5],
-        [3, 4, 0],
-        [0, 0.5, 3, 3.5],
-        [0, 1, 3, 3],
-        [0, 1.5, 3, 2.5],
-        [0, 2, 3, 2],
-        [0, 2.5, 3, 1.5],
-        [0, 3, 3, 1],
-        [0, 3.5, 3, 0.5],
-      ];
+        const dashArraySequence = [
+          [0, 4, 3],
+          [0.5, 4, 2.5],
+          [1, 4, 2],
+          [1.5, 4, 1.5],
+          [2, 4, 1],
+          [2.5, 4, 0.5],
+          [3, 4, 0],
+          [0, 0.5, 3, 3.5],
+          [0, 1, 3, 3],
+          [0, 1.5, 3, 2.5],
+          [0, 2, 3, 2],
+          [0, 2.5, 3, 1.5],
+          [0, 3, 3, 1],
+          [0, 3.5, 3, 0.5],
+        ];
 
-      let step = 0;
+        let step = 0;
 
-      const animateDashArray = (timestamp: number) => {
-        // Update line-dasharray using the next value in dashArraySequence. The
-        // divisor in the expression `timestamp / 50` controls the animation speed.
-        const newStep = Math.floor((timestamp / 50) % dashArraySequence.length);
-
-        if (newStep !== step) {
-          mapInstance.setPaintProperty(
-            "line-dashed",
-            "line-dasharray",
-            dashArraySequence[step]
+        const animateDashArray = (timestamp: number) => {
+          // Update line-dasharray using the next value in dashArraySequence. The
+          // divisor in the expression `timestamp / 50` controls the animation speed.
+          const newStep = Math.floor(
+            (timestamp / 50) % dashArraySequence.length
           );
-          step = newStep;
-        }
 
-        // Request the next frame of the animation.
-        requestAnimationFrame(animateDashArray);
-      };
-      
+          if (newStep !== step) {
+            mapInstance.setPaintProperty(
+              "line-dashed",
+              "line-dasharray",
+              dashArraySequence[step]
+            );
+            step = newStep;
+          }
 
-      animateDashArray(0);
+          // Request the next frame of the animation.
+          requestAnimationFrame(animateDashArray);
+        };
 
-      setMap(mapInstance);
-    });
+        animateDashArray(0);
 
-    // Clean up on unmount
-    return () => mapInstance.remove();
-  }
-  }, [offerings, boundaries]);
+        setMap(mapInstance);
+      });
 
-  const applySettings = (settings:Settings) => {
+      // Clean up on unmount
+      return () => mapInstance.remove();
+    }
+  }, [trips, offerings, boundaries]);
+
+  const applySettings = (settings: Settings) => {
     setSettings(settings);
-
     handleCloseSettingsModal();
   };
 
   useEffect(() => {
     if (map && boundaries?.features) {
-      if (settings.mapMode === "offering") {
-        map.setLayoutProperty("germany_overlay", "visibility", "none");
-        map.setLayoutProperty("lines", "visibility", "visible");
-        if (settings.animateRoutes) {
-          map.setLayoutProperty("line-dashed", "visibility", "visible");
-        } else {
-          map.setLayoutProperty("line-dashed", "visibility", "none");
-        }
-        map.setLayoutProperty("markers", "visibility", "visible");
-        map.moveLayer('line-dashed', 'markers');
-        map.moveLayer('lines', 'markers');
+      const allLayers = [
+        "germany_overlay",
+        "offering_lines",
+        "line-dashed",
+        "offering_markers",
+        "trip_markers",
+        "trip_lines",
+      ];
+
+      const layersByMode = {
+        offering: ["offering_lines", "offering_markers"],
+        cluster: ["germany_overlay"],
+        trip: ["trip_markers", "trip_lines"],
+        match: ["trip_markers", "trip_lines"],
+      };
+
+      const visibleLayers = layersByMode[settings.mapMode] || [];
+
+      if (
+        settings.animateRoutes &&
+        (settings.mapMode === "offering" || settings.mapMode === "trip")
+      ) {
+        visibleLayers.push("line-dashed");
       }
-      if (settings.mapMode === "cluster") {
-        map.setLayoutProperty("germany_overlay", "visibility", "visible");
-        map.setLayoutProperty("lines", "visibility", "none");
-        map.setLayoutProperty("line-dashed", "visibility", "none");
-        map.setLayoutProperty("markers", "visibility", "none");
+
+      allLayers.forEach((layer) => {
+        map.setLayoutProperty(
+          layer,
+          "visibility",
+          visibleLayers.includes(layer) ? "visible" : "none"
+        );
+      });
+
+      if (visibleLayers.includes("line-dashed")) {
+        map.moveLayer("line-dashed", visibleLayers[0]);
+      }
+      if (visibleLayers.includes(settings.mapMode + "_lines")) {
+        map.moveLayer(settings.mapMode + "_lines", visibleLayers[0]);
       }
     }
   }, [map, settings]);
 
+  if (isLoading) {
+    console.log("load state");
+    return (
+      <Container fluid className="d-flex align-items-center justify-content-center" style={{ height: '100vh' }}>
+    <Row>
+        <Col className="d-flex justify-content-center">
+            <Spinner className="m-3" animation="border" role="status" style={{ width: '3rem', height: '3rem' }}>
+                <span className="visually-hidden">Loading...</span>
+            </Spinner>
+            
+        </Col>
+    </Row>
+    <Row>
+      <h3>Fetching data...</h3>
+    </Row>
+</Container>
+    );
+  }
+
+  console.log("load normal");
   return (
     <>
       <MapSettingsModal
@@ -147,7 +205,11 @@ function MapboxMap() {
       <Container fluid>
         <Row>
           <Col className="d-flex justify-content-start">
-            <Button className="m-3" variant="primary" onClick={handleShowStatisticsModal}>
+            <Button
+              className="m-3"
+              variant="primary"
+              onClick={handleShowStatisticsModal}
+            >
               Open Statistics
             </Button>
           </Col>
@@ -155,7 +217,11 @@ function MapboxMap() {
             <h2 className="m-3">Cargo Pilot Map View</h2>
           </Col>
           <Col className="d-flex justify-content-end">
-            <Button className="m-3" variant="primary" onClick={handleShowSettingsModal}>
+            <Button
+              className="m-3"
+              variant="primary"
+              onClick={handleShowSettingsModal}
+            >
               Open Settings
             </Button>
           </Col>

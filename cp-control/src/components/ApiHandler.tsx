@@ -2,9 +2,22 @@ import { useEffect } from "react";
 import { useOfferings } from "../contexts/OfferingsContext";
 
 export function ApiHandler() {
-  const { setNewOfferings, setNewStats, setNewBoundaries } = useOfferings();
+  const { setNewTrips, setNewOfferings, setNewStats, setNewBoundaries } =
+    useOfferings();
 
   useEffect(() => {
+    const fetchTrips = async () => {
+      try {
+        const response = await fetch(
+          import.meta.env.VITE_BASE_URL + "api/db/trips"
+        );
+        const jsonData = await response.json();
+        setNewTrips(jsonData);
+      } catch (error) {
+        console.log("Error:", error);
+      }
+    };
+
     const fetchOfferings = async () => {
       try {
         const response = await fetch(
@@ -41,8 +54,9 @@ export function ApiHandler() {
       } catch (error) {
         console.log("Error:", error);
       }
-    }
+    };
 
+    fetchTrips();
     fetchStats();
     fetchOfferings();
     fetchBoundaries();

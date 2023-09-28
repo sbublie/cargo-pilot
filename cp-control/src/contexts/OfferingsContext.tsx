@@ -11,8 +11,10 @@ interface Stats {
 }
 
 interface OfferingsContextProps {
-  offerings: any[]; // Replace any with the correct type if known
-  setNewOfferings: (offerings: any[]) => void; // Replace any with the correct type if known
+  trips: any[]
+  setNewTrips: (trips: any[]) => void;
+  offerings: any[]; 
+  setNewOfferings: (offerings: any[]) => void;
   stats: Stats;
   setNewStats: (stats: Stats) => void;
   boundaries: FeatureCollection<Polygon>;
@@ -34,14 +36,19 @@ interface OfferingsProviderProps {
 }
 
 export function OfferingsProvider({ children }: OfferingsProviderProps) {
-  const [offerings, setOfferings] = useState<any[]>([]); // Replace any with the correct type if known
+  const [trips, setTrips] = useState<any[]>([]);
+  const [offerings, setOfferings] = useState<any[]>([]); 
   const [stats, setStats] = useState<Stats>({});
   const [boundaries, setBoundaries] = useState<FeatureCollection<Polygon>>({
     type: "FeatureCollection",
     features: [],
   });
 
-  function setNewOfferings(newOfferings: any[]) { // Replace any with the correct type if known
+  function setNewTrips(newTrips: any[]) { 
+    setTrips(newTrips);
+  }
+
+  function setNewOfferings(newOfferings: any[]) { 
     setOfferings(newOfferings);
   }
 
@@ -54,6 +61,8 @@ export function OfferingsProvider({ children }: OfferingsProviderProps) {
   }
 
   const contextValue: OfferingsContextProps = {
+    trips,
+    setNewTrips,
     offerings,
     setNewOfferings,
     stats,
