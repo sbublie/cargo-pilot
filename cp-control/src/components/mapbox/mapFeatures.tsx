@@ -9,6 +9,7 @@ import {
 } from "geojson";
 
 const heightFactor = 500;
+const markerLimit = 1000;
 
 interface Offering {
   id: number;
@@ -67,7 +68,10 @@ export const setupMapFeatures = (
     cityCodes[zipCode] = (cityCodes[zipCode] || 0) + 1;
   };
 
-  trips.forEach((trip) => {
+  trips.forEach((trip, i) => {
+
+    if (i < markerLimit) {
+
     const origin_marker: Feature<Point> = {
       type: "Feature",
       properties: {
@@ -111,59 +115,63 @@ export const setupMapFeatures = (
       },
     };
     tripLineData.features.push(newLine);
+  }
   });
 
-  offerings.forEach((offering) => {
+  offerings.forEach((offering, i) => {
     incrementCityCodeCount(offering.origin.zip_code);
     incrementCityCodeCount(offering.destination.zip_code);
 
-    const origin_marker: Feature<Point> = {
-      type: "Feature",
-      properties: {
-        color: "green",
-        type: "Origin",
-        id: offering.origin.id,
-        city: offering.origin.city,
-      },
-      geometry: {
-        type: "Point",
-        coordinates: [offering.origin.long, offering.origin.lat],
-      },
-    };
+    if (i < markerLimit) {
 
-    const destination_marker: Feature<Point> = {
-      type: "Feature",
-      properties: {
-        color: "red",
-        type: "Destination",
-        city: offering.destination.city,
-        id: offering.destination.id,
-      },
-      geometry: {
-        type: "Point",
-        coordinates: [offering.destination.long, offering.destination.lat],
-      },
-    };
+      const origin_marker: Feature<Point> = {
+        type: "Feature",
+        properties: {
+          color: "green",
+          type: "Origin",
+          id: offering.origin.id,
+          city: offering.origin.city,
+        },
+        geometry: {
+          type: "Point",
+          coordinates: [offering.origin.long, offering.origin.lat],
+        },
+      };
 
-    offeringMarkerData.features.push(origin_marker);
-    offeringMarkerData.features.push(destination_marker);
+      const destination_marker: Feature<Point> = {
+        type: "Feature",
+        properties: {
+          color: "red",
+          type: "Destination",
+          city: offering.destination.city,
+          id: offering.destination.id,
+        },
+        geometry: {
+          type: "Point",
+          coordinates: [offering.destination.long, offering.destination.lat],
+        },
+      };
 
-    const newLine: Feature<LineString> = {
-      type: "Feature",
-      properties: {
-        offering_id: offering.id,
-        load_meter: offering.load_meter,
-        load_weight: offering.load_weight,
-      },
-      geometry: {
-        type: "LineString",
-        coordinates: [
-          [offering.origin.long, offering.origin.lat],
-          [offering.destination.long, offering.destination.lat],
-        ],
-      },
-    };
-    offeringLineData.features.push(newLine);
+      offeringMarkerData.features.push(origin_marker);
+      offeringMarkerData.features.push(destination_marker);
+
+      const newLine: Feature<LineString> = {
+        type: "Feature",
+        properties: {
+          offering_id: offering.id,
+          load_meter: offering.load_meter,
+          load_weight: offering.load_weight,
+        },
+        geometry: {
+          type: "LineString",
+          coordinates: [
+            [offering.origin.long, offering.origin.lat],
+            [offering.destination.long, offering.destination.lat],
+          ],
+        },
+      };
+      offeringLineData.features.push(newLine);
+    }
   });
 
   map.loadImage(
