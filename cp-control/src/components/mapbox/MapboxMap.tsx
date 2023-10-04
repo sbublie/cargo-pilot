@@ -42,22 +42,6 @@ function MapboxMap() {
 
   // Initialize map when component mounts
   useEffect(() => {
-    if (
-      !trips ||
-      !offerings ||
-      !boundaries ||
-      trips.length === 0 ||
-      offerings.length === 0 ||
-      boundaries.features.length === 0
-    ) {
-      // If any of the data is not available, set loading to true
-      setIsLoading(true);
-      return;
-    }
-
-    // All data is available, set loading to false
-    setIsLoading(false);
-
     if (mapContainerRef.current) {
       const mapInstance = new mapboxgl.Map({
         container: mapContainerRef.current,
@@ -68,6 +52,7 @@ function MapboxMap() {
       });
 
       mapInstance.on("load", () => {
+        console.log("map loaded");
         setupMapFeatures(mapInstance, trips, offerings, boundaries);
 
         // technique based on https://jsfiddle.net/2mws8y3q/
@@ -113,8 +98,14 @@ function MapboxMap() {
         };
 
         animateDashArray(0);
-
         setMap(mapInstance);
+        if (
+          offerings.length > 0 &&
+          trips.length > 0 &&
+          boundaries.features.length > 0
+        ) {
+          setIsLoading(false);
+        }
       });
 
       // Clean up on unmount
@@ -171,22 +162,30 @@ function MapboxMap() {
     }
   }, [map, settings]);
 
-  if (isLoading) {
+  if (false) {
     console.log("load state");
     return (
-      <Container fluid className="d-flex align-items-center justify-content-center" style={{ height: '100vh' }}>
-    <Row>
-        <Col className="d-flex justify-content-center">
-            <Spinner className="m-3" animation="border" role="status" style={{ width: '3rem', height: '3rem' }}>
-                <span className="visually-hidden">Loading...</span>
+      <Container
+        fluid
+        className="d-flex align-items-center justify-content-center"
+        style={{ height: "100vh" }}
+      >
+        <Row>
+          <Col className="d-flex justify-content-center">
+            <Spinner
+              className="m-3"
+              animation="border"
+              role="status"
+              style={{ width: "3rem", height: "3rem" }}
+            >
+              <span className="visually-hidden">Loading...</span>
             </Spinner>
-            
-        </Col>
-    </Row>
-    <Row>
-      <h3>Fetching data...</h3>
-    </Row>
-</Container>
+          </Col>
+        </Row>
+        <Row>
+          <h3>Fetching data...</h3>
+        </Row>
+      </Container>
     );
   }
 
@@ -228,6 +227,38 @@ function MapboxMap() {
         </Row>
       </Container>
       <div className="map-container" ref={mapContainerRef} />
+
+      {/* Overlay the spinner if data is still loading */}
+      {isLoading && (
+        <Container
+          fluid
+          className="d-flex align-items-center justify-content-center position-absolute"
+          style={{
+            top: 60,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 10,
+            background: "rgba(255,255,255,255)",
+          }}
+        >
+          <Row>
+            <Col className="d-flex justify-content-center">
+              <Spinner
+                className="m-3"
+                animation="border"
+                role="status"
+                style={{ width: "3rem", height: "3rem" }}
+              >
+                <span className="visually-hidden">Loading...</span>
+              </Spinner>
+            </Col>
+          </Row>
+          <Row>
+            <h3>Fetching data...</h3>
+          </Row>
+        </Container>
+      )}
     </>
   );
 }

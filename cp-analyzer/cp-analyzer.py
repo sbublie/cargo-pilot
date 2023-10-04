@@ -21,10 +21,8 @@ def process_offerings_data():
 
 @app.route('/statistics', methods=['GET'])
 def get_statistics():
-    
     return StatisticsEngine().get_statistics()
     
-
 @app.route('/cluster', methods=['GET'])
 def cluster_locations_from_db():
     ClusterHandler().cluster_locations_from_db()
