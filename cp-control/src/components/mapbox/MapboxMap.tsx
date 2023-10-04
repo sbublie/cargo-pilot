@@ -55,49 +55,6 @@ function MapboxMap() {
         console.log("map loaded");
         setupMapFeatures(mapInstance, trips, offerings, boundaries);
 
-        // technique based on https://jsfiddle.net/2mws8y3q/
-        // an array of valid line-dasharray values, specifying the lengths of the alternating dashes and gaps that form the dash pattern
-
-        const dashArraySequence = [
-          [0, 4, 3],
-          [0.5, 4, 2.5],
-          [1, 4, 2],
-          [1.5, 4, 1.5],
-          [2, 4, 1],
-          [2.5, 4, 0.5],
-          [3, 4, 0],
-          [0, 0.5, 3, 3.5],
-          [0, 1, 3, 3],
-          [0, 1.5, 3, 2.5],
-          [0, 2, 3, 2],
-          [0, 2.5, 3, 1.5],
-          [0, 3, 3, 1],
-          [0, 3.5, 3, 0.5],
-        ];
-
-        let step = 0;
-
-        const animateDashArray = (timestamp: number) => {
-          // Update line-dasharray using the next value in dashArraySequence. The
-          // divisor in the expression `timestamp / 50` controls the animation speed.
-          const newStep = Math.floor(
-            (timestamp / 50) % dashArraySequence.length
-          );
-
-          if (newStep !== step) {
-            mapInstance.setPaintProperty(
-              "line-dashed",
-              "line-dasharray",
-              dashArraySequence[step]
-            );
-            step = newStep;
-          }
-
-          // Request the next frame of the animation.
-          requestAnimationFrame(animateDashArray);
-        };
-
-        animateDashArray(0);
         setMap(mapInstance);
         if (
           offerings.length > 0 &&
@@ -161,33 +118,6 @@ function MapboxMap() {
       }
     }
   }, [map, settings]);
-
-  if (false) {
-    console.log("load state");
-    return (
-      <Container
-        fluid
-        className="d-flex align-items-center justify-content-center"
-        style={{ height: "100vh" }}
-      >
-        <Row>
-          <Col className="d-flex justify-content-center">
-            <Spinner
-              className="m-3"
-              animation="border"
-              role="status"
-              style={{ width: "3rem", height: "3rem" }}
-            >
-              <span className="visually-hidden">Loading...</span>
-            </Spinner>
-          </Col>
-        </Row>
-        <Row>
-          <h3>Fetching data...</h3>
-        </Row>
-      </Container>
-    );
-  }
 
   console.log("load normal");
   return (
