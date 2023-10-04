@@ -31,6 +31,7 @@ if (process.env.ENABLE_HTTPS === "true") {
 // Configure proxy for API access
 app.use("/api/db", proxy("http://cp-db:5000"));
 app.use("/api/analyzer", proxy("http://cp-analyzer:5000"));
+app.use("/map", proxy("http://cp-control:80/map"));
 app.use("/", proxy("http://cp-control:80"));
 
 // Create and start both http and https server to handle all incoming traffic

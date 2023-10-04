@@ -68,9 +68,9 @@ export const setupMapFeatures = (
     cityCodes[zipCode] = (cityCodes[zipCode] || 0) + 1;
   };
 
-  trips.forEach((trip, i) => {
+  trips.forEach((trip) => {
 
-    if (i < markerLimit) {
+    //if (i < markerLimit) {
 
     const origin_marker: Feature<Point> = {
       type: "Feature",
@@ -115,7 +115,7 @@ export const setupMapFeatures = (
       },
     };
     tripLineData.features.push(newLine);
-  }
+  //}
   });
 
   offerings.forEach((offering, i) => {
