@@ -42,6 +42,7 @@ export const getTripsGeoJson = (trips: Trip[]) => {
         city: trip.origin.city,
         source: trip.source,
         timestamp: trip.origin.timestamp,
+        load_percentage: trip.load_percentage
       },
       geometry: {
         type: "Point",
@@ -58,6 +59,7 @@ export const getTripsGeoJson = (trips: Trip[]) => {
         id: trip.destination.id,
         source: trip.source,
         timestamp: trip.destination.timestamp,
+        load_percentage: trip.load_percentage
       },
       geometry: {
         type: "Point",
@@ -103,7 +105,7 @@ export const addTripsToMap = (map: MapboxMap, trips: FeatureCollection) => {
         // Assert that geometry is of a type that has coordinates
         const geometry =
           feature.geometry as mapboxgl.MapboxGeoJSONFeature["geometry"];
-        const description = `<b><h7>Location #${feature.properties?.id}</h7></b><br/>Source: ${feature.properties?.source}<br/>Time: ${dateString}`;
+        const description = `<b><h7>Location #${feature.properties?.id}</h7></b><br/>Type: ${feature.properties?.type}<br/>Source: ${feature.properties?.source}<br/>Time: ${dateString}<br/>Load: ${feature.properties?.load_percentage}%`;
 
         if (
           geometry.type !== "GeometryCollection" &&
@@ -217,7 +219,7 @@ export function addTripClusterToMap(map: MapboxMap, trips: FeatureCollection) {
         // Assert that geometry is of a type that has coordinates
         const geometry =
           feature.geometry as mapboxgl.MapboxGeoJSONFeature["geometry"];
-        const description = `<b><h7>Location #${feature.properties?.id}</h7></b><br/>Source: ${feature.properties?.source}<br/>Time: ${dateString}`;
+        const description = `<b><h7>Location #${feature.properties?.id}</h7></b><br/>Source: ${feature.properties?.source}<br/>Time: ${dateString}<br/>Load: ${feature.properties?.load_percentage}`;
 
         if (
           geometry.type !== "GeometryCollection" &&

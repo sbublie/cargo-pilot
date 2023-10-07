@@ -42,6 +42,8 @@ export const getOfferingsGeoJson = (offerings: Offering[]) => {
         city: offering.origin.city,
         source: offering.source,
         timestamp: offering.origin.timestamp,
+        load_meter: offering.load_meter,
+        load_weight: offering.load_weight
       },
       geometry: {
         type: "Point",
@@ -58,6 +60,8 @@ export const getOfferingsGeoJson = (offerings: Offering[]) => {
         id: offering.destination.id,
         source: offering.source,
         timestamp: offering.destination.timestamp,
+        load_meter: offering.load_meter,
+        load_weight: offering.load_weight
       },
       geometry: {
         type: "Point",
@@ -88,12 +92,58 @@ export const addOfferingsToMap = (
 
     map.addLayer({
       id: "offering_markers",
-      type: "symbol",
+      type: "circle",
       source: "offering_marker_data",
-      layout: {
-        "icon-image": "custom-marker",
-        "icon-offset": [0, -20],
+      paint: {
+        "circle-color": ["get", "color"],
+        "circle-radius": 10,
+        "circle-stroke-width": 1,
+        "circle-stroke-color": "#fff",
       },
+    });
+
+    map.on("click", "offering_markers", (e) => {
+      const feature = e.features?.[0];
+      if (feature) {
+        const dateString = new Date(
+          feature.properties?.timestamp * 1000
+        ).toLocaleString("de-DE");
+
+        // Assert that geometry is of a type that has coordinates
+        const geometry =
+          feature.geometry as mapboxgl.MapboxGeoJSONFeature["geometry"];
+        const description = `<b><h7>Location #${feature.properties?.id}</h7></b><br/>Type: ${feature.properties?.type}<br/>Source: ${feature.properties?.source}<br/>Time: ${dateString}<br/>Load Meter: ${feature.properties?.load_meter}%<br/>Load Weight: ${feature.properties?.load_weight}kg`;
+
+        if (
+          geometry.type !== "GeometryCollection" &&
+          geometry.coordinates &&
+          description
+        ) {
+          if (geometry.type === "Point") {
+            let coordinates = geometry.coordinates.slice() as [number, number];
+
+            while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+              coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+            }
+
+            new mapboxgl.Popup()
+              .setLngLat(coordinates)
+              .setHTML(description)
+              .addTo(map);
+          } else {
+            console.error("Geometry type is not a Point");
+          }
+        } else {
+          console.error("Feature geometry or properties are undefined");
+        }
+      }
+    });
+
+    map.on("mouseenter", "offering_markers", () => {
+      map.getCanvas().style.cursor = "pointer";
+    });
+    map.on("mouseleave", "offering_markers", () => {
+      map.getCanvas().style.cursor = "";
     });
 
     map.setLayoutProperty("offering_markers", "visibility", "none");
