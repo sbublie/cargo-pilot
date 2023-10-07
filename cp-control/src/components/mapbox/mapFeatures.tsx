@@ -20,12 +20,8 @@ export function addControlsToMap(map: MapboxMap) {
 export function setVisibleMapLayers(map: MapboxMap, settings: Settings) {
   const allLayers = [
     "germany_overlay",
-    "offering_clusters",
-    "offering_cluster_count",
-    "unclustered_offering",
-    "trip_clusters",
-    "trip_cluster_count",
-    "unclustered_trip",
+    "offering_markers",
+    "trip_markers"
   ];
 
   // Check if all layers exist on the map
@@ -33,12 +29,10 @@ export function setVisibleMapLayers(map: MapboxMap, settings: Settings) {
   if (allLayersSet) {
     const layersByMode = {
       offering: [
-        "offering_clusters",
-        "offering_cluster_count",
-        "unclustered_offering",
+        "offering_markers",
       ],
       cluster: ["germany_overlay"],
-      trip: ["trip_clusters", "trip_cluster_count", "unclustered_trip"],
+      trip: ["trip_markers"],
       match: ["trip_clusters", "trip_cluster_count", "unclustered_trip"],
     };
 

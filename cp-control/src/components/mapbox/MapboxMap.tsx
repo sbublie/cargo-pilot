@@ -10,10 +10,10 @@ import {
   addControlsToMap,
   setVisibleMapLayers,
 } from "./mapFeatures";
-import { getTripsGeoJson, addTripClusterToMap } from "./tripHandler";
+import { getTripsGeoJson, addTripsToMap } from "./tripHandler";
 import {
   getOfferingsGeoJson,
-  addOfferingClusterToMap,
+  addOfferingsToMap,
 } from "./offeringsHandler";
 import {
   addCityBoundariesToMap,
@@ -80,10 +80,10 @@ function MapboxMap() {
   useEffect(() => {
     if (map) {
       const offeringsGeoJson = getOfferingsGeoJson(offerings);
-      addOfferingClusterToMap(map, offeringsGeoJson);
+      addOfferingsToMap(map, offeringsGeoJson);
 
       const tripsGeoJson = getTripsGeoJson(trips);
-      addTripClusterToMap(map, tripsGeoJson);
+      addTripsToMap(map, tripsGeoJson);
 
       setCityBoundariesGeoJson(boundaries, offerings);
       addCityBoundariesToMap(map, boundaries);
