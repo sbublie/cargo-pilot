@@ -1,19 +1,14 @@
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 import Form from "react-bootstrap/Form";
-
 import { useState, ChangeEvent, FC } from 'react';
+
+import { Settings } from "./MapboxMap";
 
 interface MapSettingsModalProps {
   show: boolean;
   onHide: () => void;
   onApplySettings: (settings: Settings) => void;
-}
-
-interface Settings {
-  mapMode: "cluster" | "offering" | "trip" | "match";
-  dataSource: "db" | "transics";
-  animateRoutes: boolean;
 }
 
 const MapSettingsModal: FC<MapSettingsModalProps> = ({ show, onHide, onApplySettings }) => {
@@ -25,9 +20,10 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({ show, onHide, onApplySett
 
   const handleMapModeChange = (event: ChangeEvent<HTMLInputElement>) => {
     const mapModes: Record<string, Settings['mapMode']> = {
-      cluster: "cluster",
+      activity_cluster: "activity_cluster",
       offering: "offering",
       trip: "trip",
+      cluster: "cluster",
       match: "match",
     };
     const newMapMode = mapModes[event.target.id];
@@ -78,21 +74,28 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({ show, onHide, onApplySett
             <Form.Check
               type="radio"
               id="cluster"
-              label="3D-Cluster Mode"
+              label="All Locations + Clusters"
               checked={settings.mapMode === "cluster"}
               onChange={handleMapModeChange}
             />
             <Form.Check
               type="radio"
+              id="activity_cluster"
+              label="3D-Cluster"
+              checked={settings.mapMode === "activity_cluster"}
+              onChange={handleMapModeChange}
+            />
+            <Form.Check
+              type="radio"
               id="offering"
-              label="Offering Mode"
+              label="Offering Locations"
               checked={settings.mapMode === "offering"}
               onChange={handleMapModeChange}
             />
             <Form.Check
               type="radio"
               id="trip"
-              label="Trip Mode"
+              label="Trip Locations"
               checked={settings.mapMode === "trip"}
               onChange={handleMapModeChange}
             />
@@ -128,6 +131,7 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({ show, onHide, onApplySett
           <div key="Form3" className="mb-3">
             <h5>Styling Options</h5>
             <Form.Check
+              disabled
               type="checkbox"
               id="animateRoutes"
               label="Animate Routes"

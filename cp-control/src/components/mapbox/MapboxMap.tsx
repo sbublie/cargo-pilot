@@ -18,6 +18,8 @@ import {
 import {
   addCityBoundariesToMap,
   setCityBoundariesGeoJson,
+  getClusterGeoJson,
+  addClusterToMap
 } from "./clusterHandler";
 
 import "./mapbox_style.css";
@@ -27,7 +29,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_API_KEY;
 
 export interface Settings {
-  mapMode: "cluster" | "offering" | "trip" | "match";
+  mapMode: "activity_cluster" | "cluster" | "offering" | "trip" | "match";
   dataSource: "db" | "transics";
   animateRoutes: boolean;
 }
@@ -47,7 +49,7 @@ function MapboxMap() {
   const lat = 47.66559693227496;
   const zoom = 9;
 
-  const { offerings, trips, boundaries } = useOfferings();
+  const { offerings, trips, clusters, boundaries } = useOfferings();
 
   const handleCloseSettingsModal = () => setShowSettingsModal(false);
   const handleShowSettingsModal = () => setShowSettingsModal(true);
@@ -84,13 +86,17 @@ function MapboxMap() {
 
       const tripsGeoJson = getTripsGeoJson(trips);
       addTripsToMap(map, tripsGeoJson);
+      
+      const clustersGeoJson = getClusterGeoJson(clusters)
+      addClusterToMap(map, clustersGeoJson)
 
       setCityBoundariesGeoJson(boundaries, offerings);
       addCityBoundariesToMap(map, boundaries);
 
       setVisibleMapLayers(map, settings);
     }
-  }, [map, offerings, trips, boundaries, settings]);
+  }, [map, offerings, trips, clusters, boundaries, settings]);
+
 
   const applySettings = (settings: Settings) => {
     setSettings(settings);

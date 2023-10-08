@@ -21,19 +21,23 @@ export function setVisibleMapLayers(map: MapboxMap, settings: Settings) {
   const allLayers = [
     "germany_overlay",
     "offering_markers",
-    "trip_markers"
+    "trip_markers",
+    "cluster",
+    "cluster_count"
   ];
 
   // Check if all layers exist on the map
   const allLayersSet = allLayers.every((layer) => map.getLayer(layer));
+  
   if (allLayersSet) {
     const layersByMode = {
       offering: [
         "offering_markers",
       ],
-      cluster: ["germany_overlay"],
+      activity_cluster: ["germany_overlay"],
       trip: ["trip_markers"],
-      match: ["trip_clusters", "trip_cluster_count", "unclustered_trip"],
+      cluster: ["cluster", "cluster_count", "offering_markers", "trip_markers"],
+      match: ["cluster"],
     };
 
     const visibleLayers = layersByMode[settings.mapMode] || [];

@@ -74,9 +74,20 @@ async function deleteCluster(req, res) {
   }
 }
 
+async function deleteAllClusters(req, res) {
+  try {
+    await Cluster.destroy({ where: {} });  // This deletes all clusters
+    res.json({ message: "All clusters deleted successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
 module.exports = {
   getAllClusters,
   addCluster,
   getCluster,
   deleteCluster,
+  deleteAllClusters
 };

@@ -8,7 +8,7 @@ from cluster import Cluster
 
 
 class ClusterHandler:
-    def __init__(self, eps=0.1, min_samples=2) -> None:
+    def __init__(self, eps=0.01, min_samples=5) -> None:
         self.eps = eps
         self.min_samples = min_samples
         self.database_handler = DatabaseHandler()
@@ -24,15 +24,21 @@ class ClusterHandler:
 
         cluster_labels = self.__detect_cluster(lat_long_list)
         unique_clusters = set(cluster_labels)
-        
+
         clusters = []
+        noise_cluster_id = max(cluster_labels) + 1  # Initial value for new noise cluster ID
+
         for cluster_id in unique_clusters:
-            if cluster_id == -1:  # noise points in DBSCAN are labeled as -1
-                continue
 
             # Extracting the locations of the current cluster
             cluster_points = np.array(lat_long_list)[np.array(cluster_labels) == cluster_id]
-            
+
+            if cluster_id == -1:  # noise points in DBSCAN are labeled as -1
+                for point in cluster_points:
+                    #clusters.append(Cluster(center_lat=point[0], center_long=point[1], location_ids=[locations[i].id for i, label in enumerate(cluster_labels) if label == cluster_id]))
+                    noise_cluster_id += 1
+                continue
+
             # Calculating the centroid (mean) of the cluster
             centroid = np.mean(cluster_points, axis=0)
 
