@@ -5,6 +5,7 @@ import json
 
 @dataclass
 class Location:
+    id: Optional[float] = None
     lat: Optional[float] = None
     long: Optional[float] = None
     street: Optional[str] = None
@@ -16,6 +17,9 @@ class Location:
 
     def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__)
+    
+    def get_lat_long_list(self):
+        return [self.lat, self.long]
 
     
 @dataclass
