@@ -63,7 +63,7 @@ function MapboxMap() {
         style: "mapbox://styles/mapbox/streets-v12",
         center: [lng, lat],
         zoom: zoom,
-        pitch: 50,
+        pitch: 0,
       });
 
       mapInstance.on("load", () => {
