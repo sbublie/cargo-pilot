@@ -15,6 +15,8 @@ interface OfferingsContextProps {
   setNewTrips: (trips: any[]) => void;
   offerings: any[]; 
   setNewOfferings: (offerings: any[]) => void;
+  clusters: any[];
+  setNewClusters:(clusters: any[]) => void;
   stats: Stats;
   setNewStats: (stats: Stats) => void;
   boundaries: FeatureCollection<Polygon>;
@@ -38,6 +40,7 @@ interface OfferingsProviderProps {
 export function OfferingsProvider({ children }: OfferingsProviderProps) {
   const [trips, setTrips] = useState<any[]>([]);
   const [offerings, setOfferings] = useState<any[]>([]); 
+  const [clusters, setClusters] = useState<any[]>([]); 
   const [stats, setStats] = useState<Stats>({});
   const [boundaries, setBoundaries] = useState<FeatureCollection<Polygon>>({
     type: "FeatureCollection",
@@ -50,6 +53,10 @@ export function OfferingsProvider({ children }: OfferingsProviderProps) {
 
   function setNewOfferings(newOfferings: any[]) { 
     setOfferings(newOfferings);
+  }
+
+  function setNewClusters(newClusters: any[]) { 
+    setClusters(newClusters);
   }
 
   function setNewStats(newStats: Stats) {
@@ -65,6 +72,8 @@ export function OfferingsProvider({ children }: OfferingsProviderProps) {
     setNewTrips,
     offerings,
     setNewOfferings,
+    clusters,
+    setNewClusters,
     stats,
     setNewStats,
     boundaries,

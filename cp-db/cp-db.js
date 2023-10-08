@@ -19,21 +19,25 @@ const geoController = require("./geoController")
 app.get("/locations", locationController.getAllLocations);
 app.post("/locations", locationController.addLocation);
 app.get("/locations/:id", locationController.getLocation);
+//app.delete("/locations", clusterController.deleteAllLocations);
 app.delete("/locations/:id", locationController.deleteLocation);
 
 app.get("/clusters", clusterController.getAllClusters);
 app.post("/clusters", clusterController.addCluster);
 app.get("/clusters/:id", clusterController.getCluster);
+app.delete("/clusters", clusterController.deleteAllClusters);
 app.delete("/clusters/:id", clusterController.deleteCluster);
 
 app.get("/trips", tripController.getAllTrips);
 app.post("/trips", tripController.addTrip);
 app.get("/trips/:id", tripController.getTrip);
+//app.delete("/trips", clusterController.deleteAllTrips);
 app.delete("/trips/:id", tripController.deleteTrip);
 
 app.get("/offerings", offeringController.getAllOfferings);
 app.post("/offerings", offeringController.addOffering);
 app.get("/offerings/:id", offeringController.getOffering);
+//app.delete("/offerings", clusterController.deleteAllOfferings);
 app.delete("/offerings/:id", offeringController.deleteOffering);
 
 app.get("/trip-pattern", tripPatternController.getAllTripPatterns);

@@ -1,4 +1,4 @@
-import { FeatureCollection } from "geojson";
+import { FeatureCollection, Point, Feature } from "geojson";
 import { Map as MapboxMap } from "mapbox-gl";
 
 interface Offering {
@@ -20,6 +20,13 @@ interface Offering {
     long: number;
     lat: number;
   };
+}
+
+interface Cluster {
+  id: number;
+  center_lat: number;
+  center_long: number;
+  location_ids: [number];
 }
 
 const heightFactor = 500;
@@ -57,6 +64,8 @@ export function setCityBoundariesGeoJson(
     boundaries.features = newFeatures;
   }
 }
+
+
 
 export function addCityBoundariesToMap(
   map: MapboxMap,
@@ -102,5 +111,67 @@ export function addCityBoundariesToMap(
     map.setLayoutProperty("germany_overlay", "visibility", "none");
   } else {
     source.setData(boundaries);
+  }
+}
+
+
+export function getClusterGeoJson(clusters: Cluster[]) {
+
+  const clusterMarkerData: FeatureCollection<Point> = {
+    type: "FeatureCollection",
+    features: [],
+  };
+
+  clusters.forEach((cluster) => {
+    const clusterMarker: Feature<Point> = {
+      type: "Feature",
+      properties: {
+        numLocations: cluster.location_ids.length,
+      },
+      geometry: {
+        type: "Point",
+        coordinates: [cluster.center_long, cluster.center_lat],
+      },
+    }
+
+    clusterMarkerData.features.push(clusterMarker)
+  })
+  return clusterMarkerData
+}
+
+export function addClusterToMap(map: MapboxMap, clusters: FeatureCollection) {
+  const source = map.getSource(
+    "cluster_data"
+  ) as mapboxgl.GeoJSONSource;
+
+  if (!source) {
+    map.addSource(`cluster_data`, {
+      type: "geojson",
+      data: clusters,
+    });
+
+    map.addLayer({
+      id: "cluster",
+      type: "circle",
+      source: "cluster_data",
+      paint: {
+        "circle-color": "#3399ff",
+        "circle-radius": 20,
+        "circle-stroke-width": 1,
+        "circle-stroke-color": "#fff",
+      },
+    });
+
+    map.addLayer({
+      id: 'cluster_count',
+      type: 'symbol',
+      source: 'cluster_data',
+      layout: {
+      'text-field': ['get', 'numLocations'],
+      'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+      'text-size': 12
+      }
+      });
+
   }
 }

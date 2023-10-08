@@ -2,8 +2,13 @@ import { useEffect } from "react";
 import { useOfferings } from "../contexts/OfferingsContext";
 
 export function ApiHandler() {
-  const { setNewTrips, setNewOfferings, setNewStats, setNewBoundaries } =
-    useOfferings();
+  const {
+    setNewTrips,
+    setNewOfferings,
+    setNewClusters,
+    setNewStats,
+    setNewBoundaries,
+  } = useOfferings();
 
   useEffect(() => {
     const fetchTrips = async () => {
@@ -25,6 +30,18 @@ export function ApiHandler() {
         );
         const jsonData = await response.json();
         setNewOfferings(jsonData);
+      } catch (error) {
+        console.log("Error:", error);
+      }
+    };
+
+    const fetchClusters = async () => {
+      try {
+        const response = await fetch(
+          import.meta.env.VITE_BASE_URL + "api/db/clusters"
+        );
+        const jsonData = await response.json();
+        setNewClusters(jsonData);
       } catch (error) {
         console.log("Error:", error);
       }
@@ -58,6 +75,7 @@ export function ApiHandler() {
 
     fetchTrips();
     fetchStats();
+    fetchClusters();
     fetchOfferings();
     fetchBoundaries();
   }, []); // Empty dependency array ensures this effect runs only once
