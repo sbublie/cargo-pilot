@@ -2,10 +2,14 @@ import json
 import math
 
 from database_handler import DatabaseHandler
-from models import Trip, Location
+from models import Trip, Location, Offering
 
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+from typing import List
+
+MAX_WEIGHT_PER_TRIP = 25000 #kg
+MAX_LOAD_LENGTH_PER_TRIP = 13.6 #m
 
 class TripHandler:
     def __init__(self) -> None:
@@ -45,84 +49,88 @@ class TripHandler:
 
     def process_offering_data(self, json_data) -> None:
 
+        # -- Merge single freight entries to complete truck loads --
+        all_offerings:List[Offering] = []
+
+        for offering in json_data:
+            offering_dict = json.loads(offering)
+            new_offering = Offering(**offering_dict)
+            all_offerings.append(new_offering)
+        
+        # Find multiple cargo pieces on one route and day and merge them in this list
+        merged_offerings:List[Offering] = []
+           
+        for offering in all_offerings:
+            
+            merged = False
+            # Iterate over already merged items
+            for merged_offering in merged_offerings:
+                # If a entry with same timestamp, origin and destination is already in the merged list
+                if (offering.origin.timestamp == merged_offering.origin.timestamp and 
+                    offering.origin.zip_code == merged_offering.origin.zip_code and 
+                    offering.destination.zip_code == merged_offering.destination.zip_code):
+
+                    # If there is still cargo space (load meter and weight) in the merged entry add the values 
+                    if (merged_offering.load.loading_meter + offering.load.loading_meter < MAX_LOAD_LENGTH_PER_TRIP and 
+                        merged_offering.load.weight + offering.load.weight < MAX_LOAD_LENGTH_PER_TRIP):
+                        merged_offering.load.loading_meter += offering.load.loading_meter
+                        merged_offering.load.weight += offering.load.weight
+                        merged = True
+                        break  # Break out of the inner loop if a merge happens
+
+            # Just add the entry if there is nothing to be merged
+            if not merged:
+                merged_offerings.append(offering)
+
         # TODO: Implement Europe postal codes
         with open('german-city-codes.json', "r") as infile:
             city_codes = json.load(infile)
 
-        for offering in json_data:
-            offering_dict = json.loads(offering)
+        # Iterate over the merges trip entries to send them all to the database
+        for offering in merged_offerings:
+            # -- Get geo locations from zip code data
+            if offering.origin.lat is None and offering.origin.long is None:
 
-            origin_lat = offering_dict['origin']['lat']
-            origin_long = offering_dict['origin']['long']
-
-            if origin_lat is None and origin_long is None:
-
-                origin_post_code = offering_dict['origin']['zip_code']
-
-                if origin_post_code is not None:
-
-                    location = city_codes.get(str(origin_post_code))
+                if offering.origin.zip_code is not None:
+                    # Try to look up the coordinates in the city_codes dictionary
+                    location = city_codes.get(str(offering.origin.zip_code))
                     if location:
-                        origin_lat = location["lat"]
-                        origin_long = location["long"]
+                        offering.origin.lat = location["lat"]
+                        offering.origin.long = location["long"]
                     else:
                         # Skip entry if no postal code match was found
                         continue
+            offering.origin.type = "origin"
 
-            origin_location = Location(
-                lat=origin_lat, long=origin_long, street=offering_dict['origin']['street'],
-                zip_code=origin_post_code,
-                city=offering_dict['origin']['city'],
-                country=offering_dict['origin']['country'],
-                timestamp=offering_dict['origin']['timestamp'],
-                type="origin")
+            if offering.destination.lat is None and offering.destination.long is None:
 
-            destination_lat = offering_dict['destination']['lat']
-            destination_long = offering_dict['destination']['long']
-
-            # Check if destination_lat and destination_long are None
-            if destination_lat is None and destination_long is None:
-                # Get the postal code from the offering_dict
-                destination_post_code = offering_dict['destination']['zip_code']
-
-                # Check if destination_post_code is not None
-                if destination_post_code is not None:
+                if offering.destination.zip_code is not None:
                     # Try to look up the coordinates in the city_codes dictionary
-                    location = city_codes.get(str(destination_post_code))
+                    location = city_codes.get(str(offering.destination.zip_code))
                     if location:
-                        destination_lat = location["lat"]
-                        destination_long = location["long"]
+                        offering.destination.lat = location["lat"]
+                        offering.destination.long = location["long"]
                     else:
+                        # Skip entry if no postal code match was found
                         continue
+            offering.destination.type = "destination"
 
-            destination_location = Location(
-                lat=destination_lat, long=destination_long, street=offering_dict['destination']['street'],
-                zip_code=destination_post_code,
-                city=offering_dict['destination']['city'],
-                country=offering_dict['destination']['country'],
-                timestamp=offering_dict['destination']['timestamp'],
-                type="destination")
-
-            origin_id = self.database_handler.add_location(origin_location)
-            destination_id = self.database_handler.add_location(destination_location)
-
-            load_meter = offering_dict['load']['loading_meter']
+            origin_id = self.database_handler.add_location(offering.origin)
+            destination_id = self.database_handler.add_location(offering.destination)
+            
+            load_meter = offering.load.loading_meter
             if not load_meter or math.isnan(load_meter):
                 load_meter = 0.0
 
-            
-            customer_id = offering_dict.get('customer_id')
-            vehicle_id = offering_dict.get('vehicle_id')
-
-            offering = {
-                "customer_id": customer_id,
+            new_offering = {
+                "customer_id": offering.customer_id,
                 "destination_id": destination_id,
                 "origin_id": origin_id,
-                "source": offering_dict['source'],
-                "vehicle_id": vehicle_id,
-                "load_percentage": offering_dict['load']['capacity_percentage'],
+                "source": offering.source,
+                "vehicle_id": offering.vehicle_id,
+                "load_percentage": offering.load.capacity_percentage,
                 "load_meter": load_meter,
-                "load_weight": offering_dict['load']['weight']
+                "load_weight": offering.load.weight
             }
 
-            self.database_handler.add_offering(offering)
+            self.database_handler.add_offering(new_offering)

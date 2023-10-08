@@ -8,8 +8,8 @@ class DatabaseHandler:
     def __init__(self) -> None:
         self.BASE_URL = "http://cp-db:5000"
 
-    def add_location(self, location) -> int:
-        # Convert the Lcoation object to a dict and send it to the DB server
+    def add_location(self, location:Location) -> int:
+        # Convert the Location object to a dict and send it to the DB server
         location_dict = vars(location)
         response = requests.post(self.BASE_URL + "/locations",
                                  json=location_dict)
