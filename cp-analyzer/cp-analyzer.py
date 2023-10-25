@@ -2,6 +2,7 @@ from flask import Flask, request
 from trip_handler import TripHandler
 from cluster_handler import ClusterHandler
 from statistic_engine import StatisticsEngine
+from threading import Thread
 
 from flask_cors import CORS
 app = Flask(__name__)
@@ -25,8 +26,9 @@ def get_statistics():
     
 @app.route('/cluster', methods=['GET'])
 def cluster_locations_from_db():
-    ClusterHandler().cluster_locations_from_db()
-    return 'Clustering successful'
+    thread = Thread(target = ClusterHandler().cluster_locations_from_db)
+    thread.start()
+    return 'Clustering started'
 
 
 if __name__ == "__main__":
