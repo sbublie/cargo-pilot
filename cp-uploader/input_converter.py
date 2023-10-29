@@ -1,21 +1,21 @@
 import os
 import pandas as pd
-from trip import Trip, Waypoint, Load, Offering
+from models import Trip, Waypoint, Load, Offering, CargoOrder, Location, GeoLocation, AdminLocation, CargoItem
 from datetime import datetime
 from data_mapping import db_data_mapping, transics_data_mapping
 
 
 class InputConverter:
 
-    def convert_data_from_file(self, filename, source, data_type, instance) -> list:
+    def convert_data_from_file(self, filename, source, data_type) -> list:
         '''
         Process a given .csv, .geojson or .xlsc/.xls file and return the extracted data as list of Tour 
         '''
         df = self.__get_df_from_file(filename=filename)
 
-        if data_type == "Offerings":
-            return self.__get_offerings_from_df(df=df, source=source)
-        elif data_type == "Trips":
+        if data_type == "Cargo Orders":
+            return self.__get_orders_from_df(df=df, source=source)
+        elif data_type == "Past Trips":
             return self.__get_trips_from_df(df=df, source=source)
         else:
             raise ValueError("Unsupported data_type: {}".format(data_type))
@@ -40,7 +40,7 @@ class InputConverter:
             raise ValueError("Invalid file: {}".format(filename))
 
     def __get_trips_from_df(self, df, source):
-        tours = []
+        trips = []
         for index, row in df.iterrows():
 
             load = 0
@@ -56,7 +56,7 @@ class InputConverter:
             if isinstance(value, str):
                 value = value.replace(',', '.')
             origin_long = float(value)
-            
+
             origin_timestamp = self.__convert_timestamp(
                 row[transics_data_mapping['origin_timestamp']],
                 transics_data_mapping['origin_timestamp_pattern'])
@@ -77,42 +77,53 @@ class InputConverter:
                 transics_data_mapping['destination_timestamp_pattern'])
             destination = Waypoint(lat=destination_lat, long=destination_long, timestamp=destination_timestamp)
 
-            new_tour = Trip(type=0,
+            new_trip = Trip(type=0,
                             origin=origin,
                             destination=destination,
                             route_waypoints=[],
                             load=Load(capacity_percentage=load),
-                            source=source, 
+                            source=source,
                             vehicle_id=row[transics_data_mapping['vehicle_id']],
                             customer_id=row[transics_data_mapping['customer_id']])
 
-            tours.append(new_tour)
+            trips.append(new_trip)
 
-        return tours
+        return trips
 
-    def __get_offerings_from_df(self, df, source):
+    def __get_orders_from_df(self, df, source) -> list[CargoOrder]:
 
-        offerings = []
+        orders = []
         for index, row in df.iterrows():
-            origin = Waypoint(
-                zip_code=row[db_data_mapping['origin_postal_code']],
-                city=row[db_data_mapping['origin_city']],
-                country=row[db_data_mapping['origin_country_code']],
-                timestamp=self.__convert_timestamp(timestamp=row[db_data_mapping['origin_timestamp']],
-                                                   pattern=db_data_mapping['origin_timestamp_pattern']))
-            destination = Waypoint(
-                zip_code=row[db_data_mapping['destination_postal_code']],
-                city=row[db_data_mapping['destination_city']],
-                country=row[db_data_mapping['destination_country_code']],
-                timestamp=self.__convert_timestamp(timestamp=row[db_data_mapping['destination_timestamp']],
-                                                   pattern=db_data_mapping['destination_timestamp_pattern']))
-            load = Load(weight=row[db_data_mapping['weight']], loading_meter=row[db_data_mapping['loading_meter']])
 
-            offerings.append(
-                Offering(origin=origin, destination=destination, source=source, load=load)
-            )
+            origin = Location(
+                admin_location=AdminLocation(
+                    postal_code=row[db_data_mapping['origin_postal_code']],
+                    city=row[db_data_mapping['origin_city']],
+                    country=row[db_data_mapping['origin_country_code']],
+                ), timestamp=self.__convert_timestamp(
+                    timestamp=row[db_data_mapping['origin_timestamp']],
+                    pattern=db_data_mapping['origin_timestamp_pattern']))
 
-        return offerings
+            destination = Location(
+                admin_location=AdminLocation(
+                    postal_code=row[db_data_mapping['destination_postal_code']],
+                    city=row[db_data_mapping['destination_city']],
+                    country=row[db_data_mapping['destination_country_code']],
+                ), timestamp=self.__convert_timestamp(
+                    timestamp=row[db_data_mapping['destination_timestamp']],
+                    pattern=db_data_mapping['destination_timestamp_pattern']))
+
+            cargo_item = CargoItem(
+                weight=row[db_data_mapping['weight']],
+                loading_meter=row[db_data_mapping['loading_meter']],
+                load_carrier=False, load_carrier_nestable=False)
+
+            orders.append(CargoOrder(origin=origin,
+                                     destination=destination,
+                                     cargo_item=cargo_item,
+                                     data_source=source))
+
+        return orders
 
     def __convert_timestamp(self, timestamp, pattern):
 

@@ -1,4 +1,4 @@
-from models import Location, Trip, Cluster
+from models import Location, Trip, Cluster, CargoOrder
 import requests
 import json
 
@@ -57,3 +57,15 @@ class DatabaseHandler:
         for cluster in clusters:
             new_cluster = {"center_lat": cluster.center_lat, "center_long": cluster.center_long, "location_ids": cluster.location_ids}
             response = requests.post(self.BASE_URL + "/clusters", json=new_cluster)
+
+    def add_cargo_orders_to_db(self, cargo_orders: list[CargoOrder]):
+
+        url = self.BASE_URL + "/cargo-orders"
+        for cargo_order in cargo_orders:
+            
+            response = requests.post(url=url, json=json.loads(json.dumps(cargo_order, default=lambda o: o.__dict__)))
+        
+            if response.status_code == 201:
+                print(f"Cargo orders added to data base!")
+            else:
+                print(f"Failed to upload chunk! Status code: {response.status_code}")

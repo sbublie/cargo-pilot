@@ -2,7 +2,7 @@ import json
 import math
 
 from database_handler import DatabaseHandler
-from models import Trip, Location, Offering
+from models import Trip, Location, Offering, CargoOrder
 
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -46,6 +46,35 @@ class TripHandler:
                     "origin_id": trip_obj.origin_id, "source": trip_obj.source, "type": "base", "vehicle": trip_obj.vehicle_id, "load_percentage": trip_obj.load.capacity_percentage}
 
             self.database_handler.add_trip(new_trip)
+
+    def get_orders_from_json(self, json_data) -> List[CargoOrder]:
+        cargo_orders = []
+
+        with open('german-city-codes.json', "r") as infile:
+            city_codes = json.load(infile)
+
+        for cargo_order in json_data:
+            order_dict = json.loads(cargo_order)
+            new_order = CargoOrder(**order_dict)
+
+            # If there are no geo location information but a postal code is available
+            if new_order.origin.geo_location.lat is None and new_order.origin.geo_location.long is None and new_order.origin.admin_location.postal_code is not None:
+                origin_geo = city_codes.get(str(new_order.origin.admin_location.postal_code))
+                destination_geo = city_codes.get(str(new_order.destination.admin_location.postal_code))
+                if origin_geo and destination_geo:
+                    new_order.origin.geo_location.lat = origin_geo["lat"]
+                    new_order.origin.geo_location.long = origin_geo["long"]
+                    new_order.destination.geo_location.lat = destination_geo["lat"]
+                    new_order.destination.geo_location.long = destination_geo["long"]
+                else:
+                    # Skip entry if no postal code match was found
+                    continue
+
+            cargo_orders.append(new_order)
+
+        return cargo_orders
+
+
 
     def process_offering_data(self, json_data) -> None:
 

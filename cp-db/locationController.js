@@ -1,9 +1,9 @@
-const { Location } = require("./models");
+const { LocationOld } = require("./models");
 
 // Function to get all locations
 async function getAllLocations(req, res) {
   try {
-    const locations = await Location.findAll();
+    const locations = await LocationOld.findAll();
     res.json(locations);
   } catch (error) {
     console.error(error);
@@ -46,7 +46,7 @@ async function addLocation(req, res) {
       locationData.country = country
     }
 
-    const newLocation = await Location.create(locationData);
+    const newLocation = await LocationOld.create(locationData);
     res.status(201).json(newLocation);
   } catch (error) {
     console.log(error);
@@ -57,7 +57,7 @@ async function addLocation(req, res) {
 async function getLocation(req, res) {
   try {
     const locationId = req.params.id;
-    const location = await Location.findByPk(locationId);
+    const location = await LocationOld.findByPk(locationId);
 
     if (!location) {
       return res.status(404).json({ message: "Location not found" });
@@ -73,7 +73,7 @@ async function getLocation(req, res) {
 async function deleteLocation(req, res) {
   try {
     const locationId = req.params.id;
-    const location = await Location.findByPk(locationId);
+    const location = await LocationOld.findByPk(locationId);
 
     if (!location) {
       return res.status(404).json({ message: "Location not found" });

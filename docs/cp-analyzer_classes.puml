@@ -1,45 +1,85 @@
 @startuml
 
+skinparam linetype polyline
+skinparam linetype ortho
 
+class GeoLocation {
+    - lat: float
+    - long: float
+}
 
 class Location {
-    int id
-    float latitude
-    float longitude
+    - id: int
+    - timestamp: int
+    - geo_location: GeoLocation
+    - admin_location: AdminLocation
 }
 
-class Tour {
-    int id
-    int origin_location_id
-    int destination_location_id
-    int timestamp
-    float load
+class AdminLocation {
+    - street: string
+    - postal_code: int
+    - city: string
+    - country: string
 }
 
-class Cluster {
-    int id
-    string name
-    float center_lat
-    float center_long
-    list[location_id] locations
+class CargoItem {
+    - loading_meter: float
+    - weight: float
+    - load_carrier: bool
+    - load_carrier_nestable: bool
 }
 
-class ClusterRelation {
-    int id
-    int start_cluster_id
-    int end_cluster_id
+class CargoOrder {
+    - id: int
+    - origin: Location
+    - destination: Location
+    - cargo_item: CargoItem
+    - customer: string
+    - data_source: string
+    - route_locations: list<GeoLocation>
 }
 
-class TourPattern {
-
+class CompletedTrip {
+    - id: int
+    - origin: Location
+    - destination: Location
+    - load: CargoItem
+    - customer_id: int
+    - vehicle_id: int
+    - data_source: string
+    - route_locations: list<GeoLocation>
 }
 
-class Offering {
-
+class Vehicle {
+    - id: int
+    - type: string
+    - stackable: bool
+    - max_load_meter: float
+    - max_weight: float
 }
 
-class TourMatch {
-
+class TripSection {
+    - origin: Location
+    - destination: Location
+    - loaded_cargo: list<CargoItem>
 }
+
+class ProjectedTrip {
+    - id: int
+    - included_orders: list<CargoOrder>
+    - vehicle: Vehicle
+    - trip_sections: list<TripSection>
+}
+
+Location "1" --> "0..*" GeoLocation 
+Location --> AdminLocation 
+CargoOrder "1" --> "1" Location 
+CargoOrder "1" --> "1" Location 
+CargoOrder "1" --> "1" CargoItem 
+CargoOrder "0..*" --> "1" GeoLocation 
+CompletedTrip "1" --> "1" Location 
+CompletedTrip "1" --> "1" CargoItem 
+CompletedTrip "0..*" --> "1" GeoLocation 
+
 
 @enduml
