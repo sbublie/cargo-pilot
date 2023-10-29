@@ -79,26 +79,39 @@ CargoOrder.belongsTo(Location, {
 });
 
 
-/*
-
-const CompletedTrip = sequelize.define("CompletedTrip", {
-  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  customer_id: { type: DataTypes.INTEGER, allowNull: false },
-  vehicle_id: { type: DataTypes.INTEGER, allowNull: false },
-});
-
 const Vehicle = sequelize.define("Vehicle", {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   type: { type: DataTypes.STRING, allowNull: false },
   stackable: { type: DataTypes.BOOLEAN, allowNull: false },
   max_load_meter: { type: DataTypes.FLOAT, allowNull: false },
   max_weight: { type: DataTypes.FLOAT, allowNull: false },
+},
+{
+  underscored: true,
 });
 
-const TripSection = sequelize.define("TripSection", {});
+const CompletedTrip = sequelize.define("CompletedTrip", {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  customer: { type: DataTypes.STRING, allowNull: false },
+  data_source: { type: DataTypes.STRING, allowNull: false },
+},
+{
+  underscored: true,
+});
 
-const ProjectedTrip = sequelize.define("ProjectedTrip", {});
-*/
+CompletedTrip.belongsTo(Location, {
+  as: "destination",
+});
+CompletedTrip.belongsTo(Location, {
+  as: "origin",
+});
+CompletedTrip.belongsTo(CargoItem, {
+  as: "cargo_item",
+});
+CompletedTrip.belongsTo(Vehicle, {
+  as: "vehicle",
+});
+
 // ----
 
 const LocationOld = sequelize.define("LocationOld", {
@@ -212,4 +225,6 @@ module.exports = {
   AdminLocation,
   CargoItem,
   Location,
+  CompletedTrip,
+  Vehicle
 };

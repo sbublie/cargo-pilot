@@ -52,19 +52,6 @@ class CargoOrder:
         return json.dumps(self, default=lambda o: o.__dict__,
                         sort_keys=True, indent=4)
 
-
-@dataclass
-class CompletedTrip:
-    origin: Location
-    destination: Location
-    load: CargoItem
-    customer_id: int
-    vehicle_id: int
-    data_source: str
-    id: Optional[int] = None
-    route_locations: Optional[list[GeoLocation]] = None
-
-
 @dataclass
 class Vehicle:
     type: str
@@ -72,6 +59,19 @@ class Vehicle:
     max_load_meter: float
     max_weight: float
     id: Optional[int] = None
+
+@dataclass
+class CompletedTrip:
+
+    def __init__(self, origin, destination, cargo_item, customer, vehicle, data_source, id=None, route_locations=None):
+        self.origin = Location(**origin)
+        self.destination = Location(**destination)
+        self.cargo_item = CargoItem(**cargo_item)
+        self.customer = customer
+        self.vehicle = Vehicle(**vehicle)
+        self.data_source = data_source
+        self.id = id
+        self.route_locations = route_locations
 
 @dataclass
 class TripSection:

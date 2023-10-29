@@ -2,7 +2,7 @@ import json
 import math
 
 from database_handler import DatabaseHandler
-from models import Trip, Location, Offering, CargoOrder
+from models import Trip, Location, Offering, CargoOrder, CompletedTrip
 
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -15,37 +15,27 @@ class TripHandler:
     def __init__(self) -> None:
         self.database_handler = DatabaseHandler()
 
-    def process_trip_data(self, json_data) -> None:
+    def get_trips_from_json(self, json_data) -> List[CompletedTrip]:
+
+        trips = []
 
         for trip in json_data:
 
             trip_dict = json.loads(trip)
-            trip_obj = Trip(**trip_dict)
+            new_trip = CompletedTrip(**trip_dict)
 
             # TODO: Delete temp addition of one year
-            dt_object = datetime.fromtimestamp(trip_obj.origin.timestamp)
+            dt_object = datetime.fromtimestamp(new_trip.origin.timestamp)
             new_dt_object = dt_object + relativedelta(years=1)
-            origin_timestamp = int(new_dt_object.timestamp())
+            new_trip.origin.timestamp = int(new_dt_object.timestamp())
 
-            origin_location = Location(lat=trip_obj.origin.lat, long=trip_obj.origin.long, type="origin", timestamp=origin_timestamp)
-            origin_id = self.database_handler.add_location(origin_location)
-
-            # TODO: Delete temp addition of one year
-            dt_object = datetime.fromtimestamp(trip_obj.destination.timestamp)
+            dt_object = datetime.fromtimestamp(new_trip.destination.timestamp)
             new_dt_object = dt_object + relativedelta(years=1)
-            destination_timestamp = int(new_dt_object.timestamp())
+            new_trip.destination.timestamp = int(new_dt_object.timestamp())
 
-            destination_location = Location(lat=trip_obj.destination.lat, long=trip_obj.destination.long,
-                                            type="destination", timestamp=destination_timestamp)
-            destination_id = self.database_handler.add_location(destination_location)
-
-            trip_obj.origin_id = origin_id
-            trip_obj.destination_id = destination_id
-
-            new_trip = {"customer": trip_obj.customer_id, "destination_id": trip_obj.destination_id,
-                    "origin_id": trip_obj.origin_id, "source": trip_obj.source, "type": "base", "vehicle": trip_obj.vehicle_id, "load_percentage": trip_obj.load.capacity_percentage}
-
-            self.database_handler.add_trip(new_trip)
+            trips.append(new_trip)
+        
+        return trips
 
     def get_orders_from_json(self, json_data) -> List[CargoOrder]:
         cargo_orders = []

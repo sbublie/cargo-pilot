@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-from models import Trip, Waypoint, Load, Offering, CargoOrder, Location, GeoLocation, AdminLocation, CargoItem
+from models import Trip, Waypoint, Load, CargoOrder, Location, GeoLocation, AdminLocation, CargoItem, CompletedTrip, Vehicle
 from datetime import datetime
 from data_mapping import db_data_mapping, transics_data_mapping
 
@@ -43,9 +43,10 @@ class InputConverter:
         trips = []
         for index, row in df.iterrows():
 
-            load = 0
+            cargo_item = CargoItem(0, 0, False, False)
             if row[transics_data_mapping['vehicle_state']] == "LOADED":
-                load = 100
+                cargo_item.weight = 23936
+                cargo_item.loading_meter = 13.6
 
             value = row[transics_data_mapping['origin_lat']]
             if isinstance(value, str):
@@ -60,7 +61,6 @@ class InputConverter:
             origin_timestamp = self.__convert_timestamp(
                 row[transics_data_mapping['origin_timestamp']],
                 transics_data_mapping['origin_timestamp_pattern'])
-            origin = Waypoint(lat=origin_lat, long=origin_long, timestamp=origin_timestamp)
 
             value = row[transics_data_mapping['destination_lat']]
             if isinstance(value, str):
@@ -75,16 +75,13 @@ class InputConverter:
             destination_timestamp = self.__convert_timestamp(
                 row[transics_data_mapping['destination_timestamp']],
                 transics_data_mapping['destination_timestamp_pattern'])
-            destination = Waypoint(lat=destination_lat, long=destination_long, timestamp=destination_timestamp)
+        
+            origin_location = Location(geo_location=GeoLocation(lat=origin_lat, long=origin_long), timestamp=origin_timestamp)
+            destination_location = Location(geo_location=GeoLocation(lat=destination_lat, long=destination_long), timestamp=destination_timestamp)
 
-            new_trip = Trip(type=0,
-                            origin=origin,
-                            destination=destination,
-                            route_waypoints=[],
-                            load=Load(capacity_percentage=load),
-                            source=source,
-                            vehicle_id=row[transics_data_mapping['vehicle_id']],
-                            customer_id=row[transics_data_mapping['customer_id']])
+            vehicle = Vehicle(id=row[transics_data_mapping['vehicle_id']], type="default", max_load_meter=13.6, max_weight=23936, stackable=False)
+
+            new_trip = CompletedTrip(origin=origin_location, destination=destination_location, cargo_item=cargo_item, customer=str(row[transics_data_mapping['customer_id']]), vehicle=vehicle, data_source=source)
 
             trips.append(new_trip)
 

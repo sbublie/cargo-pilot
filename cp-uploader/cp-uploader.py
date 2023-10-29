@@ -43,6 +43,7 @@ def main():
             filename=file_path,
             source=answers["source"],
             data_type=answers["data_type"])
+        
         APIHandler().upload_data(data=processed_data, data_type=answers["data_type"], instance=answers["instance"])
 
 

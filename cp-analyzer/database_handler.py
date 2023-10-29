@@ -1,4 +1,4 @@
-from models import Location, Trip, Cluster, CargoOrder
+from models import Location, CompletedTrip, Cluster, CargoOrder
 import requests
 import json
 
@@ -44,14 +44,14 @@ class DatabaseHandler:
         response = requests.get(self.BASE_URL + "/offerings")
         return response.json()
 
-    def add_trip(self, trip) -> int:
+    def add_trips_to_db(self, trips:list[CompletedTrip]):
         
-        response = requests.post(self.BASE_URL + "/trips", json=trip)
-        if response.status_code == 201:
-            return response.json()
-        else:
-            print('Failed to send trip to database: ', response.status_code, response.text)
-            return None
+        for trip in trips:
+            response = requests.post(self.BASE_URL + "/trips", json=json.loads(json.dumps(trip, default=lambda o: o.__dict__)))
+            if response.status_code == 201:
+                print(f"Trips added to data base!")
+            else:
+                print('Failed to send trip to database: ', response.status_code, response.text)
 
     def add_clusters(self, clusters: list[Cluster]):
         for cluster in clusters:

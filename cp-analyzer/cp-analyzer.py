@@ -12,7 +12,8 @@ CORS(app)
 @app.route('/upload/trips', methods=['POST'])
 def process_trips_data():
     json_data = request.get_json()  
-    TripHandler().process_trip_data(json_data)
+    all_trips = TripHandler().get_trips_from_json(json_data)
+    DatabaseHandler().add_trips_to_db(all_trips)
     return 'Data received successfully'
 
 @app.route('/upload/cargo-orders', methods=['POST'])

@@ -1,13 +1,67 @@
-const { Trip, Location } = require("./models");
+const {
+  CompletedTrip,
+  Location,
+  Vehicle,
+  GeoLocation,
+  AdminLocation,
+  CargoItem
+} = require("./models");
 
 // Function to get all trips
 async function getAllTrips(req, res) {
   try {
-    const trips = await Trip.findAll({
-      attributes: ['id', 'customer', 'source', 'vehicle', 'load_percentage', 'load_meter', 'load_weight'],
+    const trips = await CompletedTrip.findAll({
+      attributes: ["id", "customer", "data_source"],
       include: [
-        { model: Location, as: "destination"},
-        { model: Location, as: "origin"},
+        {
+          model: Location,
+          as: "destination",
+          attributes: ["timestamp"], // Include necessary attributes from Location model
+          include: [
+            {
+              as: "admin_location",
+              model: AdminLocation,
+              attributes: ["street", "postal_code", "city", "country"], // Include necessary attributes from AdminLocation model
+            },
+            {
+              as: "geo_location",
+              model: GeoLocation,
+              attributes: ["lat", "long"], // Include necessary attributes from GeoLocation model
+            },
+          ],
+        },
+        {
+          model: Location,
+          as: "origin",
+          attributes: ["timestamp"], // Include necessary attributes from Location model
+          include: [
+            {
+              as: "admin_location",
+              model: AdminLocation,
+              attributes: ["street", "postal_code", "city", "country"], // Include necessary attributes from AdminLocation model
+            },
+            {
+              as: "geo_location",
+              model: GeoLocation,
+              attributes: ["lat", "long"], // Include necessary attributes from GeoLocation model
+            },
+          ],
+        },
+        {
+          model: CargoItem,
+          as: "cargo_item",
+          attributes: [
+            "loading_meter",
+            "weight",
+            "load_carrier",
+            "load_carrier_nestable",
+          ],
+        },
+        {
+          model: Vehicle,
+          as: "vehicle",
+          attributes: ["id", "type", "stackable", "max_load_meter", "max_weight"],
+        },
       ],
     });
     res.json(trips);
@@ -20,58 +74,62 @@ async function getAllTrips(req, res) {
 async function addTrip(req, res) {
   try {
     const {
+      data_source,
+      origin,
+      destination,
+      cargo_item,
       customer,
-      destination_id,
-      origin_id,
-      source,
-      type,
+      route_locations,
       vehicle,
-      load_percentage,
-      load_meter,
-      load_weight,
     } = req.body;
 
-    // Validate that all required fields are present in the request body
-    if (
-      !destination_id ||
-      !origin_id ||
-      !source ||
-      !type
-    ) {
-      return res.status(400).json({
-        message: `destination_id, origin_id, source, and type are required fields.`,
-      });
+    // Create GeoLocation for origin and destination
+    const originGeoLocation = await GeoLocation.create(origin.geo_location);
+    const destinationGeoLocation = await GeoLocation.create(
+      destination.geo_location
+    );
+    const newCargoItem = await CargoItem.create({
+      load_carrier: cargo_item.load_carrier,
+      load_carrier_nestable: cargo_item.load_carrier_nestable,
+      loading_meter: cargo_item.loading_meter,
+      weight: cargo_item.weight,
+    });
+
+    const originLocation = await Location.create({
+      timestamp: origin.timestamp,
+    });
+    await originLocation.setGeo_location(originGeoLocation);
+    //await originLocation.setAdmin_location(originAdminLocation);
+
+    const destinationLocation = await Location.create({
+      timestamp: destination.timestamp,
+    });
+    await destinationLocation.setGeo_location(destinationGeoLocation);
+    //await destinationLocation.setAdmin_location(destinationAdminLocation);
+
+    const newVehicle = await Vehicle.findOne({ where: { id: vehicle.id } });
+
+    if (!newVehicle) {
+      newVehicle = await Vehicle.create({
+      id: vehicle.id,
+      type: vehicle.type,
+      stackable: vehicle.stackable,
+      max_load_meter: vehicle.max_load_meter,
+      max_weight: vehicle.max_weight,
+    });
     }
 
-    // Create an object with the required and optional fields
-    const tripData = {
+    const newCompletedTrip = await CompletedTrip.create({
+      data_source: data_source,
+      customer: customer,
+    });
 
-      destination_id,
-      origin_id,
-      source,
-      type,
-    };
+    await newCompletedTrip.setDestination(destinationLocation);
+    await newCompletedTrip.setOrigin(originLocation);
+    await newCompletedTrip.setCargo_item(newCargoItem);
+    await newCompletedTrip.setVehicle(newVehicle);
 
-    // Include optional fields if they exist in the request body
-    if (customer) {
-      tripData.customer = customer;
-    }
-    if (vehicle) {
-      tripData.vehicle = vehicle;
-    }
-    if (load_percentage !== undefined) {
-      tripData.load_percentage = load_percentage;
-    }
-    if (load_meter !== undefined) {
-      tripData.load_meter = load_meter;
-    }
-    if (load_weight !== undefined) {
-      tripData.load_weight = load_weight;
-    }
-
-    const newTrip = await Trip.create(tripData);
-
-    res.status(201).json(newTrip);
+    res.status(201).json(newCompletedTrip);
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Internal server error: " + error });
