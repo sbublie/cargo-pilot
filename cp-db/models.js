@@ -1,12 +1,16 @@
 const sequelize = require("./db");
 const { DataTypes } = require("sequelize");
 
-const Location = sequelize.define("Location", {
-  timestamp: { type: DataTypes.INTEGER, allowNull: false },
-  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-},{
-  underscored: true,
-});
+const Location = sequelize.define(
+  "Location",
+  {
+    timestamp: { type: DataTypes.INTEGER, allowNull: false },
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  },
+  {
+    underscored: true,
+  }
+);
 
 const CargoOrder = sequelize.define(
   "CargoOrder",
@@ -20,21 +24,40 @@ const CargoOrder = sequelize.define(
   }
 );
 
-const GeoLocation = sequelize.define("GeoLocation", {
-  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  lat: { type: DataTypes.FLOAT, allowNull: false },
-  long: { type: DataTypes.FLOAT, allowNull: false },
-},{
-  underscored: true,
-});
+const GeoLocation = sequelize.define(
+  "GeoLocation",
+  {
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    lat: { type: DataTypes.FLOAT, allowNull: false },
+    long: { type: DataTypes.FLOAT, allowNull: false },
+  },
+  {
+    underscored: true,
+  }
+);
 
-const AdminLocation = sequelize.define("AdminLocation", {
+const AdminLocation = sequelize.define(
+  "AdminLocation",
+  {
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    postal_code: { type: DataTypes.INTEGER, allowNull: false },
+    city: { type: DataTypes.STRING, allowNull: false },
+    country: { type: DataTypes.STRING, allowNull: false },
+    street: { type: DataTypes.STRING, allowNull: true },
+  },
+  {
+    underscored: true,
+  }
+);
+
+const CargoItem = sequelize.define("CargoItem", {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  postal_code: { type: DataTypes.INTEGER, allowNull: false },
-  city: { type: DataTypes.STRING, allowNull: false },
-  country: { type: DataTypes.STRING, allowNull: false },
-  street: { type: DataTypes.STRING, allowNull: true },
-},{
+  loading_meter: { type: DataTypes.FLOAT, allowNull: false },
+  weight: { type: DataTypes.FLOAT, allowNull: false },
+  load_carrier: { type: DataTypes.BOOLEAN, allowNull: false },
+  load_carrier_nestable: { type: DataTypes.BOOLEAN, allowNull: false },
+},
+{
   underscored: true,
 });
 
@@ -45,54 +68,24 @@ Location.belongsTo(GeoLocation, {
   as: "geo_location",
 });
 
+CargoOrder.belongsTo(CargoItem, {
+  as: "cargo_item",
+});
 CargoOrder.belongsTo(Location, {
   as: "destination",
 });
 CargoOrder.belongsTo(Location, {
   as: "origin",
 });
-/*
 
-
-GeoLocation.belongsTo(Location);
-Location.hasOne(GeoLocation);
-
-const AdminLocation = sequelize.define("AdminLocation", {
-  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  postal_code: { type: DataTypes.INTEGER, allowNull: false },
-  city: { type: DataTypes.STRING, allowNull: false },
-  country: { type: DataTypes.STRING, allowNull: false },
-  street: { type: DataTypes.STRING, allowNull: true },
-});
-
-AdminLocation.belongsTo(Location);
-Location.hasOne(AdminLocation);
-
-const CargoItem = sequelize.define("CargoItem", {
-  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  loading_meter: { type: DataTypes.FLOAT, allowNull: false },
-  weight: { type: DataTypes.FLOAT, allowNull: false },
-  load_carrier: { type: DataTypes.BOOLEAN, allowNull: false },
-  load_carrier_nestable: { type: DataTypes.BOOLEAN, allowNull: false },
-});
-*/
 
 /*
-CargoItem.belongsTo(CargoOrder);
-Location.belongsTo(CargoOrder);
-CargoOrder.hasOne(Location, { as: "origin" });
-CargoOrder.hasOne(Location, { as: "destination" });
-CargoOrder.hasOne(CargoItem);
 
 const CompletedTrip = sequelize.define("CompletedTrip", {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   customer_id: { type: DataTypes.INTEGER, allowNull: false },
   vehicle_id: { type: DataTypes.INTEGER, allowNull: false },
 });
-
-CompletedTrip.hasOne(Location, { as: "origin" });
-CompletedTrip.hasOne(Location, { as: "destination" });
-CompletedTrip.hasOne(CargoItem);
 
 const Vehicle = sequelize.define("Vehicle", {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
@@ -104,15 +97,7 @@ const Vehicle = sequelize.define("Vehicle", {
 
 const TripSection = sequelize.define("TripSection", {});
 
-TripSection.hasOne(Location, { as: "origin" });
-TripSection.hasOne(Location, { as: "destination" });
-TripSection.hasMany(CargoItem);
-
 const ProjectedTrip = sequelize.define("ProjectedTrip", {});
-
-ProjectedTrip.hasOne(Vehicle);
-ProjectedTrip.hasMany(CargoOrder);
-ProjectedTrip.hasMany(TripSection);
 */
 // ----
 
@@ -225,6 +210,6 @@ module.exports = {
   TripMatch,
   GeoLocation,
   AdminLocation,
-  //CargoItem,
+  CargoItem,
   Location,
 };

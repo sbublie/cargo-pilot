@@ -3,14 +3,14 @@ const {
   Location,
   GeoLocation,
   AdminLocation,
-  //CargoItem,
+  CargoItem,
 } = require("./models");
 
 // Function to get all cargo orders
 async function getAllCargoOrders(req, res) {
   try {
     const orders = await CargoOrder.findAll({
-      attributes: ["data_source", "id", "customer", ],
+      attributes: ["data_source", "id", "customer"],
       include: [
         {
           model: Location,
@@ -20,7 +20,7 @@ async function getAllCargoOrders(req, res) {
             {
               as: "admin_location",
               model: AdminLocation,
-              attributes: ["street","postal_code", "city", "country"], // Include necessary attributes from AdminLocation model
+              attributes: ["street", "postal_code", "city", "country"], // Include necessary attributes from AdminLocation model
             },
             {
               as: "geo_location",
@@ -37,7 +37,7 @@ async function getAllCargoOrders(req, res) {
             {
               as: "admin_location",
               model: AdminLocation,
-              attributes: ["street","postal_code", "city", "country"], // Include necessary attributes from AdminLocation model
+              attributes: ["street", "postal_code", "city", "country"], // Include necessary attributes from AdminLocation model
             },
             {
               as: "geo_location",
@@ -45,6 +45,11 @@ async function getAllCargoOrders(req, res) {
               attributes: ["lat", "long"], // Include necessary attributes from GeoLocation model
             },
           ],
+        },
+        {
+          model: CargoItem,
+          as: "cargo_item",
+          attributes: ["loading_meter", "weight", "load_carrier", "load_carrier_nestable"],
         },
       ],
     });
@@ -69,7 +74,9 @@ async function addCargoOrder(req, res) {
 
     // Create GeoLocation for origin and destination
     const originGeoLocation = await GeoLocation.create(origin.geo_location);
-    const destinationGeoLocation = await GeoLocation.create(destination.geo_location);
+    const destinationGeoLocation = await GeoLocation.create(
+      destination.geo_location
+    );
 
     // Create AdminLocation for origin and destination
     const originAdminLocation = await AdminLocation.create(
@@ -80,14 +87,13 @@ async function addCargoOrder(req, res) {
     );
 
     // Create CargoItem
-    /*
-      const newCargoItem = await CargoItem.create({
-          load_carrier: cargo_item.load_carrier,
-          load_carrier_nestable: cargo_item.load_carrier_nestable,
-          loading_meter: cargo_item.loading_meter,
-          weight: cargo_item.weight
-      });
-      */
+
+    const newCargoItem = await CargoItem.create({
+      load_carrier: cargo_item.load_carrier,
+      load_carrier_nestable: cargo_item.load_carrier_nestable,
+      loading_meter: cargo_item.loading_meter,
+      weight: cargo_item.weight,
+    });
 
     const originLocation = await Location.create({
       timestamp: origin.timestamp,
@@ -109,14 +115,9 @@ async function addCargoOrder(req, res) {
     await newCargoOrder.setDestination(destinationLocation);
     await newCargoOrder.setOrigin(originLocation);
 
-    /*
-      // Associate CargoOrder with origin and destination Location
-      await newCargoOrder.setOrigin(originLocation);
-      await newCargoOrder.setDestination(destinationLocation);
+    // Associate CargoOrder with CargoItem
+    await newCargoOrder.setCargo_item(newCargoItem);
 
-      // Associate CargoOrder with CargoItem
-      await newCargoOrder.setCargoItem(newCargoItem);
-      */
     // Respond with the newly created CargoOrder record
     res.status(201).json(newCargoOrder);
   } catch (error) {
