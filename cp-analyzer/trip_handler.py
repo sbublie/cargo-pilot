@@ -64,8 +64,6 @@ class TripHandler:
 
         return cargo_orders
 
-
-
     def process_offering_data(self, json_data) -> None:
 
         # -- Merge single freight entries to complete truck loads --

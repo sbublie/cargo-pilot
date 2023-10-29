@@ -109,10 +109,19 @@ class InputConverter:
                 ), timestamp=self.__convert_timestamp(
                     timestamp=row[db_data_mapping['destination_timestamp']],
                     pattern=db_data_mapping['destination_timestamp_pattern']))
+            
+            loading_meter = row[db_data_mapping['loading_meter']]
+            weight = row[db_data_mapping['weight']]
+
+            if pd.isna(loading_meter):
+                loading_meter = None
+
+            if pd.isna(weight):
+                weight = None
 
             cargo_item = CargoItem(
-                weight=row[db_data_mapping['weight']],
-                loading_meter=row[db_data_mapping['loading_meter']],
+                weight=weight,
+                loading_meter=loading_meter,
                 load_carrier=False, load_carrier_nestable=False)
 
             orders.append(CargoOrder(origin=origin,

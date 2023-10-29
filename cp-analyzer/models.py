@@ -43,7 +43,7 @@ class CargoOrder:
         self.data_source = data_source
         self.origin = Location(**origin)
         self.destination = Location(**destination)
-        self.cargo_item = cargo_item
+        self.cargo_item = CargoItem(**cargo_item)
         self.id = id
         self.customer = customer
         self.route_locations = route_locations

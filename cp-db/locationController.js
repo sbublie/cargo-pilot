@@ -1,9 +1,23 @@
-const { LocationOld } = require("./models");
+const { Location, GeoLocation, AdminLocation } = require("./models");
 
 // Function to get all locations
 async function getAllLocations(req, res) {
   try {
-    const locations = await LocationOld.findAll();
+    const locations = await Location.findAll({
+      attributes: ["id", "timestamp"],
+      include: [
+        {
+          model: GeoLocation,
+          as: "geo_location",
+          attributes: ["lat", "long"],
+        },
+        {
+          model: AdminLocation,
+          as: "admin_location",
+          attributes: ["street", "postal_code", "city", "country"], 
+        },
+      ],
+    });
     res.json(locations);
   } catch (error) {
     console.error(error);

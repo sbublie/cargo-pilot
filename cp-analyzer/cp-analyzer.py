@@ -17,7 +17,7 @@ def process_trips_data():
     return 'Data received successfully'
 
 @app.route('/upload/cargo-orders', methods=['POST'])
-def process_offerings_data():
+def process_cargo_orders_data():
     json_data = request.get_json()  
     all_cargo_orders = TripHandler().get_orders_from_json(json_data)
     DatabaseHandler().add_cargo_orders_to_db(cargo_orders=all_cargo_orders)

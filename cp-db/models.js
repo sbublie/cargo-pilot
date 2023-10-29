@@ -52,8 +52,8 @@ const AdminLocation = sequelize.define(
 
 const CargoItem = sequelize.define("CargoItem", {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  loading_meter: { type: DataTypes.FLOAT, allowNull: false },
-  weight: { type: DataTypes.FLOAT, allowNull: false },
+  loading_meter: { type: DataTypes.FLOAT, allowNull: true },
+  weight: { type: DataTypes.FLOAT, allowNull: true },
   load_carrier: { type: DataTypes.BOOLEAN, allowNull: false },
   load_carrier_nestable: { type: DataTypes.BOOLEAN, allowNull: false },
 },

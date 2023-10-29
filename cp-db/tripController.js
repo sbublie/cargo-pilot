@@ -107,7 +107,7 @@ async function addTrip(req, res) {
     await destinationLocation.setGeo_location(destinationGeoLocation);
     //await destinationLocation.setAdmin_location(destinationAdminLocation);
 
-    const newVehicle = await Vehicle.findOne({ where: { id: vehicle.id } });
+    let newVehicle = await Vehicle.findOne({ where: { id: vehicle.id } });
 
     if (!newVehicle) {
       newVehicle = await Vehicle.create({

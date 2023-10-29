@@ -8,7 +8,7 @@ class DatabaseHandler:
     def __init__(self) -> None:
         self.BASE_URL = "http://cp-db:5000"
 
-    def add_location(self, location:Location) -> int:
+    def add_location(self, location: Location) -> int:
         # Convert the Location object to a dict and send it to the DB server
         location_dict = vars(location)
         response = requests.post(self.BASE_URL + "/locations",
@@ -18,12 +18,11 @@ class DatabaseHandler:
         else:
             print('Failed to send location to database: ', response.status_code, response.text)
             return None
-            
-    
+
     def add_offering(self, offering):
         response = requests.post(self.BASE_URL + "/offerings",
                                  json=offering)
-        
+
         if response.status_code == 201:
             return response.text
         else:
@@ -44,10 +43,16 @@ class DatabaseHandler:
         response = requests.get(self.BASE_URL + "/offerings")
         return response.json()
 
-    def add_trips_to_db(self, trips:list[CompletedTrip]):
-        
+    # Custom serialization function to handle problematic floats and convert objects to dictionaries
+    def __custom_serializer(self, obj):
+        if isinstance(obj, float) and (obj > 1e15 or obj < -1e15):
+            return str(obj)  # Convert large/small floats to strings
+        return obj.__dict__  # Convert other objects to dictionaries
+
+    def add_trips_to_db(self, trips: list[CompletedTrip]):
+
         for trip in trips:
-            response = requests.post(self.BASE_URL + "/trips", json=json.loads(json.dumps(trip, default=lambda o: o.__dict__)))
+            response = requests.post(self.BASE_URL + "/trips", json=json.loads(json.dumps(trip, default=self.__custom_serializer)))
             if response.status_code == 201:
                 print(f"Trips added to data base!")
             else:
@@ -62,10 +67,10 @@ class DatabaseHandler:
 
         url = self.BASE_URL + "/cargo-orders"
         for cargo_order in cargo_orders:
-            
-            response = requests.post(url=url, json=json.loads(json.dumps(cargo_order, default=lambda o: o.__dict__)))
-        
+
+            response = requests.post(url=url, json=json.loads(json.dumps(cargo_order, default=self.__custom_serializer)))
+
             if response.status_code == 201:
                 print(f"Cargo orders added to data base!")
             else:
-                print(f"Failed to upload chunk! Status code: {response.status_code}")
+                print(f"Failed to upload chunk! Status code: {response.status_code}, {response.text}")
