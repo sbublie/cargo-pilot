@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 from typing import Optional
 import json
+from geopy.distance import geodesic
 
 
 @dataclass
@@ -51,6 +52,9 @@ class CargoOrder:
     def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__,
                         sort_keys=True, indent=4)
+    
+    def get_distance(self):
+        return geodesic((self.origin.geo_location.lat, self.origin.geo_location.long), (self.destination.geo_location.lat, self.destination.geo_location.long)).kilometers
 
 @dataclass
 class Vehicle:
@@ -82,6 +86,7 @@ class TripSection:
 @dataclass
 class ProjectedTrip:
     vehicle: Vehicle
+    start_time: int
     included_orders: list[CargoOrder]
     trip_sections: list[TripSection]
     id: Optional[int] = None
@@ -97,6 +102,12 @@ class ProjectedTrip:
         for order in self.included_orders:
             total_loading_meter += order.cargo_item.loading_meter
         return total_loading_meter
+    
+    def get_weight_utilization(self):
+        return self.get_total_weight() / self.vehicle.max_weight 
+    
+    def get_loading_meter_utilization(self):
+        return self.get_total_loading_meter() / self.vehicle.max_loading_meter
 
 
 # ---
@@ -113,8 +124,10 @@ class DeliveryConfig:
     focus_area: str
     load_carrier: bool
     load_carrier_nestable: bool
+    corridor_radius: int
+    allowed_stays: int
     delivery_promise: Optional[dict] = None
-    return_corridor: Optional[dict] = None
+    
 
 @dataclass
 class DeliveryPromise:
