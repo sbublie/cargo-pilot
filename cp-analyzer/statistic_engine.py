@@ -8,6 +8,10 @@ class StatisticsEngine:
         pass
 
     def get_statistics(self):
+        offerings = DatabaseHandler().get_cargo_orders()
+        return {"result": len(offerings)}
+
+    def get_statistics_old(self):
         offerings = DatabaseHandler().get_offerings()
 
         all_origin_zip_codes = [offering['origin']['zip_code'] for offering in offerings]
