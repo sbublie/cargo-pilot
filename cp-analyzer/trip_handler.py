@@ -2,7 +2,7 @@ import json
 import math
 
 from database_handler import DatabaseHandler
-from models import Trip, Location, Offering, CargoOrder, CompletedTrip
+from models import CargoOrder, CompletedTrip
 
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -56,9 +56,6 @@ class TripHandler:
                     new_order.origin.geo_location.long = origin_geo["long"]
                     new_order.destination.geo_location.lat = destination_geo["lat"]
                     new_order.destination.geo_location.long = destination_geo["long"]
-                else:
-                    # Skip entry if no postal code match was found
-                    continue
 
             cargo_orders.append(new_order)
 

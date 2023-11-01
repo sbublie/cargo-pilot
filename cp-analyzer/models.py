@@ -12,7 +12,7 @@ class GeoLocation:
 
 @dataclass
 class AdminLocation:
-    postal_code: int
+    postal_code: str
     city: str
     country: str
     street: Optional[str] = None
@@ -20,13 +20,13 @@ class AdminLocation:
 
 @dataclass
 class CargoItem:
-    loading_meter: float
-    weight: float
     load_carrier: bool
     load_carrier_nestable: bool
-
+    loading_meter: Optional[float] = None
+    weight: Optional[float] = None
+    
 class Location:
-    def __init__(self, timestamp, geo_location, admin_location, id=None):
+    def __init__(self, timestamp, geo_location=None, admin_location=None, id=None):
         self.timestamp = timestamp
         self.id = id
         if geo_location is None:
@@ -56,13 +56,12 @@ class CargoOrder:
 class Vehicle:
     type: str
     stackable: bool
-    max_load_meter: float
+    max_loading_meter: float
     max_weight: float
     id: Optional[int] = None
 
 @dataclass
 class CompletedTrip:
-
     def __init__(self, origin, destination, cargo_item, customer, vehicle, data_source, id=None, route_locations=None):
         self.origin = Location(**origin)
         self.destination = Location(**destination)
@@ -87,53 +86,47 @@ class ProjectedTrip:
     trip_sections: list[TripSection]
     id: Optional[int] = None
 
+    def get_total_weight(self):
+        total_weight = 0
+        for order in self.included_orders:
+            total_weight += order.cargo_item.weight
+        return total_weight
+    
+    def get_total_loading_meter(self):
+        total_loading_meter = 0
+        for order in self.included_orders:
+            total_loading_meter += order.cargo_item.loading_meter
+        return total_loading_meter
+
+
 # ---
 
 @dataclass
-class LocationOld:
-    id: Optional[float] = None
-    lat: Optional[float] = None
-    long: Optional[float] = None
-    street: Optional[str] = None
-    zip_code: Optional[int] = None
-    city: Optional[str] = None
-    country: Optional[str] = None
-    timestamp: Optional[int] = None
-    type: Optional[str] = None
+class DeliveryConfig:
+    start_time: int
+    end_time_incl: int
+    max_loading_meter: float
+    max_weight: int
+    num_trucks: int
+    cargo_stackable: bool
+    max_waiting_time: int
+    focus_area: str
+    load_carrier: bool
+    load_carrier_nestable: bool
+    delivery_promise: Optional[dict] = None
+    return_corridor: Optional[dict] = None
 
-    def to_json(self):
-        return json.dumps(self, default=lambda o: o.__dict__)
-    
-    def get_lat_long_list(self):
-        return [self.lat, self.long]
-    
 @dataclass
-class Load:
-    weight: Optional[float] = None
-    loading_meter: Optional[float] = None
-    capacity_percentage: Optional[float] = None
+class DeliveryPromise:
+    active: bool
+    radius: int
+    percent_of_cargo: int
+    time_for_remaining_cargo: int
 
-class Trip:
-    def __init__(self, customer_id, destination, load, origin, route_waypoints, source, type, vehicle_id):
-        self.customer_id = customer_id
-        self.destination = Location(**destination)
-        self.load = Load(**load)
-        self.origin = Location(**origin)
-        self.route_waypoints = route_waypoints
-        self.source = source
-        self.type = type
-        self.vehicle_id = vehicle_id
-
-class Offering:
-    def __init__(self, customer_id, destination, load, origin, route_waypoints, source, vehicle_id):
-        self.customer_id = customer_id
-        self.destination = Location(**destination)
-        self.load = Load(**load)
-        self.origin = Location(**origin)
-        self.route_waypoints = route_waypoints
-        self.source = source
-        self.vehicle_id = vehicle_id
-
+@dataclass
+class ReturnCorridor:
+    distance_return_to_start: int
+    allowed_stays: int
 
 @dataclass
 class Cluster:

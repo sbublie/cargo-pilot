@@ -17,7 +17,7 @@ class Location {
 
 class AdminLocation {
     - street: string
-    - postal_code: int
+    - postal_code: string
     - city: string
     - country: string
 }
@@ -43,7 +43,7 @@ class Vehicle {
     - id: int
     - type: string
     - stackable: bool
-    - max_load_meter: float
+    - max_loading_meter: float
     - max_weight: float
 }
 

@@ -40,7 +40,7 @@ const AdminLocation = sequelize.define(
   "AdminLocation",
   {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    postal_code: { type: DataTypes.INTEGER, allowNull: false },
+    postal_code: { type: DataTypes.STRING, allowNull: false },
     city: { type: DataTypes.STRING, allowNull: false },
     country: { type: DataTypes.STRING, allowNull: false },
     street: { type: DataTypes.STRING, allowNull: true },
@@ -83,7 +83,7 @@ const Vehicle = sequelize.define("Vehicle", {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   type: { type: DataTypes.STRING, allowNull: false },
   stackable: { type: DataTypes.BOOLEAN, allowNull: false },
-  max_load_meter: { type: DataTypes.FLOAT, allowNull: false },
+  max_loading_meter: { type: DataTypes.FLOAT, allowNull: false },
   max_weight: { type: DataTypes.FLOAT, allowNull: false },
 },
 {

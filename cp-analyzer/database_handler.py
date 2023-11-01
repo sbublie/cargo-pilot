@@ -39,9 +39,12 @@ class DatabaseHandler:
             print("Error: Unable to parse JSON response or missing key in the JSON data.")
         return locations
 
-    def get_offerings(self):
-        response = requests.get(self.BASE_URL + "/offerings")
-        return response.json()
+    def get_cargo_orders(self) -> list[CargoOrder]:
+        response = requests.get(self.BASE_URL + "/cargo-orders")
+        data = response.json()
+        orders = [CargoOrder(**order) for order in data]
+
+        return orders
 
     # Custom serialization function to handle problematic floats and convert objects to dictionaries
     def __custom_serializer(self, obj):

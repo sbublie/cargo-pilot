@@ -11,7 +11,7 @@ class GeoLocation:
 
 @dataclass
 class AdminLocation:
-    postal_code: int
+    postal_code: str
     city: str
     country: str
     street: Optional[str] = None
@@ -51,7 +51,7 @@ class CargoOrder:
 class Vehicle:
     type: str
     stackable: bool
-    max_load_meter: float
+    max_loading_meter: float
     max_weight: float
     id: Optional[int] = None
 

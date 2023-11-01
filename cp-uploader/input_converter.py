@@ -79,7 +79,7 @@ class InputConverter:
             origin_location = Location(geo_location=GeoLocation(lat=origin_lat, long=origin_long), timestamp=origin_timestamp)
             destination_location = Location(geo_location=GeoLocation(lat=destination_lat, long=destination_long), timestamp=destination_timestamp)
 
-            vehicle = Vehicle(id=row[transics_data_mapping['vehicle_id']], type="default", max_load_meter=13.6, max_weight=23936, stackable=False)
+            vehicle = Vehicle(id=row[transics_data_mapping['vehicle_id']], type="default", max_loading_meter=13.6, max_weight=23936, stackable=False)
 
             new_trip = CompletedTrip(origin=origin_location, destination=destination_location, cargo_item=cargo_item, customer=str(row[transics_data_mapping['customer_id']]), vehicle=vehicle, data_source=source)
 

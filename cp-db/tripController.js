@@ -60,7 +60,7 @@ async function getAllTrips(req, res) {
         {
           model: Vehicle,
           as: "vehicle",
-          attributes: ["id", "type", "stackable", "max_load_meter", "max_weight"],
+          attributes: ["id", "type", "stackable", "max_loading_meter", "max_weight"],
         },
       ],
     });
@@ -114,7 +114,7 @@ async function addTrip(req, res) {
       id: vehicle.id,
       type: vehicle.type,
       stackable: vehicle.stackable,
-      max_load_meter: vehicle.max_load_meter,
+      max_loading_meter: vehicle.max_loading_meter,
       max_weight: vehicle.max_weight,
     });
     }

@@ -49,7 +49,12 @@ async function getAllCargoOrders(req, res) {
         {
           model: CargoItem,
           as: "cargo_item",
-          attributes: ["loading_meter", "weight", "load_carrier", "load_carrier_nestable"],
+          attributes: [
+            "loading_meter",
+            "weight",
+            "load_carrier",
+            "load_carrier_nestable",
+          ],
         },
       ],
     });
@@ -72,11 +77,22 @@ async function addCargoOrder(req, res) {
       route_locations,
     } = req.body;
 
-    // Create GeoLocation for origin and destination
-    const originGeoLocation = await GeoLocation.create(origin.geo_location);
-    const destinationGeoLocation = await GeoLocation.create(
-      destination.geo_location
-    );
+    const originLocation = await Location.create({
+      timestamp: origin.timestamp,
+    });
+    const destinationLocation = await Location.create({
+      timestamp: destination.timestamp,
+    });
+
+    if (origin.geo_location.lat != null && origin.geo_location.long && destination.geo_location.lat != null && destination.geo_location.long != null) {
+      // Create GeoLocation for origin and destination
+      const originGeoLocation = await GeoLocation.create(origin.geo_location);
+      const destinationGeoLocation = await GeoLocation.create(
+        destination.geo_location
+      );
+      await originLocation.setGeo_location(originGeoLocation);
+      await destinationLocation.setGeo_location(destinationGeoLocation);
+    }
 
     // Create AdminLocation for origin and destination
     const originAdminLocation = await AdminLocation.create(
@@ -85,8 +101,8 @@ async function addCargoOrder(req, res) {
     const destinationAdminLocation = await AdminLocation.create(
       destination.admin_location
     );
-
-    // Create CargoItem
+    await originLocation.setAdmin_location(originAdminLocation);
+    await destinationLocation.setAdmin_location(destinationAdminLocation);
 
     const newCargoItem = await CargoItem.create({
       load_carrier: cargo_item.load_carrier,
@@ -94,18 +110,6 @@ async function addCargoOrder(req, res) {
       loading_meter: cargo_item.loading_meter,
       weight: cargo_item.weight,
     });
-
-    const originLocation = await Location.create({
-      timestamp: origin.timestamp,
-    });
-    await originLocation.setGeo_location(originGeoLocation);
-    await originLocation.setAdmin_location(originAdminLocation);
-
-    const destinationLocation = await Location.create({
-      timestamp: destination.timestamp,
-    });
-    await destinationLocation.setGeo_location(destinationGeoLocation);
-    await destinationLocation.setAdmin_location(destinationAdminLocation);
 
     const newCargoOrder = await CargoOrder.create({
       data_source: data_source,
