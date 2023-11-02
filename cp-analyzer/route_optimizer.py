@@ -1,7 +1,7 @@
 from models import DeliveryConfig, ProjectedTrip, CargoOrder, Vehicle, TripSection
 import json
 from geopy.distance import geodesic
-
+from datetime import timedelta
 
 class RouteOptimizer:
     def __init__(self) -> None:
@@ -16,6 +16,7 @@ class RouteOptimizer:
     def get_optimized_routes_from_orders(self, delivery_config: DeliveryConfig, orders: list[CargoOrder]) -> list[ProjectedTrip]:
 
         planned_order_ids = set()  # Keep track of orders that have already been planned
+        orders_placed_late = 0
 
         # --- Step 1: Filter by time and geo coordinates
         relevant_orders: list[CargoOrder] = []
@@ -84,15 +85,51 @@ class RouteOptimizer:
 
                 if not trip_found:
                     # If the order cannot be placed in any existing trips, create a new trip
-                    projected_trips.append(
-                        ProjectedTrip(
-                            vehicle=Vehicle(
-                                type="default", stackable=False, max_weight=delivery_config.max_weight,
-                                max_loading_meter=delivery_config.max_loading_meter),
+
+                    # Check if there are any vehicles left
+                    orders_on_the_same_day = sum(1 for pt in projected_trips if pt.start_time == order.origin.timestamp)
+
+                    if orders_on_the_same_day < delivery_config.num_trucks:
+                        vehicle = Vehicle(
+                            type="default", 
+                            stackable=False, 
+                            max_weight=delivery_config.max_weight,
+                            max_loading_meter=delivery_config.max_loading_meter
+                        )
+
+                        new_trip = ProjectedTrip(
+                            vehicle=vehicle,
                             included_orders=[order],
                             start_time=order.origin.timestamp,
-                            trip_sections=[]))
-                    planned_order_ids.add(order.id)  # Add the order ID to the set of planned orders
+                            trip_sections=[]
+                        )
+
+                        projected_trips.append(new_trip)
+                        planned_order_ids.add(order.id)  # Add the order ID to the set of planned orders
+
+                    else:
+                        # Find the next available time slot
+                        next_available_time = order.origin.timestamp + 86400  # You can adjust the time increment as needed
+                        while any(pt.start_time == next_available_time for pt in projected_trips):
+                            next_available_time += 86400
+
+                        vehicle = Vehicle(
+                            type="default", 
+                            stackable=False, 
+                            max_weight=delivery_config.max_weight,
+                            max_loading_meter=delivery_config.max_loading_meter
+                        )
+
+                        new_trip = ProjectedTrip(
+                            vehicle=vehicle,
+                            included_orders=[order],
+                            start_time=next_available_time,
+                            trip_sections=[]
+                        )
+
+                        orders_placed_late += 1
+                        projected_trips.append(new_trip)
+                        planned_order_ids.add(order.id)  # Add the order ID to the set of planned orders
 
         # Get the total number of kilometers driven
         total_distance = 0
@@ -109,7 +146,14 @@ class RouteOptimizer:
         for trip in projected_trips:
             total_loading_meter += trip.get_weight_utilization()
             total_weight += trip.get_loading_meter_utilization()
-        avg_weight_utilization = total_weight / len(projected_trips)
-        avg_loading_meter_utilization = total_loading_meter / len(projected_trips)
+        avg_weight_utilization = total_weight / len(projected_trips)*100
+        avg_loading_meter_utilization = total_loading_meter / len(projected_trips)*100
 
-        return {"average_utl_loading_meter": avg_loading_meter_utilization, "average_utl_weight": avg_weight_utilization, "total_km": total_distance, "average_km": avg_distance, "relevant_orders": len(planned_order_ids), "num_trips": len(projected_trips), "trips": [json.loads(json.dumps(ttrip, default=self.__custom_serializer)) for ttrip in projected_trips]}
+        # Get the number of orders that could not be planned
+        orders_not_placed = len(relevant_orders) - len(planned_order_ids)
+
+        # Get the percentage of orders that were one time
+        orders_on_time_percentage = (len(relevant_orders) - orders_placed_late) / len(relevant_orders)*100
+        
+
+        return {"orders_not_placed": orders_not_placed, "OTD": orders_on_time_percentage, "average_utl_loading_meter": avg_loading_meter_utilization, "average_utl_weight": avg_weight_utilization, "total_km": total_distance, "average_km": avg_distance, "relevant_orders": len(planned_order_ids), "num_trips": len(projected_trips), "trips": [json.loads(json.dumps(ttrip, default=self.__custom_serializer)) for ttrip in projected_trips]}
