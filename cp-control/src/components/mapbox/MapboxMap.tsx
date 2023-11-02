@@ -12,9 +12,9 @@ import {
 } from "./mapFeatures";
 import { getTripsGeoJson, addTripsToMap } from "./tripHandler";
 import {
-  getOfferingsGeoJson,
-  addOfferingsToMap,
-} from "./offeringsHandler";
+  getCargoOrderGeoJson,
+  addCargoOrdersToMap,
+} from "./cargoOrderHandler";
 import {
   addCityBoundariesToMap,
   setCityBoundariesGeoJson,
@@ -29,7 +29,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_API_KEY;
 
 export interface Settings {
-  mapMode: "activity_cluster" | "cluster" | "offering" | "trip" | "match";
+  mapMode: "activity_cluster" | "cluster" | "cargo_order" | "trip" | "match";
   dataSource: "db" | "transics";
   animateRoutes: boolean;
 }
@@ -49,7 +49,7 @@ function MapboxMap() {
   const lat = 47.66559693227496;
   const zoom = 9;
 
-  const { offerings, trips, clusters, boundaries } = useOfferings();
+  const { cargoOrders, trips, clusters, boundaries } = useOfferings();
 
   const handleCloseSettingsModal = () => setShowSettingsModal(false);
   const handleShowSettingsModal = () => setShowSettingsModal(true);
@@ -81,8 +81,8 @@ function MapboxMap() {
 
   useEffect(() => {
     if (map) {
-      const offeringsGeoJson = getOfferingsGeoJson(offerings);
-      addOfferingsToMap(map, offeringsGeoJson);
+      const cargoOrderGeoJson = getCargoOrderGeoJson(cargoOrders);
+      addCargoOrdersToMap(map, cargoOrderGeoJson);
 
       const tripsGeoJson = getTripsGeoJson(trips);
       addTripsToMap(map, tripsGeoJson);
@@ -90,12 +90,12 @@ function MapboxMap() {
       const clustersGeoJson = getClusterGeoJson(clusters)
       addClusterToMap(map, clustersGeoJson)
 
-      setCityBoundariesGeoJson(boundaries, offerings);
+      setCityBoundariesGeoJson(boundaries, cargoOrders);
       addCityBoundariesToMap(map, boundaries);
 
       setVisibleMapLayers(map, settings);
     }
-  }, [map, offerings, trips, clusters, boundaries, settings]);
+  }, [map, cargoOrders, trips, clusters, boundaries, settings]);
 
 
   const applySettings = (settings: Settings) => {

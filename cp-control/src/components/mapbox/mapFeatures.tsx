@@ -20,7 +20,7 @@ export function addControlsToMap(map: MapboxMap) {
 export function setVisibleMapLayers(map: MapboxMap, settings: Settings) {
   const allLayers = [
     "germany_overlay",
-    "offering_markers",
+    "cargo_order_markers",
     "trip_markers",
     "cluster",
     "cluster_count"
@@ -31,12 +31,12 @@ export function setVisibleMapLayers(map: MapboxMap, settings: Settings) {
   
   if (allLayersSet) {
     const layersByMode = {
-      offering: [
-        "offering_markers",
+      cargo_order: [
+        "cargo_order_markers",
       ],
       activity_cluster: ["germany_overlay"],
       trip: ["trip_markers"],
-      cluster: ["cluster", "cluster_count", "offering_markers", "trip_markers"],
+      cluster: ["cluster", "cluster_count", "cargo_order_markers", "trip_markers"],
       match: ["cluster"],
     };
 
@@ -44,7 +44,7 @@ export function setVisibleMapLayers(map: MapboxMap, settings: Settings) {
 
     if (
       settings.animateRoutes &&
-      (settings.mapMode === "offering" || settings.mapMode === "trip")
+      (settings.mapMode === "cargo_order" || settings.mapMode === "trip")
     ) {
       visibleLayers.push("line-dashed");
     }

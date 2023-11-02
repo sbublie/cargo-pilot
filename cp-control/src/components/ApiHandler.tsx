@@ -4,7 +4,7 @@ import { useOfferings } from "../contexts/OfferingsContext";
 export function ApiHandler() {
   const {
     setNewTrips,
-    setNewOfferings,
+    setNewCargoOrders,
     setNewClusters,
     setNewStats,
     setNewBoundaries,
@@ -23,13 +23,13 @@ export function ApiHandler() {
       }
     };
 
-    const fetchOfferings = async () => {
+    const fetchCargoOrders = async () => {
       try {
         const response = await fetch(
-          import.meta.env.VITE_BASE_URL + "api/db/offerings"
+          import.meta.env.VITE_BASE_URL + "api/db/cargo-orders"
         );
         const jsonData = await response.json();
-        setNewOfferings(jsonData);
+        setNewCargoOrders(jsonData);
       } catch (error) {
         console.log("Error:", error);
       }
@@ -76,7 +76,7 @@ export function ApiHandler() {
     fetchTrips();
     fetchStats();
     fetchClusters();
-    fetchOfferings();
+    fetchCargoOrders();
     fetchBoundaries();
   }, []); // Empty dependency array ensures this effect runs only once
 
