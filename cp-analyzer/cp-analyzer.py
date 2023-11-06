@@ -40,8 +40,9 @@ def cluster_locations_from_db():
 def calulate_truck_routes():
     data = request.json
     cargo_orders =  DatabaseHandler().get_cargo_orders()
-    result = RouteOptimizer().get_optimized_routes_from_orders(delivery_config=DeliveryConfig(**data), orders=cargo_orders)
-    
+    #result = RouteOptimizer().get_optimized_routes_from_orders(delivery_config=DeliveryConfig(**data), orders=cargo_orders)
+    result = RouteOptimizer().solve_vrp(delivery_config=DeliveryConfig(**data), orders=cargo_orders)
+
     return {"result": result}
 
 if __name__ == "__main__":

@@ -1,7 +1,9 @@
-from models import DeliveryConfig, ProjectedTrip, CargoOrder, Vehicle, TripSection
+from models import DeliveryConfig, ProjectedTrip, CargoOrder, Vehicle, TripSection, Location, GeoLocation
 import json
 from geopy.distance import geodesic
 from datetime import timedelta
+from ortools.constraint_solver import routing_enums_pb2
+from ortools.constraint_solver import pywrapcp
 
 class RouteOptimizer:
     def __init__(self) -> None:
@@ -157,3 +159,218 @@ class RouteOptimizer:
         
 
         return {"orders_not_placed": orders_not_placed, "OTD": orders_on_time_percentage, "average_utl_loading_meter": avg_loading_meter_utilization, "average_utl_weight": avg_weight_utilization, "total_km": total_distance, "average_km": avg_distance, "relevant_orders": len(planned_order_ids), "num_trips": len(projected_trips), "trips": [json.loads(json.dumps(ttrip, default=self.__custom_serializer)) for ttrip in projected_trips]}
+
+    def solve_vrp_fail(self, delivery_config: DeliveryConfig, orders: list[CargoOrder]):
+        # --- Step 1: Filter by time and geo coordinates
+        relevant_orders: list[CargoOrder] = []
+        for order in orders:
+            if order.origin.timestamp >= delivery_config.start_time and order.destination.timestamp <= delivery_config.end_time_incl:
+                if order.origin.geo_location.lat and order.destination.geo_location.lat:
+                    relevant_orders.append(order)
+
+        # --- Step 2: Create a list of all locations
+        locations = []
+        for order in relevant_orders:
+            locations.append(order.origin)
+            locations.append(order.destination)
+
+        # --- Step 3: Create a list of all distances between locations
+        distance_matrix = self.compute_distance_matrix(locations)
+
+        # --- Step 4: Create a list of all vehicles
+        num_vehicles = delivery_config.num_trucks
+        vehicle_capacity = delivery_config.max_weight
+        depot = 0
+        vehicle_capacities = [vehicle_capacity for i in range(num_vehicles)]
+
+        # --- Step 5: Create a list of all pickup and delivery locations
+        pickup_deliveries = []
+        for order in relevant_orders:
+            pickup_deliveries.append(order.origin.id)
+            pickup_deliveries.append(order.destination.id)
+
+        demands = [0]
+        for order in relevant_orders:
+            demands.append(order.cargo_item.weight)
+        demands.pop(-1)
+
+        # Create the routing index manager.
+        manager = pywrapcp.RoutingIndexManager(
+            len(distance_matrix), num_vehicles, depot
+        )
+        # Create Routing Model.
+        routing = pywrapcp.RoutingModel(manager)
+
+        # Create and register a transit callback.
+        def distance_callback(from_index, to_index):
+            """Returns the distance between the two nodes."""
+            # Convert from routing variable Index to distance matrix NodeIndex.
+            from_node = manager.IndexToNode(from_index)
+            to_node = manager.IndexToNode(to_index)
+            return distance_matrix[from_node][to_node]
+
+        transit_callback_index = routing.RegisterTransitCallback(distance_callback)
+        # Define cost of each arc.
+        routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
+
+            # Add Capacity constraint.
+        def demand_callback(from_index):
+            """Returns the demand of the node."""
+            # Convert from routing variable Index to demands NodeIndex.
+            from_node = manager.IndexToNode(from_index)
+            return demands[from_node]
+
+        demand_callback_index = routing.RegisterUnaryTransitCallback(demand_callback)
+        routing.AddDimensionWithVehicleCapacity(
+            demand_callback_index,
+            0,  # null capacity slack
+            vehicle_capacities,  # vehicle maximum capacities
+            True,  # start cumul to zero
+            "Capacity",
+        )
+
+
+
+        # Setting first solution heuristic.
+        search_parameters = pywrapcp.DefaultRoutingSearchParameters()
+        search_parameters.first_solution_strategy = (
+            routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
+        )
+        search_parameters.local_search_metaheuristic = (
+            routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
+        )
+        search_parameters.time_limit.FromSeconds(1)
+
+        # Solve the problem.
+        solution = routing.SolveWithParameters(search_parameters)
+
+        # Print solution on console.
+        if solution:
+            self.print_solution(num_vehicles, demands, manager, routing, solution)
+
+        
+        return {}
+        # Compute distance matrix based on coordinates
+    def compute_distance_matrix(self, locations:list[Location]):
+        num_locations = len(locations)
+        distance_matrix = [[0] * num_locations for _ in range(num_locations)]
+        for i in range(num_locations):
+            for j in range(num_locations):
+                distance_matrix[i][j] = geodesic((locations[i].geo_location.lat, locations[i].geo_location.long), (locations[j].geo_location.lat, locations[j].geo_location.long)).kilometers
+        return distance_matrix
+    
+    def print_solution(self, data, manager, routing, solution):
+        """Prints solution on console."""
+        print(f"Objective: {solution.ObjectiveValue()}", flush=True)
+        total_distance = 0
+        total_load = 0
+        for vehicle_id in range(data["num_vehicles"]):
+            index = routing.Start(vehicle_id)
+            plan_output = f"Route for vehicle {vehicle_id}:\n"
+            route_distance = 0
+            route_load = 0
+            while not routing.IsEnd(index):
+                node_index = manager.IndexToNode(index)
+                #route_load += data["demands"][node_index]
+                plan_output += f" {node_index} Load({route_load}) -> "
+                previous_index = index
+                index = solution.Value(routing.NextVar(index))
+                route_distance += routing.GetArcCostForVehicle(
+                    previous_index, index, vehicle_id
+                )
+            plan_output += f" {manager.IndexToNode(index)} Load({route_load})\n"
+            plan_output += f"Distance of the route: {route_distance}m\n"
+            plan_output += f"Load of the route: {route_load}\n"
+            print(plan_output, flush=True)
+            total_distance += route_distance
+            total_load += route_load
+        print(f"Total distance of all routes: {total_distance}m", flush=True)
+        print(f"Total load of all routes: {total_load}", flush=True)
+
+
+    def solve_vrp(self, delivery_config: DeliveryConfig, orders: list[CargoOrder]):
+        
+        # Step 1: Filter by time and geo coordinates
+        relevant_orders: list[CargoOrder] = []
+        for order in orders:
+            if order.origin.timestamp >= delivery_config.start_time and order.destination.timestamp <= delivery_config.end_time_incl:
+                if order.origin.geo_location.lat and order.destination.geo_location.lat:
+                    relevant_orders.append(order)
+        
+        # Step 2: Create a list of all locations 50.261781864551835, 10.961540334822597
+        locations = [Location(id=0, geo_location={"lat": 50.26, "long": 10.96}, timestamp=0)]
+        for order in relevant_orders:
+            locations.append(order.origin)
+            locations.append(order.destination)
+
+        pickup_deliveries = []
+        for n in range(1, len(locations)-1, 2):
+            pickup_deliveries.append([n, n+1])
+
+        distance_matrix = self.compute_distance_matrix(locations)
+        
+        data = {}
+        data["distance_matrix"] = distance_matrix
+        data["vehicle_capacities"] = [15, 15, 15, 15]
+        data["num_vehicles"] = 4
+        data["depot"] = 0
+        data["pickup_deliveries"] = pickup_deliveries
+
+        # Create the routing index manager.
+        manager = pywrapcp.RoutingIndexManager(
+            len(data["distance_matrix"]), data["num_vehicles"], data["depot"]
+        )
+
+        # Create Routing Model.
+        routing = pywrapcp.RoutingModel(manager)
+
+
+        # Define cost of each arc.
+        def distance_callback(from_index, to_index):
+            """Returns the manhattan distance between the two nodes."""
+            # Convert from routing variable Index to distance matrix NodeIndex.
+            from_node = manager.IndexToNode(from_index)
+            to_node = manager.IndexToNode(to_index)
+            return data["distance_matrix"][from_node][to_node]
+
+        transit_callback_index = routing.RegisterTransitCallback(distance_callback)
+        routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
+
+        # Add Distance constraint.
+        dimension_name = "Distance"
+        routing.AddDimension(
+            transit_callback_index,
+            0,  # no slack
+            3000,  # vehicle maximum travel distance
+            True,  # start cumul to zero
+            dimension_name,
+        )
+        distance_dimension = routing.GetDimensionOrDie(dimension_name)
+        distance_dimension.SetGlobalSpanCostCoefficient(100)
+
+        # Define Transportation Requests.
+        for request in data["pickup_deliveries"]:
+            pickup_index = manager.NodeToIndex(request[0])
+            delivery_index = manager.NodeToIndex(request[1])
+            routing.AddPickupAndDelivery(pickup_index, delivery_index)
+            routing.solver().Add(
+                routing.VehicleVar(pickup_index) == routing.VehicleVar(delivery_index)
+            )
+            routing.solver().Add(
+                distance_dimension.CumulVar(pickup_index)
+                <= distance_dimension.CumulVar(delivery_index)
+            )
+
+        # Setting first solution heuristic.
+        search_parameters = pywrapcp.DefaultRoutingSearchParameters()
+        search_parameters.first_solution_strategy = (
+            routing_enums_pb2.FirstSolutionStrategy.PARALLEL_CHEAPEST_INSERTION
+        )
+        search_parameters.time_limit.FromSeconds(5)
+
+        # Solve the problem.
+        solution = routing.SolveWithParameters(search_parameters)
+
+        # Print solution on console.
+        if solution:
+            self.print_solution(data, manager, routing, solution)
