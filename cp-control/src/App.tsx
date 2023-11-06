@@ -5,6 +5,7 @@ import { Link, NavLink, Routes, Route } from "react-router-dom";
 import { Navbar, Nav } from "react-bootstrap";
 import { OfferingsProvider } from "./contexts/OfferingsContext";
 import { ApiHandler } from "./components/ApiHandler";
+import Optimizer from "./components/optimizer/Optimizer";
 
 function App() {
   return (
@@ -25,7 +26,10 @@ function App() {
               Home
             </Nav.Link>
             <Nav.Link as={NavLink} to="/map">
-              Map
+              Data Explorer
+            </Nav.Link>
+            <Nav.Link as={NavLink} to="/optimizer">
+              Cargo Optimizer
             </Nav.Link>
           </Nav>
         </Navbar>
@@ -33,6 +37,7 @@ function App() {
           <Routes>
             <Route path="/" element={<StartPage />} />
             <Route path="/map" element={<MapboxMap />} />
+            <Route path="/optimizer" element={<Optimizer />} />
           </Routes>
         
       

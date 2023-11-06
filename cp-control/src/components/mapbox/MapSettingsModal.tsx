@@ -87,7 +87,7 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({ show, onHide, onApplySett
             />
             <Form.Check
               type="radio"
-              id="order"
+              id="cargo_order"
               label="Order Locations"
               checked={settings.mapMode === "cargo_order"}
               onChange={handleMapModeChange}
