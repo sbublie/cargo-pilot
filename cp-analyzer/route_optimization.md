@@ -16,10 +16,10 @@ Parameters that are currently set by default:
 - [Local search options](https://developers.google.com/optimization/routing/routing_options#local_search_options): GUIDED_LOCAL_SEARCH 
 - Maximum time for solution calculation: 5 seconds (influences the quality of the results)
 
-Parameters that are being considered to be set in the future:
+Parameters under consideration for future implementation::
 - Stackability in the truck cargo area (P2)
 - Truck waiting time for consideration of freight delivery (P3)
-- Focus of the load optimisation (P4)
+- Focus of the load optimization (P4)
 - Load carriers "nestability" (P5)
 - Next day delivery (P6)
 
@@ -37,7 +37,7 @@ Step 5: Set the solution heuristic and search parameters for solving the VRP. Th
 
 Step 6: Solve the VRP using the specified parameters and obtain the solution.
 
-Step 10: If a solution is found, return a solution to the API caller.
+Step 7: If a solution is found, return a solution to the API caller.
 
 ## Solution
 
