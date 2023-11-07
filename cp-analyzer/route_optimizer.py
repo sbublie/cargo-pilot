@@ -1,4 +1,4 @@
-from models import DeliveryConfig, ProjectedTrip, CargoOrder, Vehicle, TripSection, Location, GeoLocation
+from models import DeliveryConfig, ProjectedTrip, CargoOrder, Vehicle, Location, GeoLocation, MovingSection, SectionType, HoldingSection, CargoItem
 import json
 from geopy.distance import geodesic
 from datetime import timedelta
@@ -192,7 +192,7 @@ class RouteOptimizer:
         demands = [0]
         for order in relevant_orders:
             demands.append(order.cargo_item.weight)
-        demands.pop(-1)
+        
 
         # Create the routing index manager.
         manager = pywrapcp.RoutingIndexManager(
@@ -229,8 +229,6 @@ class RouteOptimizer:
             "Capacity",
         )
 
-
-
         # Setting first solution heuristic.
         search_parameters = pywrapcp.DefaultRoutingSearchParameters()
         search_parameters.first_solution_strategy = (
@@ -259,34 +257,7 @@ class RouteOptimizer:
                 distance_matrix[i][j] = geodesic((locations[i].geo_location.lat, locations[i].geo_location.long), (locations[j].geo_location.lat, locations[j].geo_location.long)).kilometers
         return distance_matrix
     
-    def print_solution(self, data, manager, routing, solution, locations:list[Location]):
-        """Prints solution on console."""
-        print(f"Objective: {solution.ObjectiveValue()}", flush=True)
-        total_distance = 0
-        total_load = 0
-        for vehicle_id in range(data["num_vehicles"]):
-            index = routing.Start(vehicle_id)
-            plan_output = f"Route for vehicle {vehicle_id}:\n"
-            route_distance = 0
-            route_load = 0
-            while not routing.IsEnd(index):
-                node_index = manager.IndexToNode(index)
-                location = locations[node_index]
-                route_load += data["demands"][node_index]
-                plan_output += f" {location.admin_location.city} Load({round(route_load, 2)}) -> "
-                previous_index = index
-                index = solution.Value(routing.NextVar(index))
-                route_distance += routing.GetArcCostForVehicle(
-                    previous_index, index, vehicle_id
-                )
-            plan_output += f" {manager.IndexToNode(index)} Load({route_load})\n"
-            plan_output += f"Distance of the route: {route_distance}km\n"
-            #plan_output += f"Load of the route: {route_load}\n"
-            print(plan_output, flush=True)
-            total_distance += route_distance
-            total_load += route_load
-        print(f"Total distance of all routes: {total_distance}km", flush=True)
-        print(f"Total load of all routes: {total_load}", flush=True)
+
 
 
     def solve_vrp(self, delivery_config: DeliveryConfig, orders: list[CargoOrder]):
@@ -312,23 +283,28 @@ class RouteOptimizer:
         # Step 4: Create a list of all distances between locations
         distance_matrix = self.compute_distance_matrix(locations)
         
-        # Step5: Create list of demands
-        demands = [0]
+        # Step 5: Create list of demands
+        weight_demands = [0]
+        loading_meter_demands = [0]
         for order in relevant_orders:
-            demands.append(order.cargo_item.weight)
-            demands.append(-order.cargo_item.weight)
+            weight_demands.append(round(order.cargo_item.weight, 2))
+            weight_demands.append(round(-order.cargo_item.weight, 2))
+            loading_meter_demands.append(round(order.cargo_item.loading_meter, 2))
+            loading_meter_demands.append(round(-order.cargo_item.loading_meter, 2))
 
-        print(len(distance_matrix[0]), flush=True)
-        print(len(demands), flush=True)
+        loading_meter_capacities = [delivery_config.max_loading_meter for i in range(delivery_config.num_trucks)]
+        weight_capacities = [delivery_config.max_weight for i in range(delivery_config.num_trucks)]
 
         # Step 6: Create data object
         data = {}
         data["distance_matrix"] = distance_matrix
-        data["vehicle_capacities"] = [24000, 24000, 24000, 24000, 24000]
-        data["num_vehicles"] = 5
+        data["weight_capacities"] = weight_capacities
+        data["loading_meter_capacities"] = loading_meter_capacities
+        data["num_vehicles"] = delivery_config.num_trucks
         data["depot"] = 0
         data["pickup_deliveries"] = pickup_deliveries
-        data["demands"] = demands
+        data["weight_demands"] = weight_demands
+        data["loading_meter_demands"] = loading_meter_demands
 
         # Create the routing index manager.
         manager = pywrapcp.RoutingIndexManager(
@@ -337,7 +313,6 @@ class RouteOptimizer:
 
         # Create Routing Model.
         routing = pywrapcp.RoutingModel(manager)
-
 
         # Define cost of each arc.
         def distance_callback(from_index, to_index):
@@ -351,17 +326,33 @@ class RouteOptimizer:
         routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
 
         # Add Capacity constraint.
-        def demand_callback(from_index):
+        def weight_demand_callback(from_index):
             # Returns the demand of the node.
             # Convert from routing variable Index to demands NodeIndex.
             from_node = manager.IndexToNode(from_index)
-            return data["demands"][from_node]
+            return data["weight_demands"][from_node]
 
-        demand_callback_index = routing.RegisterUnaryTransitCallback(demand_callback)
+        weight_demand_callback_index = routing.RegisterUnaryTransitCallback(weight_demand_callback)
         routing.AddDimensionWithVehicleCapacity(
-            demand_callback_index,
+            weight_demand_callback_index,
             0,  # null capacity slack
-            data["vehicle_capacities"],  # vehicle maximum capacities
+            data["weight_capacities"],  # vehicle maximum capacities
+            True,  # start cumul to zero
+            "Capacity",
+        )
+
+        # Add Capacity constraint.
+        def loading_meter_demand_callback(from_index):
+            # Returns the demand of the node.
+            # Convert from routing variable Index to demands NodeIndex.
+            from_node = manager.IndexToNode(from_index)
+            return data["loading_meter_demands"][from_node]
+        
+        loading_meter_demand_callback_index = routing.RegisterUnaryTransitCallback(loading_meter_demand_callback)
+        routing.AddDimensionWithVehicleCapacity(
+            loading_meter_demand_callback_index,
+            0,  # null capacity slack
+            data["loading_meter_capacities"],  # vehicle maximum capacities
             True,  # start cumul to zero
             "Capacity",
         )
@@ -371,7 +362,7 @@ class RouteOptimizer:
         routing.AddDimension(
             transit_callback_index,
             0,  # no slack
-            2000,  # vehicle maximum travel distance
+            delivery_config.max_travel_distance,  # vehicle maximum travel distance
             True,  # start cumul to zero
             dimension_name,
         )
@@ -408,5 +399,105 @@ class RouteOptimizer:
         # Print solution on console.
         if solution:
             self.print_solution(data, manager, routing, solution, locations)
+            return self.construct_solution(data, manager, routing, solution, locations)
         else: 
-            print("No solution found", flush=True)
+            return {"result": "No solution found"}
+
+
+    def construct_solution(self, data, manager, routing, solution, locations:list[Location]):
+        
+        trips = []
+        number_trips = 4
+        total_distance = 0
+        for vehicle_id in range(data["num_vehicles"]):
+            index = routing.Start(vehicle_id)
+            trip = ProjectedTrip(
+                id=vehicle_id,
+                vehicle=Vehicle(
+                     type="default", stackable=False, max_weight=24000, max_loading_meter=13.6),
+                included_orders=[],
+                start_time=locations[0].timestamp,
+                trip_sections=[])
+            route_distance = 0
+            route_load = 0
+            route_loading_meter = 0
+            count = 0
+            driving_count = 0
+            while not routing.IsEnd(index):
+                
+                node_index = manager.IndexToNode(index)
+                
+
+                distance = geodesic((locations[manager.IndexToNode(index)].geo_location.lat, locations[manager.IndexToNode(index)].geo_location.long), (locations[manager.IndexToNode(solution.Value(routing.NextVar(index)))].geo_location.lat, locations[manager.IndexToNode(solution.Value(routing.NextVar(index)))].geo_location.long)).kilometers
+                new_weight = data["weight_demands"][node_index]
+                new_loading_meter = data["loading_meter_demands"][node_index]
+
+                
+                if new_weight > 0 and new_loading_meter > 0 and distance != 0:
+                    trip.trip_sections.append(HoldingSection(id=count, section_type=SectionType.LOADING.name, location=locations[manager.IndexToNode(index)], duration=0, changed_weight=new_weight, changed_loading_meter=new_loading_meter))
+                    count += 1
+                    trip.trip_sections.append(MovingSection(id=count, section_type=SectionType.DRIVING.name, origin=locations[manager.IndexToNode(index)], destination=locations[manager.IndexToNode(solution.Value(routing.NextVar(index)))], loaded_cargo=CargoItem(weight=route_load, loading_meter=route_loading_meter, load_carrier=False, load_carrier_nestable=False)))
+                    count += 1
+                    driving_count += 1
+                elif new_weight < 0 and new_loading_meter < 0 and distance != 0:
+                    trip.trip_sections.append(HoldingSection(id=count, section_type=SectionType.UNLOADING.name, location=locations[manager.IndexToNode(index)], duration=0, changed_weight=new_weight, changed_loading_meter=new_loading_meter))
+                    count += 1
+                    trip.trip_sections.append(MovingSection(id=count, section_type=SectionType.DRIVING.name, origin=locations[manager.IndexToNode(index)], destination=locations[manager.IndexToNode(solution.Value(routing.NextVar(index)))], loaded_cargo=CargoItem(weight=route_load, loading_meter=route_loading_meter, load_carrier=False, load_carrier_nestable=False)))
+                    count += 1
+                    driving_count += 1
+                elif new_weight < 0 and new_loading_meter < 0 and distance == 0:
+                    trip.trip_sections.append(HoldingSection(id=count, section_type=SectionType.UNLOADING.name, location=locations[manager.IndexToNode(index)], duration=0, changed_weight=new_weight, changed_loading_meter=new_loading_meter))
+                    count += 1
+                elif new_weight > 0 and new_loading_meter > 0 and distance == 0:
+                    trip.trip_sections.append(HoldingSection(id=count, section_type=SectionType.LOADING.name, location=locations[manager.IndexToNode(index)], duration=0, changed_weight=new_weight, changed_loading_meter=new_loading_meter))
+                    count += 1
+                else:
+                    trip.trip_sections.append(MovingSection(id=count, section_type=SectionType.DRIVING.name, origin=locations[manager.IndexToNode(index)], destination=locations[manager.IndexToNode(solution.Value(routing.NextVar(index)))], loaded_cargo=CargoItem(weight=route_load, loading_meter=route_loading_meter, load_carrier=False, load_carrier_nestable=False)))
+                    count += 1
+
+                route_load += data["weight_demands"][node_index]
+                route_loading_meter += data["loading_meter_demands"][node_index]
+                previous_index = index
+                index = solution.Value(routing.NextVar(index))
+                route_distance += routing.GetArcCostForVehicle(
+                    previous_index, index, vehicle_id
+                )
+                
+            total_distance += route_distance
+            trip.num_driving_sections = driving_count
+            trips.append(trip)
+
+        avg_distance = total_distance / number_trips
+
+        return {"number_trips": number_trips, "total_distance": total_distance, "average_distance": avg_distance, "trips": [json.loads(json.dumps(ttrip, default=self.__custom_serializer)) for ttrip in trips]}
+
+    def print_solution(self, data, manager, routing, solution, locations:list[Location]):
+        """Prints solution on console."""
+        print(f"Objective: {solution.ObjectiveValue()}", flush=True)
+        total_distance = 0
+        total_load = 0
+        for vehicle_id in range(data["num_vehicles"]):
+            index = routing.Start(vehicle_id)
+            plan_output = f"Route for vehicle {vehicle_id}:\n"
+            route_distance = 0
+            route_load = 0
+            route_loading_meter = 0
+            while not routing.IsEnd(index):
+                node_index = manager.IndexToNode(index)
+                location = locations[node_index]
+                route_load += data["weight_demands"][node_index]
+                route_loading_meter += data["loading_meter_demands"][node_index]
+                plan_output += f" {location.admin_location.city} Loaded weight({round(route_load, 2)}) Loading Meter({route_loading_meter}) -> "
+                previous_index = index
+                index = solution.Value(routing.NextVar(index))
+                route_distance += routing.GetArcCostForVehicle(
+                    previous_index, index, vehicle_id
+                )
+            plan_output += f" {manager.IndexToNode(index)} Load({route_load})\n"
+            plan_output += f"Distance of the route: {route_distance}km\n"
+            #plan_output += f"Load of the route: {route_load}\n"
+            print(plan_output, flush=True)
+            total_distance += route_distance
+            total_load += route_load
+        print(f"Total distance of all routes: {total_distance}km", flush=True)
+        print(f"Total load of all routes: {total_load}", flush=True)

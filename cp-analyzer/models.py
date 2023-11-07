@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Optional
 import json
 from geopy.distance import geodesic
+from enum import Enum
 
 
 @dataclass
@@ -76,19 +77,39 @@ class CompletedTrip:
         self.id = id
         self.route_locations = route_locations
 
-@dataclass
-class TripSection:
-    origin: Location
-    destination: Location
-    loaded_cargo: list[CargoItem]
+class SectionType(Enum):
+    LOADING = 1
+    DRIVING = 2
+    UNLOADING = 3
 
+# Change to normal class
+class MovingSection:
+    def __init__(self, section_type, origin, destination, loaded_cargo: CargoItem, id=None):
+        self.section_type = section_type
+        self.origin = origin
+        self.destination = destination
+        self.loaded_cargo = loaded_cargo
+        self.distance = geodesic((self.origin.geo_location.lat, self.origin.geo_location.long), (self.destination.geo_location.lat, self.destination.geo_location.long)).kilometers
+        self.loading_meter_utilization = round(self.loaded_cargo.loading_meter / 13.6, 2)
+        self.weight_utilization = round(self.loaded_cargo.weight / 24000, 2)
+        self.id = id
+
+@dataclass
+class HoldingSection:
+    section_type: SectionType
+    location: Location
+    duration: int
+    changed_weight: float
+    changed_loading_meter: float
+    id: Optional[int] = None
 
 @dataclass
 class ProjectedTrip:
     vehicle: Vehicle
     start_time: int
     included_orders: list[CargoOrder]
-    trip_sections: list[TripSection]
+    trip_sections: list
+    num_driving_sections: Optional[int] = None
     id: Optional[int] = None
 
     def get_total_weight(self):
@@ -109,7 +130,6 @@ class ProjectedTrip:
     def get_loading_meter_utilization(self):
         return self.get_total_loading_meter() / self.vehicle.max_loading_meter
 
-
 # ---
 
 @dataclass
@@ -126,9 +146,10 @@ class DeliveryConfig:
     load_carrier_nestable: bool
     corridor_radius: int
     allowed_stays: int
+    max_travel_distance: int
     delivery_promise: Optional[dict] = None
     
-
+    
 @dataclass
 class DeliveryPromise:
     active: bool
