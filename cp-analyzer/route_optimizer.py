@@ -8,7 +8,7 @@ from ortools.constraint_solver import pywrapcp
 class RouteOptimizer:
     def __init__(self) -> None:
         pass
-
+    
     # Custom serialization function to handle problematic floats and convert objects to dictionaries
     def __custom_serializer(self, obj):
         if isinstance(obj, float) and (obj > 1e15 or obj < -1e15):
@@ -259,7 +259,7 @@ class RouteOptimizer:
                 distance_matrix[i][j] = geodesic((locations[i].geo_location.lat, locations[i].geo_location.long), (locations[j].geo_location.lat, locations[j].geo_location.long)).kilometers
         return distance_matrix
     
-    def print_solution(self, data, manager, routing, solution):
+    def print_solution(self, data, manager, routing, solution, locations:list[Location]):
         """Prints solution on console."""
         print(f"Objective: {solution.ObjectiveValue()}", flush=True)
         total_distance = 0
@@ -271,20 +271,21 @@ class RouteOptimizer:
             route_load = 0
             while not routing.IsEnd(index):
                 node_index = manager.IndexToNode(index)
-                #route_load += data["demands"][node_index]
-                plan_output += f" {node_index} Load({route_load}) -> "
+                location = locations[node_index]
+                route_load += data["demands"][node_index]
+                plan_output += f" {location.admin_location.city} Load({round(route_load, 2)}) -> "
                 previous_index = index
                 index = solution.Value(routing.NextVar(index))
                 route_distance += routing.GetArcCostForVehicle(
                     previous_index, index, vehicle_id
                 )
             plan_output += f" {manager.IndexToNode(index)} Load({route_load})\n"
-            plan_output += f"Distance of the route: {route_distance}m\n"
-            plan_output += f"Load of the route: {route_load}\n"
+            plan_output += f"Distance of the route: {route_distance}km\n"
+            #plan_output += f"Load of the route: {route_load}\n"
             print(plan_output, flush=True)
             total_distance += route_distance
             total_load += route_load
-        print(f"Total distance of all routes: {total_distance}m", flush=True)
+        print(f"Total distance of all routes: {total_distance}km", flush=True)
         print(f"Total load of all routes: {total_load}", flush=True)
 
 
@@ -297,24 +298,37 @@ class RouteOptimizer:
                 if order.origin.geo_location.lat and order.destination.geo_location.lat:
                     relevant_orders.append(order)
         
-        # Step 2: Create a list of all locations 50.261781864551835, 10.961540334822597
-        locations = [Location(id=0, geo_location={"lat": 50.26, "long": 10.96}, timestamp=0)]
+        # Step 2: Create a list of all locations 
+        locations = [Location(id=0, geo_location={"lat": 50.26, "long": 10.96}, timestamp=0, admin_location={"city": "COBURG DEPOT", "postal_code": "96450", "country": "DE"})]
         for order in relevant_orders:
             locations.append(order.origin)
             locations.append(order.destination)
 
+        # Step 3: Create a list of the pickup and delivery locations
         pickup_deliveries = []
         for n in range(1, len(locations)-1, 2):
             pickup_deliveries.append([n, n+1])
 
+        # Step 4: Create a list of all distances between locations
         distance_matrix = self.compute_distance_matrix(locations)
         
+        # Step5: Create list of demands
+        demands = [0]
+        for order in relevant_orders:
+            demands.append(order.cargo_item.weight)
+            demands.append(-order.cargo_item.weight)
+
+        print(len(distance_matrix[0]), flush=True)
+        print(len(demands), flush=True)
+
+        # Step 6: Create data object
         data = {}
         data["distance_matrix"] = distance_matrix
-        data["vehicle_capacities"] = [15, 15, 15, 15]
-        data["num_vehicles"] = 4
+        data["vehicle_capacities"] = [24000, 24000, 24000, 24000, 24000]
+        data["num_vehicles"] = 5
         data["depot"] = 0
         data["pickup_deliveries"] = pickup_deliveries
+        data["demands"] = demands
 
         # Create the routing index manager.
         manager = pywrapcp.RoutingIndexManager(
@@ -327,7 +341,7 @@ class RouteOptimizer:
 
         # Define cost of each arc.
         def distance_callback(from_index, to_index):
-            """Returns the manhattan distance between the two nodes."""
+            # Returns the manhattan distance between the two nodes.
             # Convert from routing variable Index to distance matrix NodeIndex.
             from_node = manager.IndexToNode(from_index)
             to_node = manager.IndexToNode(to_index)
@@ -336,12 +350,28 @@ class RouteOptimizer:
         transit_callback_index = routing.RegisterTransitCallback(distance_callback)
         routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
 
+        # Add Capacity constraint.
+        def demand_callback(from_index):
+            # Returns the demand of the node.
+            # Convert from routing variable Index to demands NodeIndex.
+            from_node = manager.IndexToNode(from_index)
+            return data["demands"][from_node]
+
+        demand_callback_index = routing.RegisterUnaryTransitCallback(demand_callback)
+        routing.AddDimensionWithVehicleCapacity(
+            demand_callback_index,
+            0,  # null capacity slack
+            data["vehicle_capacities"],  # vehicle maximum capacities
+            True,  # start cumul to zero
+            "Capacity",
+        )
+
         # Add Distance constraint.
         dimension_name = "Distance"
         routing.AddDimension(
             transit_callback_index,
             0,  # no slack
-            3000,  # vehicle maximum travel distance
+            2000,  # vehicle maximum travel distance
             True,  # start cumul to zero
             dimension_name,
         )
@@ -366,6 +396,10 @@ class RouteOptimizer:
         search_parameters.first_solution_strategy = (
             routing_enums_pb2.FirstSolutionStrategy.PARALLEL_CHEAPEST_INSERTION
         )
+        search_parameters.local_search_metaheuristic = (
+        routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
+        )
+
         search_parameters.time_limit.FromSeconds(5)
 
         # Solve the problem.
@@ -373,4 +407,6 @@ class RouteOptimizer:
 
         # Print solution on console.
         if solution:
-            self.print_solution(data, manager, routing, solution)
+            self.print_solution(data, manager, routing, solution, locations)
+        else: 
+            print("No solution found", flush=True)
