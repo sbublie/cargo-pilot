@@ -2,7 +2,7 @@ import json
 import math
 
 from database_handler import DatabaseHandler
-from models import Trip, Location, Offering
+from models import CargoOrder, CompletedTrip
 
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -15,37 +15,51 @@ class TripHandler:
     def __init__(self) -> None:
         self.database_handler = DatabaseHandler()
 
-    def process_trip_data(self, json_data) -> None:
+    def get_trips_from_json(self, json_data) -> List[CompletedTrip]:
+
+        trips = []
 
         for trip in json_data:
 
             trip_dict = json.loads(trip)
-            trip_obj = Trip(**trip_dict)
+            new_trip = CompletedTrip(**trip_dict)
 
             # TODO: Delete temp addition of one year
-            dt_object = datetime.fromtimestamp(trip_obj.origin.timestamp)
+            dt_object = datetime.fromtimestamp(new_trip.origin.timestamp)
             new_dt_object = dt_object + relativedelta(years=1)
-            origin_timestamp = int(new_dt_object.timestamp())
+            new_trip.origin.timestamp = int(new_dt_object.timestamp())
 
-            origin_location = Location(lat=trip_obj.origin.lat, long=trip_obj.origin.long, type="origin", timestamp=origin_timestamp)
-            origin_id = self.database_handler.add_location(origin_location)
-
-            # TODO: Delete temp addition of one year
-            dt_object = datetime.fromtimestamp(trip_obj.destination.timestamp)
+            dt_object = datetime.fromtimestamp(new_trip.destination.timestamp)
             new_dt_object = dt_object + relativedelta(years=1)
-            destination_timestamp = int(new_dt_object.timestamp())
+            new_trip.destination.timestamp = int(new_dt_object.timestamp())
 
-            destination_location = Location(lat=trip_obj.destination.lat, long=trip_obj.destination.long,
-                                            type="destination", timestamp=destination_timestamp)
-            destination_id = self.database_handler.add_location(destination_location)
+            trips.append(new_trip)
+        
+        return trips
 
-            trip_obj.origin_id = origin_id
-            trip_obj.destination_id = destination_id
+    def get_orders_from_json(self, json_data) -> List[CargoOrder]:
+        cargo_orders = []
 
-            new_trip = {"customer": trip_obj.customer_id, "destination_id": trip_obj.destination_id,
-                    "origin_id": trip_obj.origin_id, "source": trip_obj.source, "type": "base", "vehicle": trip_obj.vehicle_id, "load_percentage": trip_obj.load.capacity_percentage}
+        with open('german-city-codes.json', "r") as infile:
+            city_codes = json.load(infile)
 
-            self.database_handler.add_trip(new_trip)
+        for cargo_order in json_data:
+            order_dict = json.loads(cargo_order)
+            new_order = CargoOrder(**order_dict)
+
+            # If there are no geo location information but a postal code is available
+            if new_order.origin.geo_location.lat is None and new_order.origin.geo_location.long is None and new_order.origin.admin_location.postal_code is not None:
+                origin_geo = city_codes.get(str(new_order.origin.admin_location.postal_code))
+                destination_geo = city_codes.get(str(new_order.destination.admin_location.postal_code))
+                if origin_geo and destination_geo:
+                    new_order.origin.geo_location.lat = origin_geo["lat"]
+                    new_order.origin.geo_location.long = origin_geo["long"]
+                    new_order.destination.geo_location.lat = destination_geo["lat"]
+                    new_order.destination.geo_location.long = destination_geo["long"]
+
+            cargo_orders.append(new_order)
+
+        return cargo_orders
 
     def process_offering_data(self, json_data) -> None:
 

@@ -23,9 +23,9 @@ class APIHandler:
         if instance == "Local":
             url = LOCAL_CP_INSTANCE_URL + API_ENDPOINT
         
-        if data_type == "Offerings":
-            url += "/offerings"
-        elif data_type == "Trips":
+        if data_type == "Cargo Orders":
+            url += "/cargo-orders"
+        elif data_type == "Past Trips":
             url += "/trips"
 
         num_chunks = -(-len(data) // CHUNK_SIZE)

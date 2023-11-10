@@ -11,16 +11,22 @@ app.use(cors());
 const locationController = require("./locationController");
 const clusterController = require("./clusterController");
 const tripController = require("./tripController");
-const offeringController = require("./offeringController");
 const tripPatternController = require("./tripPatternController");
 const tripMatchController = require("./tripMatchController");
 const geoController = require("./geoController")
+const cargoOrderController = require("./cargoOrderController")
 
 app.get("/locations", locationController.getAllLocations);
 app.post("/locations", locationController.addLocation);
 app.get("/locations/:id", locationController.getLocation);
 //app.delete("/locations", clusterController.deleteAllLocations);
 app.delete("/locations/:id", locationController.deleteLocation);
+
+app.get("/cargo-orders", cargoOrderController.getAllCargoOrders);
+app.post("/cargo-orders", cargoOrderController.addCargoOrder);
+app.get("/cargo-orders/:id", cargoOrderController.getLocation);
+//app.delete("/cargo-orders", cargoOrderController.deleteAllLocations);
+app.delete("/cargo-orders/:id", cargoOrderController.deleteLocation);
 
 app.get("/clusters", clusterController.getAllClusters);
 app.post("/clusters", clusterController.addCluster);
@@ -33,12 +39,6 @@ app.post("/trips", tripController.addTrip);
 app.get("/trips/:id", tripController.getTrip);
 //app.delete("/trips", clusterController.deleteAllTrips);
 app.delete("/trips/:id", tripController.deleteTrip);
-
-app.get("/offerings", offeringController.getAllOfferings);
-app.post("/offerings", offeringController.addOffering);
-app.get("/offerings/:id", offeringController.getOffering);
-//app.delete("/offerings", clusterController.deleteAllOfferings);
-app.delete("/offerings/:id", offeringController.deleteOffering);
 
 app.get("/trip-pattern", tripPatternController.getAllTripPatterns);
 app.post("/trip-pattern", tripPatternController.addTripPattern);

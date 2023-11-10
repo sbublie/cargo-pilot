@@ -13,8 +13,8 @@ interface Stats {
 interface OfferingsContextProps {
   trips: any[]
   setNewTrips: (trips: any[]) => void;
-  offerings: any[]; 
-  setNewOfferings: (offerings: any[]) => void;
+  cargoOrders: any[]; 
+  setNewCargoOrders: (cargoOrders: any[]) => void;
   clusters: any[];
   setNewClusters:(clusters: any[]) => void;
   stats: Stats;
@@ -39,7 +39,7 @@ interface OfferingsProviderProps {
 
 export function OfferingsProvider({ children }: OfferingsProviderProps) {
   const [trips, setTrips] = useState<any[]>([]);
-  const [offerings, setOfferings] = useState<any[]>([]); 
+  const [cargoOrders, setCargoOrders] = useState<any[]>([]); 
   const [clusters, setClusters] = useState<any[]>([]); 
   const [stats, setStats] = useState<Stats>({});
   const [boundaries, setBoundaries] = useState<FeatureCollection<Polygon>>({
@@ -51,8 +51,8 @@ export function OfferingsProvider({ children }: OfferingsProviderProps) {
     setTrips(newTrips);
   }
 
-  function setNewOfferings(newOfferings: any[]) { 
-    setOfferings(newOfferings);
+  function setNewCargoOrders(newCargoOrders: any[]) { 
+    setCargoOrders(newCargoOrders);
   }
 
   function setNewClusters(newClusters: any[]) { 
@@ -70,8 +70,8 @@ export function OfferingsProvider({ children }: OfferingsProviderProps) {
   const contextValue: OfferingsContextProps = {
     trips,
     setNewTrips,
-    offerings,
-    setNewOfferings,
+    cargoOrders,
+    setNewCargoOrders,
     clusters,
     setNewClusters,
     stats,

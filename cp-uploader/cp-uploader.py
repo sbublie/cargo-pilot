@@ -22,7 +22,7 @@ def main():
             inquirer.List(
                 "data_type",
                 message="What type of data do you want to upload?",
-                choices=["Trips", "Offerings"],
+                choices=["Past Trips", "Cargo Orders"],
             ),
             inquirer.List(
                 "source",
@@ -42,8 +42,8 @@ def main():
         processed_data = InputConverter().convert_data_from_file(
             filename=file_path,
             source=answers["source"],
-            data_type=answers["data_type"],
-            instance=answers["instance"])
+            data_type=answers["data_type"])
+        
         APIHandler().upload_data(data=processed_data, data_type=answers["data_type"], instance=answers["instance"])
 
 

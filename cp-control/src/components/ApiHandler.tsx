@@ -1,10 +1,32 @@
 import { useEffect } from "react";
 import { useOfferings } from "../contexts/OfferingsContext";
 
+
+export function getCalcRoutes(settings: any): Promise<any[]> {
+  const requestOptions = {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(settings),
+  };
+
+  // Return a Promise for the fetch operation
+  return fetch(import.meta.env.VITE_BASE_URL + "api/analyzer/calc-routes", requestOptions)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return response.json();
+    })
+    .catch((error) => {
+      // Handle the error here or rethrow it to be caught later
+      console.error("Error fetching data: ", error);
+      throw error;
+    });
+}
 export function ApiHandler() {
   const {
     setNewTrips,
-    setNewOfferings,
+    setNewCargoOrders,
     setNewClusters,
     setNewStats,
     setNewBoundaries,
@@ -23,13 +45,13 @@ export function ApiHandler() {
       }
     };
 
-    const fetchOfferings = async () => {
+    const fetchCargoOrders = async () => {
       try {
         const response = await fetch(
-          import.meta.env.VITE_BASE_URL + "api/db/offerings"
+          import.meta.env.VITE_BASE_URL + "api/db/cargo-orders"
         );
         const jsonData = await response.json();
-        setNewOfferings(jsonData);
+        setNewCargoOrders(jsonData);
       } catch (error) {
         console.log("Error:", error);
       }
@@ -76,7 +98,7 @@ export function ApiHandler() {
     fetchTrips();
     fetchStats();
     fetchClusters();
-    fetchOfferings();
+    fetchCargoOrders();
     fetchBoundaries();
   }, []); // Empty dependency array ensures this effect runs only once
 

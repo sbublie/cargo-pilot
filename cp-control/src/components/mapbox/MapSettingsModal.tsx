@@ -21,7 +21,7 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({ show, onHide, onApplySett
   const handleMapModeChange = (event: ChangeEvent<HTMLInputElement>) => {
     const mapModes: Record<string, Settings['mapMode']> = {
       activity_cluster: "activity_cluster",
-      offering: "offering",
+      cargo_order: "cargo_order",
       trip: "trip",
       cluster: "cluster",
       match: "match",
@@ -87,9 +87,9 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({ show, onHide, onApplySett
             />
             <Form.Check
               type="radio"
-              id="offering"
-              label="Offering Locations"
-              checked={settings.mapMode === "offering"}
+              id="cargo_order"
+              label="Order Locations"
+              checked={settings.mapMode === "cargo_order"}
               onChange={handleMapModeChange}
             />
             <Form.Check

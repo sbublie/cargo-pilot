@@ -1,9 +1,23 @@
-const { Location } = require("./models");
+const { Location, GeoLocation, AdminLocation } = require("./models");
 
 // Function to get all locations
 async function getAllLocations(req, res) {
   try {
-    const locations = await Location.findAll();
+    const locations = await Location.findAll({
+      attributes: ["id", "timestamp"],
+      include: [
+        {
+          model: GeoLocation,
+          as: "geo_location",
+          attributes: ["lat", "long"],
+        },
+        {
+          model: AdminLocation,
+          as: "admin_location",
+          attributes: ["street", "postal_code", "city", "country"], 
+        },
+      ],
+    });
     res.json(locations);
   } catch (error) {
     console.error(error);
@@ -46,7 +60,7 @@ async function addLocation(req, res) {
       locationData.country = country
     }
 
-    const newLocation = await Location.create(locationData);
+    const newLocation = await LocationOld.create(locationData);
     res.status(201).json(newLocation);
   } catch (error) {
     console.log(error);
@@ -57,7 +71,7 @@ async function addLocation(req, res) {
 async function getLocation(req, res) {
   try {
     const locationId = req.params.id;
-    const location = await Location.findByPk(locationId);
+    const location = await LocationOld.findByPk(locationId);
 
     if (!location) {
       return res.status(404).json({ message: "Location not found" });
@@ -73,7 +87,7 @@ async function getLocation(req, res) {
 async function deleteLocation(req, res) {
   try {
     const locationId = req.params.id;
-    const location = await Location.findByPk(locationId);
+    const location = await LocationOld.findByPk(locationId);
 
     if (!location) {
       return res.status(404).json({ message: "Location not found" });

@@ -2,52 +2,66 @@ import { Map as MapboxMap, MapMouseEvent } from "mapbox-gl";
 import mapboxgl from "mapbox-gl";
 import { FeatureCollection, Point, Feature } from "geojson";
 
-interface Offering {
+interface CargoOrder {
   id: number;
-  load_weight: number;
-  load_meter: number;
-  load_percentage: number;
-  source: string;
+  data_source: string;
   origin: {
     id: number;
-    zip_code: number;
-    city: string;
-    long: number;
-    lat: number;
     timestamp: number;
+    admin_location: {
+      postal_code: string;
+      city: string;
+      country: string;
+    }
+    geo_location: {
+      lat: number;
+      long: number;
+    }
   };
   destination: {
     id: number;
-    zip_code: number;
-    city: string;
-    long: number;
-    lat: number;
     timestamp: number;
+    admin_location: {
+      postal_code: string;
+      city: string;
+      country: string;
+    }
+    geo_location: {
+      lat: number;
+      long: number;
+    }
   };
+  cargo_item: {
+    loading_meter: number;
+    weight: number;
+    load_carrier: boolean;
+    load_carrier_nestable: boolean;
+  }
 }
 
-export const getOfferingsGeoJson = (offerings: Offering[]) => {
-  const offeringMarkerData: FeatureCollection<Point> = {
+export const getCargoOrderGeoJson = (cargoOrders: CargoOrder[]) => {
+  const cargoOrderMarkerData: FeatureCollection<Point> = {
     type: "FeatureCollection",
     features: [],
   };
 
-  offerings.forEach((offering) => {
+  cargoOrders.forEach((order) => {
+    if (order.origin.geo_location !== undefined && order.destination.geo_location !== undefined) {
     const origin_marker: Feature<Point> = {
       type: "Feature",
       properties: {
         color: "green",
         type: "Origin",
-        id: offering.origin.id,
-        city: offering.origin.city,
-        source: offering.source,
-        timestamp: offering.origin.timestamp,
-        load_meter: offering.load_meter,
-        load_weight: offering.load_weight
+        id: order.id,
+        city: order.origin.admin_location.city,
+        source: order.data_source,
+        timestamp: order.origin.timestamp,
+        loading_meter: order.cargo_item.loading_meter,
+        weight: order.cargo_item.weight
       },
       geometry: {
         type: "Point",
-        coordinates: [offering.origin.long, offering.origin.lat],
+        coordinates: [order.origin.geo_location.long, order.origin.geo_location.lat],
       },
     };
 
@@ -56,44 +70,45 @@ export const getOfferingsGeoJson = (offerings: Offering[]) => {
       properties: {
         color: "red",
         type: "Destination",
-        city: offering.destination.city,
-        id: offering.destination.id,
-        source: offering.source,
-        timestamp: offering.destination.timestamp,
-        load_meter: offering.load_meter,
-        load_weight: offering.load_weight
+        id: order.destination.id,
+        city: order.destination.admin_location.city,
+        source: order.data_source,
+        timestamp: order.destination.timestamp,
+        loading_meter: order.cargo_item.loading_meter,
+        weight: order.cargo_item.weight
       },
       geometry: {
         type: "Point",
-        coordinates: [offering.destination.long, offering.destination.lat],
+        coordinates: [order.destination.geo_location.long, order.destination.geo_location.lat],
       },
     };
 
-    offeringMarkerData.features.push(origin_marker);
-    offeringMarkerData.features.push(destination_marker);
+    cargoOrderMarkerData.features.push(origin_marker);
+    cargoOrderMarkerData.features.push(destination_marker);
+  }
   });
 
-  return offeringMarkerData;
+  return cargoOrderMarkerData;
 };
 
-export const addOfferingsToMap = (
+export const addCargoOrdersToMap = (
   map: MapboxMap,
-  offerings: FeatureCollection
+  cargoOrders: FeatureCollection
 ) => {
   const source = map.getSource(
-    "offering_marker_data"
+    "cargo_order_marker_data"
   ) as mapboxgl.GeoJSONSource;
 
   if (!source) {
-    map.addSource(`offering_marker_data`, {
+    map.addSource("cargo_order_marker_data", {
       type: "geojson",
-      data: offerings,
+      data: cargoOrders,
     });
 
     map.addLayer({
-      id: "offering_markers",
+      id: "cargo_order_markers",
       type: "circle",
-      source: "offering_marker_data",
+      source: "cargo_order_marker_data",
       paint: {
         "circle-color": ["get", "color"],
         "circle-radius": 10,
@@ -102,7 +117,7 @@ export const addOfferingsToMap = (
       },
     });
 
-    map.on("click", "offering_markers", (e) => {
+    map.on("click", "cargo_order_markers", (e) => {
       const feature = e.features?.[0];
       if (feature) {
         const dateString = new Date(
@@ -112,7 +127,7 @@ export const addOfferingsToMap = (
         // Assert that geometry is of a type that has coordinates
         const geometry =
           feature.geometry as mapboxgl.MapboxGeoJSONFeature["geometry"];
-        const description = `<b><h7>Location #${feature.properties?.id}</h7></b><br/>Type: ${feature.properties?.type}<br/>Source: ${feature.properties?.source}<br/>Time: ${dateString}<br/>Load Meter: ${feature.properties?.load_meter}%<br/>Load Weight: ${feature.properties?.load_weight}kg`;
+        const description = `<b><h7>Order #${feature.properties?.id}</h7></b><br/>Type: ${feature.properties?.type}<br/>Source: ${feature.properties?.source}<br/>Time: ${dateString}<br/>Load Meter: ${feature.properties?.loading_meter}m<br/>Load Weight: ${feature.properties?.weight}kg`;
 
         if (
           geometry.type !== "GeometryCollection" &&
@@ -139,43 +154,43 @@ export const addOfferingsToMap = (
       }
     });
 
-    map.on("mouseenter", "offering_markers", () => {
+    map.on("mouseenter", "cargo_order_markers", () => {
       map.getCanvas().style.cursor = "pointer";
     });
-    map.on("mouseleave", "offering_markers", () => {
+    map.on("mouseleave", "cargo_order_markers", () => {
       map.getCanvas().style.cursor = "";
     });
 
-    map.setLayoutProperty("offering_markers", "visibility", "none");
+    map.setLayoutProperty("cargo_order_markers", "visibility", "none");
   } else {
-    source.setData(offerings);
+    source.setData(cargoOrders);
   }
 };
 
-export function addOfferingClusterToMap(
+export function addCargoOrderClusterToMap(
   map: MapboxMap,
-  offerings: FeatureCollection
+  cargoOrders: FeatureCollection
 ) {
   const source = map.getSource(
-    "offering_cluster_data"
+    "cargo_order_cluster_data"
   ) as mapboxgl.GeoJSONSource;
 
   if (!source) {
     console.log("add source");
-    map.addSource("offering_cluster_data", {
+    map.addSource("cargo_order_cluster_data", {
       type: "geojson",
       // Point to GeoJSON data. This example visualizes all M1.0+ earthquakes
       // from 12/22/15 to 1/21/16 as logged by USGS' Earthquake hazards program.
-      data: offerings,
+      data: cargoOrders,
       cluster: true,
       clusterMaxZoom: 14, // Max zoom to cluster points on
       clusterRadius: 50, // Radius of each cluster when clustering points (defaults to 50)
     });
 
     map.addLayer({
-      id: "offering_clusters",
+      id: "cargo_order_clusters",
       type: "circle",
-      source: "offering_cluster_data",
+      source: "cargo_order_cluster_data",
       filter: ["has", "point_count"],
       paint: {
         // Use step expressions (https://docs.mapbox.com/style-spec/reference/expressions/#step)
@@ -197,9 +212,9 @@ export function addOfferingClusterToMap(
     });
 
     map.addLayer({
-      id: "offering_cluster_count",
+      id: "cargo_order_cluster_count",
       type: "symbol",
-      source: "offering_cluster_data",
+      source: "cargo_order_cluster_data",
       filter: ["has", "point_count"],
       layout: {
         "text-field": ["get", "point_count_abbreviated"],
@@ -209,9 +224,9 @@ export function addOfferingClusterToMap(
     });
 
     map.addLayer({
-      id: "unclustered_offering",
+      id: "unclustered_cargo_order",
       type: "circle",
-      source: "offering_cluster_data",
+      source: "cargo_order_cluster_data",
       filter: ["!", ["has", "point_count"]],
       paint: {
         "circle-color": ["get", "color"],
@@ -221,7 +236,7 @@ export function addOfferingClusterToMap(
       },
     });
 
-    map.on("click", "unclustered_offering", (e) => {
+    map.on("click", "unclustered_cargo_order", (e) => {
       const feature = e.features?.[0];
       if (feature) {
         const dateString = new Date(
@@ -231,7 +246,7 @@ export function addOfferingClusterToMap(
         // Assert that geometry is of a type that has coordinates
         const geometry =
           feature.geometry as mapboxgl.MapboxGeoJSONFeature["geometry"];
-        const description = `<b><h7>Location #${feature.properties?.id}</h7></b><br/>Source: ${feature.properties?.source}<br/>Time: ${dateString}`;
+        const description = `<b><h7>Order #${feature.properties?.id}</h7></b><br/>Source: ${feature.properties?.source}<br/>Time: ${dateString}`;
 
         if (
           geometry.type !== "GeometryCollection" &&
@@ -261,7 +276,7 @@ export function addOfferingClusterToMap(
     // inspect a cluster on click
     map.on(
       "click",
-      "offering_clusters",
+      "cargo_order_clusters",
       (e: MapMouseEvent & { features?: Array<any> }) => {
         // Ensure that features exist and it's not an empty array
         if (!e.features || e.features.length === 0) {
@@ -277,7 +292,7 @@ export function addOfferingClusterToMap(
         }
 
         const source = map.getSource(
-          "offering_cluster_data"
+          "cargo_order_cluster_data"
         ) as mapboxgl.GeoJSONSource; // Type cast to GeoJSONSource
 
         if (!source.getClusterExpansionZoom) {
@@ -298,17 +313,17 @@ export function addOfferingClusterToMap(
       }
     );
 
-    map.on("mouseenter", "unclustered_offering", () => {
+    map.on("mouseenter", "unclustered_cargo_order", () => {
       map.getCanvas().style.cursor = "pointer";
     });
-    map.on("mouseleave", "unclustered_offering", () => {
+    map.on("mouseleave", "unclustered_cargo_order", () => {
       map.getCanvas().style.cursor = "";
     });
 
-    map.on("mouseenter", "offering_clusters", () => {
+    map.on("mouseenter", "cargo_order_clusters", () => {
       map.getCanvas().style.cursor = "pointer";
     });
-    map.on("mouseleave", "offering_clusters", () => {
+    map.on("mouseleave", "cargo_order_clusters", () => {
       map.getCanvas().style.cursor = "";
     });
   }
