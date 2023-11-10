@@ -8,10 +8,12 @@ interface DeliveryPromise {
   time_for_remaining_cargo: number;
 }
 
+/*
 interface ReturnCorridor {
   distance_return_to_start: number;
   allowed_stays: number;
 }
+*/
 
 export interface DeliveryConfig {
   start_time: number;
@@ -19,6 +21,7 @@ export interface DeliveryConfig {
   max_loading_meter: number;
   max_weight: number;
   num_trucks: number;
+  max_travel_distance: number;
   cargo_stackable: boolean;
   max_waiting_time: number;
   focus_area: string;
@@ -38,10 +41,11 @@ interface ConfigModalProps {
 export const ConfigModal: React.FC<ConfigModalProps> = ({ show, onHide, onApplySettings }) => {
   const [deliveryConfig, setDeliveryConfig] = useState<DeliveryConfig>({
     start_time: 1672614000,
-    end_time_incl: 1673045999,
+    end_time_incl: 1672700399,
     max_loading_meter: 13.6,
     max_weight: 24000,
-    num_trucks: 2,
+    num_trucks: 5,
+    max_travel_distance: 2000,
     cargo_stackable: false,
     max_waiting_time: 86400,
     focus_area: "volume",
@@ -60,18 +64,6 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({ show, onHide, onApplyS
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setDeliveryConfig({ ...deliveryConfig, [name]: parseFloat(value) || 0 });
-  };
-
-  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, checked } = e.target;
-    setDeliveryConfig({ ...deliveryConfig, [name]: checked });
-  };
-
-  const handlePromiseChange = (key: string, value: number) => {
-    setDeliveryConfig({
-      ...deliveryConfig,
-      delivery_promise: { ...deliveryConfig.delivery_promise, [key]: value },
-    });
   };
 
   return (
@@ -135,6 +127,7 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({ show, onHide, onApplyS
             <Form.Group>
               <Form.Label>Max Waiting Time</Form.Label>
               <Form.Control
+                disabled
                 type="number"
                 name="max_waiting_time"
                 placeholder="Enter Max Waiting Time"
@@ -143,18 +136,19 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({ show, onHide, onApplyS
               />
             </Form.Group>
             <Form.Group>
-              <Form.Label>Corridor Radius</Form.Label>
+              <Form.Label>Max Kilometers per Trip</Form.Label>
               <Form.Control
                 type="number"
-                name="corridor_radius"
-                placeholder="Enter Corridor Radius"
-                value={deliveryConfig.corridor_radius}
+                name="max_travel_distance"
+                placeholder="Max Kilometers per Trip"
+                value={deliveryConfig.max_travel_distance}
                 onChange={handleInputChange}
               />
             </Form.Group>
             <Form.Group>
               <Form.Label>Allowed Stays</Form.Label>
               <Form.Control
+                disabled
                 type="number"
                 name="allowed_stays"
                 placeholder="Enter Allowed Stays"
@@ -165,6 +159,7 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({ show, onHide, onApplyS
             <Form.Group>
               <Form.Label>Focus Area</Form.Label>
               <Form.Control
+                disabled
                 type="text"
                 name="focus_area"
                 placeholder="Enter Focus Area"
@@ -175,11 +170,8 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({ show, onHide, onApplyS
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={onHide}>
-            Close
-          </Button>
           <Button variant="primary" onClick={() => onApplySettings(deliveryConfig)}>
-            Apply
+            Calculate Routes
           </Button>
         </Modal.Footer>
       </Modal>
