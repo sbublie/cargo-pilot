@@ -1,3 +1,5 @@
+import mapboxgl from "mapbox-gl";
+
 interface TripSection {
   id: number;
   section_type: string;
@@ -15,17 +17,29 @@ interface TripSection {
       lat: number;
       long: number;
     };
+    admin_location: {
+      city: string;
+      postal_code: number;
+    };
   };
   destination: {
     geo_location: {
       lat: number;
       long: number;
     };
+    admin_location: {
+      city: string;
+      postal_code: number;
+    };
   };
   location: {
     geo_location: {
       lat: number;
       long: number;
+    };
+    admin_location: {
+      city: string;
+      postal_code: number;
     };
   };
 }
@@ -36,25 +50,30 @@ interface ProjectedTrip {
   num_driving_sections: number;
   start_time: number;
   trip_sections: TripSection[];
+  total_loading_meter_utilization: number;
+  total_weight_utilization: number;
 }
 
-interface ProjectedTripResult {
+export interface ProjectedTripResult {
   result: {
     average_distance: number;
     number_trips: number;
     total_distance: number;
+    num_of_dropped_nodes: number;
     trips: ProjectedTrip[];
   };
 }
 
-const mainColors = ["blue", "red", "yellow", "green", "orange", "purple"]; // List of main colors
+const mainColors = ["blue", "red", "green", "orange", "purple", "brown"]; // List of main colors
 
-export function getProjectedTripsGeoJson(projected_trips: ProjectedTripResult) {
+export function getProjectedTripsLineGeoJson(
+  projected_trips: ProjectedTripResult
+) {
   const geoJson = {
     type: "FeatureCollection",
     features: projected_trips.result.trips.flatMap((trip, index) => {
-    const colorIndex = index % mainColors.length; // Use index to select color from the mainColors array
-    const lineColor = mainColors[colorIndex];
+      const colorIndex = index % mainColors.length; // Use index to select color from the mainColors array
+      const lineColor = mainColors[colorIndex];
       return trip.trip_sections
         .map((section) => {
           if (section.section_type === "DRIVING") {
@@ -75,24 +94,18 @@ export function getProjectedTripsGeoJson(projected_trips: ProjectedTripResult) {
               },
               properties: {
                 id: section.id,
-                color: lineColor,
-                weight: 5,
-                opacity: 0.5,
-              },
-            };
-          } else if (section.section_type === "LOADING") {
-            return {
-              type: "Feature",
-              geometry: {
-                type: "Point",
-                coordinates: [
-                  section.location.geo_location.long,
-                  section.location.geo_location.lat,
-                ],
-              },
-              properties: {
-                id: section.id,
-                color: "blue", // Change color or other properties as needed
+                trip_id: trip.id,
+                distance: section.distance,
+                weight_utilization: section.weight_utilization,
+                loading_meter_utilization: section.loading_meter_utilization,
+                loaded_cargo_weight: section.loaded_cargo.weight,
+                loaded_cargo_loading_meter: section.loaded_cargo.loading_meter,
+                line_color: lineColor,
+                line_weight: 5,
+                line_opacity: 0.5,
+                total_weight_utilization: trip.total_weight_utilization,
+                total_loading_meter_utilization:
+                  trip.total_loading_meter_utilization,
               },
             };
           }
@@ -105,30 +118,193 @@ export function getProjectedTripsGeoJson(projected_trips: ProjectedTripResult) {
   return geoJson;
 }
 
-export function addProjectedTripsToMap(map: mapboxgl.Map, geoJson: any) {
-  const source = map.getSource("projected_trips") as mapboxgl.GeoJSONSource;
+export function getProjectedTripsPointGeoJson(
+  projected_trips: ProjectedTripResult
+) {
+  const geoJson = {
+    type: "FeatureCollection",
+    features: projected_trips.result.trips.flatMap((trip, index) => {
+      const colorIndex = index % mainColors.length; // Use index to select color from the mainColors array
+      const lineColor = mainColors[colorIndex];
+      let count = 0;
+      return trip.trip_sections
+        .map((section) => {
+          if (
+            section.section_type === "LOADING" ||
+            section.section_type === "UNLOADING"
+          ) {
+            count++;
+            return {
+              type: "Feature",
+              geometry: {
+                type: "Point",
+                coordinates: [
+                  section.location.geo_location.long,
+                  section.location.geo_location.lat,
+                ],
+              },
+              properties: {
+                id: count,
+                color: lineColor,
+                city: section.location.admin_location.city,
+                changed_weight: section.changed_weight,
+                changed_loading_meter: section.changed_loading_meter,
+              },
+            };
+          }
+          return null; // Handle other section types if necessary
+        })
+        .filter((feature) => feature !== null); // Remove null values from the array
+    }),
+  };
 
-  if (!source) {
-    map.addSource("projected_trips", {
+  return geoJson;
+}
+
+export function addProjectedTripsToMap(
+  map: mapboxgl.Map,
+  lineGeoJson: any,
+  pointGeoJson: any
+) {
+  const lines_source = map.getSource(
+    "projected_trips_lines"
+  ) as mapboxgl.GeoJSONSource;
+  const points_source = map.getSource(
+    "projected_trips_points"
+  ) as mapboxgl.GeoJSONSource;
+
+  if (!lines_source && !points_source) {
+    map.addSource("projected_trips_lines", {
       type: "geojson",
-      data: geoJson,
+      data: lineGeoJson,
+    });
+
+    map.addSource("projected_trips_points", {
+      type: "geojson",
+      data: pointGeoJson,
     });
 
     map.addLayer({
-      id: "projected_trips_layer",
+      id: "projected_trips_lines_layer",
       type: "line",
-      source: "projected_trips",
+      source: "projected_trips_lines",
       layout: {
         "line-join": "round",
         "line-cap": "round",
       },
       paint: {
-        "line-color": ["get", "color"],
-        "line-width": ["get", "weight"],
-        "line-opacity": ["get", "opacity"],
+        "line-color": ["get", "line_color"],
+        "line-width": ["get", "line_weight"],
+        "line-opacity": ["get", "line_opacity"],
+      },
+    });
+
+    map.addLayer({
+      id: "projected_trips_points_layer",
+      type: "circle",
+      source: "projected_trips_points",
+      paint: {
+        "circle-color": ["get", "color"],
+        "circle-radius": 8,
+        "circle-stroke-width": 1,
+        "circle-stroke-color": "#fff",
+      },
+    });
+
+    map.addLayer({
+      id: "projected_trips_points_count",
+      type: "symbol",
+      source: "projected_trips_points",
+      layout: {
+        "text-field": ["get", "id"],
+        "text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
+        "text-size": 12,
+      },
+      paint: {
+        "text-color": "white",
       },
     });
   } else {
-    source.setData(geoJson);
+    lines_source.setData(lineGeoJson);
+    points_source.setData(pointGeoJson);
   }
+
+  map.on("click", "projected_trips_points_layer", (e) => {
+    const feature = e.features?.[0];
+    if (feature) {
+      // Assert that geometry is of a type that has coordinates
+      const geometry =
+        feature.geometry as mapboxgl.MapboxGeoJSONFeature["geometry"];
+      const description = `<b>Location ${feature?.properties?.id}</b><br /> City: ${feature?.properties?.city}<br /> Changed weight: ${feature?.properties?.changed_weight} km<br /> Changed loading meter: ${feature?.properties?.changed_loading_meter} m<br /`;
+
+      if (
+        geometry.type !== "GeometryCollection" &&
+        geometry.coordinates &&
+        description
+      ) {
+        console.log(geometry.type);
+        if (geometry.type === "Point") {
+          let coordinates = geometry.coordinates.slice() as [number, number];
+
+          while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+            coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+          }
+
+          new mapboxgl.Popup()
+            .setLngLat(coordinates)
+            .setHTML(description)
+            .addTo(map);
+          e.stopPropagation();
+        } else {
+          console.error("Geometry type is not a Point");
+        }
+      } else {
+        console.error("Feature geometry or properties are undefined");
+      }
+    }
+  });
+
+  map.on("click", "projected_trips_lines_layer", (e) => {
+    const feature = e.features?.[0];
+    if (feature) {
+      // Assert that geometry is of a type that has coordinates
+      const geometry =
+        feature.geometry as mapboxgl.MapboxGeoJSONFeature["geometry"];
+      const description = `<b>Sub-Trip ${feature?.properties?.id}</b><br /> Trip ID: ${feature?.properties?.trip_id}<br />  Distance: ${feature?.properties?.distance} km<br /> Weight: ${feature?.properties?.loaded_cargo_weight} kg<br /> Weight utilization: ${feature?.properties?.weight_utilization} %<br /> Loading meter: ${feature?.properties?.loaded_cargo_loading_meter} m<br /> Loading meter utilization: ${feature?.properties?.loading_meter_utilization} % `;
+
+      if (
+        geometry.type !== "GeometryCollection" &&
+        geometry.coordinates &&
+        description
+      ) {
+        console.log(geometry.type);
+        if (geometry.type === "LineString") {
+          let coordinates = e.lngLat;
+
+          new mapboxgl.Popup()
+            .setLngLat(coordinates)
+            .setHTML(description)
+            .addTo(map);
+          e.stopPropagation();
+        } else {
+          console.error("Geometry type is not a Point");
+        }
+      } else {
+        console.error("Feature geometry or properties are undefined");
+      }
+    }
+  });
+
+  map.on("mouseenter", "projected_trips_lines_layer", () => {
+    map.getCanvas().style.cursor = "pointer";
+  });
+  map.on("mouseleave", "projected_trips_lines_layer", () => {
+    map.getCanvas().style.cursor = "";
+  });
+  map.on("mouseenter", "projected_trips_points_layer", () => {
+    map.getCanvas().style.cursor = "pointer";
+  });
+  map.on("mouseleave", "projected_trips_points_layer", () => {
+    map.getCanvas().style.cursor = "";
+  });
 }

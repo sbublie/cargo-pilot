@@ -42,7 +42,7 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({ show, onHide, onApplyS
   const [deliveryConfig, setDeliveryConfig] = useState<DeliveryConfig>({
     start_time: 1672614000,
     end_time_incl: 1672700399,
-    max_loading_meter: 13.6,
+    max_loading_meter: 14,
     max_weight: 24000,
     num_trucks: 5,
     max_travel_distance: 2000,
@@ -98,8 +98,8 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({ show, onHide, onApplyS
               <Form.Label>Max Load Meter</Form.Label>
               <Form.Control
                 type="number"
-                name="max_load_meter"
-                placeholder="Enter Max Load Meter"
+                name="max_loading_meter"
+                placeholder="Enter Max Loading Meter"
                 value={deliveryConfig.max_loading_meter}
                 onChange={handleInputChange}
               />

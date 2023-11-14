@@ -2,10 +2,15 @@ import React from "react";
 import { Container, Row, Col, Button } from "react-bootstrap";
 import { useState, useRef, useEffect } from "react";
 import { ConfigModal, DeliveryConfig } from "./ConfigModal";
-import { SpinnerModal, NotificationModal } from "./SpinnerModal";
+import {
+  SpinnerModal,
+  NotificationModal,
+  StatisticsModal,
+} from "./SpinnerModal";
 import { getCalcRoutes } from "../ApiHandler";
 import {
-  getProjectedTripsGeoJson,
+  getProjectedTripsLineGeoJson,
+  getProjectedTripsPointGeoJson,
   addProjectedTripsToMap,
 } from "./mapFeatures";
 import mapboxgl from "mapbox-gl";
@@ -23,6 +28,7 @@ const Optimizer: React.FC = () => {
   const [showConfigModal, setShowConfigModal] = useState(true);
   const [showSpinnerModal, setShowSpinnerModal] = useState(false);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [showStatisticsModal, setShowStatisticsModal] = useState(false);
 
   const [results, setResults] = useState<any>({
     result: {
@@ -34,6 +40,10 @@ const Optimizer: React.FC = () => {
   }); // State to store results
 
   const handleCloseConfigModal = () => setShowConfigModal(false);
+  const handleCloseStatisticsModal = () => setShowStatisticsModal(false);
+  const handleShowStatisticsModal = () => {
+    setShowStatisticsModal(true);
+  };
   const handleCloseNotificationModal = () => {
     setShowNotificationModal(false);
     setShowConfigModal(true);
@@ -41,9 +51,14 @@ const Optimizer: React.FC = () => {
 
   const clearMapContent = () => {
     if (map) {
-      const source = map.getSource("projected_trips") as mapboxgl.GeoJSONSource;
-      source.setData({
-        type: 'FeatureCollection',
+      const source_lines = map.getSource("projected_trips_lines") as mapboxgl.GeoJSONSource;
+      source_lines.setData({
+        type: "FeatureCollection",
+        features: [],
+      });
+      const source_points = map.getSource("projected_trips_points") as mapboxgl.GeoJSONSource;
+      source_points.setData({
+        type: "FeatureCollection",
         features: [],
       });
     }
@@ -53,7 +68,7 @@ const Optimizer: React.FC = () => {
     clearMapContent();
   };
 
-  const lng = 9.969391007692515
+  const lng = 9.969391007692515;
   const lat = 50.292267569907885;
   const zoom = 7;
 
@@ -81,8 +96,9 @@ const Optimizer: React.FC = () => {
 
   useEffect(() => {
     if (map && results.result.trips !== undefined) {
-      const geoJson = getProjectedTripsGeoJson(results);
-      addProjectedTripsToMap(map, geoJson);
+      const lineGeoJson = getProjectedTripsLineGeoJson(results);
+      const pointGeoJson = getProjectedTripsPointGeoJson(results);
+      addProjectedTripsToMap(map, lineGeoJson, pointGeoJson);
     } else if (map && results.result.trips === undefined) {
       setShowNotificationModal(true);
     }
@@ -92,7 +108,6 @@ const Optimizer: React.FC = () => {
     handleCloseConfigModal();
     setShowSpinnerModal(true);
     // Call the API with the settings
-    console.log(settings);
     getCalcRoutes(settings)
       .then((data) => {
         // Store the results in state
@@ -121,19 +136,30 @@ const Optimizer: React.FC = () => {
         onClose={handleCloseNotificationModal}
         text="No results found!"
       ></NotificationModal>
+      <StatisticsModal
+        show={showStatisticsModal}
+        onClose={handleCloseStatisticsModal}
+        trips={results}
+      ></StatisticsModal>
       <Container fluid>
-      <Row>
-        <Col className="d-flex justify-content-start">
-          <Button className="m-3" variant="primary" onClick={handleReload}>
-            New Calculation
-          </Button>
-        </Col>
-        <Col className="d-flex justify-content-center">
-          <h2 className="m-3">Cargo Pilot Optimizer</h2>
-        </Col>
-        <Col className="d-flex justify-content-end"> {/* Add this column to push the heading to the middle */}
-          {/* This empty column will push the heading to the middle of the row */}
-        </Col>
+        <Row>
+          <Col className="d-flex justify-content-start">
+            <Button
+              className="m-3"
+              variant="primary"
+              onClick={handleShowStatisticsModal}
+            >
+              Show Statistics
+            </Button>
+          </Col>
+          <Col className="d-flex justify-content-center">
+            <h2 className="m-3">Cargo Pilot Optimizer</h2>
+          </Col>
+          <Col className="d-flex justify-content-end">
+            <Button className="m-3" variant="primary" onClick={handleReload}>
+              New Calculation
+            </Button>
+          </Col>
         </Row>
       </Container>
       <div className="map-container" ref={mapContainerRef} />
@@ -141,6 +167,4 @@ const Optimizer: React.FC = () => {
   );
 };
 
-
 export default Optimizer;
-

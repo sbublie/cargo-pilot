@@ -2,6 +2,7 @@ const express = require("express");
 const http = require("http");
 const https = require("https");
 const proxy = require("express-http-proxy");
+const path = require("path");
 
 const app = express();
 
@@ -32,6 +33,7 @@ if (process.env.ENABLE_HTTPS === "true") {
 app.use("/api/db", proxy("http://cp-db:5000"));
 app.use("/api/analyzer", proxy("http://cp-analyzer:5000"));
 app.use("/map", proxy("http://cp-control:80/map"));
+app.use("/optimizer", proxy("http://cp-control:80/optimizer"));
 app.use("/", proxy("http://cp-control:80"));
 
 // Create and start both http and https server to handle all incoming traffic
