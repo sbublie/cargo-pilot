@@ -20,13 +20,16 @@ class AdminLocation:
     street: Optional[str] = None
 
 
-@dataclass
 class CargoItem:
-    load_carrier: bool
-    load_carrier_nestable: bool
-    loading_meter: Optional[float] = None
-    weight: Optional[float] = None
-    
+    def __init__(self, load_carrier, load_carrier_nestable, loading_meter=None, weight=None):
+        self.load_carrier = load_carrier
+        self.load_carrier_nestable = load_carrier_nestable
+        if loading_meter is not None:
+            self.loading_meter = round(loading_meter, 2)
+        if weight is not None:
+            self.weight = round(weight, 2)
+
+
 class Location:
     def __init__(self, timestamp, geo_location=None, admin_location=None, id=None):
         self.timestamp = timestamp
@@ -40,6 +43,7 @@ class Location:
         else:
             self.admin_location = AdminLocation(**admin_location)
 
+
 class CargoOrder:
     def __init__(self, data_source, origin, destination, cargo_item, id=None, customer=None, route_locations=None):
         self.data_source = data_source
@@ -52,10 +56,11 @@ class CargoOrder:
 
     def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__,
-                        sort_keys=True, indent=4)
-    
+                          sort_keys=True, indent=4)
+
     def get_distance(self):
         return geodesic((self.origin.geo_location.lat, self.origin.geo_location.long), (self.destination.geo_location.lat, self.destination.geo_location.long)).kilometers
+
 
 @dataclass
 class Vehicle:
@@ -64,6 +69,7 @@ class Vehicle:
     max_loading_meter: float
     max_weight: float
     id: Optional[int] = None
+
 
 @dataclass
 class CompletedTrip:
@@ -77,22 +83,29 @@ class CompletedTrip:
         self.id = id
         self.route_locations = route_locations
 
+
 class SectionType(Enum):
     LOADING = 1
     DRIVING = 2
-    UNLOADING = 3
 
 # Change to normal class
+
+
 class MovingSection:
-    def __init__(self, section_type, origin, destination, loaded_cargo: CargoItem, id=None):
+    def __init__(self, section_type, origin, destination, vehicle: Vehicle, loaded_cargo: CargoItem, id=None):
         self.section_type = section_type
         self.origin = origin
         self.destination = destination
+        self.vehicle = vehicle
         self.loaded_cargo = loaded_cargo
-        self.distance = geodesic((self.origin.geo_location.lat, self.origin.geo_location.long), (self.destination.geo_location.lat, self.destination.geo_location.long)).kilometers
-        self.loading_meter_utilization = round(self.loaded_cargo.loading_meter / 13.6, 2)
-        self.weight_utilization = round(self.loaded_cargo.weight / 24000, 2)
+        self.distance = round(geodesic((self.origin.geo_location.lat, self.origin.geo_location.long), (
+            self.destination.geo_location.lat, self.destination.geo_location.long)).kilometers, 2)
+        self.loading_meter_utilization = round(
+            self.loaded_cargo.loading_meter / self.vehicle.max_loading_meter, 2)*100
+        self.weight_utilization = round(
+            self.loaded_cargo.weight / self.vehicle.max_weight, 2)*100
         self.id = id
+
 
 @dataclass
 class HoldingSection:
@@ -101,7 +114,9 @@ class HoldingSection:
     duration: int
     changed_weight: float
     changed_loading_meter: float
+    num_cargo_changed: int
     id: Optional[int] = None
+
 
 @dataclass
 class ProjectedTrip:
@@ -109,28 +124,32 @@ class ProjectedTrip:
     start_time: int
     included_orders: list[CargoOrder]
     trip_sections: list
-    num_driving_sections: Optional[int] = None
+    num_driving_sections: int = 0
+    num_loading_sections: int = 0
     id: Optional[int] = None
 
-    def get_total_weight(self):
-        total_weight = 0
-        for order in self.included_orders:
-            total_weight += order.cargo_item.weight
-        return total_weight
-    
-    def get_total_loading_meter(self):
-        total_loading_meter = 0
-        for order in self.included_orders:
-            total_loading_meter += order.cargo_item.loading_meter
-        return total_loading_meter
-    
     def get_weight_utilization(self):
-        return self.get_total_weight() / self.vehicle.max_weight 
-    
+        return self.get_total_weight() / self.vehicle.max_weight
+
     def get_loading_meter_utilization(self):
         return self.get_total_loading_meter() / self.vehicle.max_loading_meter
 
+    def get_num_driving_sections(self):
+        num_driving_sections = 0
+        for section in self.trip_sections:
+            if section.section_type == SectionType.DRIVING.name:
+                num_driving_sections += 1
+        return num_driving_sections
+
+    def get_num_loading_sections(self):
+        num_loading_sections = 0
+        for section in self.trip_sections:
+            if section.section_type == SectionType.LOADING.name:
+                num_loading_sections += 1
+        return num_loading_sections
+
 # ---
+
 
 @dataclass
 class DeliveryConfig:
@@ -148,8 +167,8 @@ class DeliveryConfig:
     allowed_stays: int
     max_travel_distance: int
     delivery_promise: Optional[dict] = None
-    
-    
+
+
 @dataclass
 class DeliveryPromise:
     active: bool
@@ -157,10 +176,12 @@ class DeliveryPromise:
     percent_of_cargo: int
     time_for_remaining_cargo: int
 
+
 @dataclass
 class ReturnCorridor:
     distance_return_to_start: int
     allowed_stays: int
+
 
 @dataclass
 class Cluster:
