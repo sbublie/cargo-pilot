@@ -92,7 +92,7 @@ class SectionType(Enum):
 
 
 class MovingSection:
-    def __init__(self, section_type, origin, destination, vehicle: Vehicle, loaded_cargo: CargoItem, id=None):
+    def __init__(self, section_type, origin:Location, destination:Location, vehicle: Vehicle, loaded_cargo: CargoItem, id=None):
         self.section_type = section_type
         self.origin = origin
         self.destination = destination

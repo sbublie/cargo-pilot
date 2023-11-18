@@ -21,6 +21,7 @@ interface TripSection {
       city: string;
       postal_code: number;
     };
+    timestamp: number;
   };
   destination: {
     geo_location: {
@@ -31,6 +32,7 @@ interface TripSection {
       city: string;
       postal_code: number;
     };
+    timestamp: number;
   };
   location: {
     geo_location: {
@@ -41,6 +43,7 @@ interface TripSection {
       city: string;
       postal_code: number;
     };
+    timestamp: number;
   };
 }
 
@@ -103,9 +106,8 @@ export function getProjectedTripsLineGeoJson(
                 line_color: lineColor,
                 line_weight: 5,
                 line_opacity: 0.5,
-                total_weight_utilization: trip.total_weight_utilization,
-                total_loading_meter_utilization:
-                  trip.total_loading_meter_utilization,
+                timestamp_origin: section.origin.timestamp,
+                timestamp_destination: section.destination.timestamp,
               },
             };
           }
@@ -149,6 +151,7 @@ export function getProjectedTripsPointGeoJson(
                 city: section.location.admin_location.city,
                 changed_weight: section.changed_weight,
                 changed_loading_meter: section.changed_loading_meter,
+
               },
             };
           }
@@ -235,7 +238,7 @@ export function addProjectedTripsToMap(
       // Assert that geometry is of a type that has coordinates
       const geometry =
         feature.geometry as mapboxgl.MapboxGeoJSONFeature["geometry"];
-      const description = `<b>Location ${feature?.properties?.id}</b><br /> City: ${feature?.properties?.city}<br /> Changed weight: ${feature?.properties?.changed_weight} km<br /> Changed loading meter: ${feature?.properties?.changed_loading_meter} m<br /`;
+      const description = `<b>Location ${feature?.properties?.id}</b><br /> City: ${feature?.properties?.city}<br /> Changed weight: ${feature?.properties?.changed_weight} kg<br /> Changed loading meter: ${feature?.properties?.changed_loading_meter} m<br /`;
 
       if (
         geometry.type !== "GeometryCollection" &&
@@ -270,7 +273,7 @@ export function addProjectedTripsToMap(
       // Assert that geometry is of a type that has coordinates
       const geometry =
         feature.geometry as mapboxgl.MapboxGeoJSONFeature["geometry"];
-      const description = `<b>Sub-Trip ${feature?.properties?.id}</b><br /> Trip ID: ${feature?.properties?.trip_id}<br />  Distance: ${feature?.properties?.distance} km<br /> Weight: ${feature?.properties?.loaded_cargo_weight} kg<br /> Weight utilization: ${feature?.properties?.weight_utilization} %<br /> Loading meter: ${feature?.properties?.loaded_cargo_loading_meter} m<br /> Loading meter utilization: ${feature?.properties?.loading_meter_utilization} % `;
+      const description = `<b>Sub-Trip ${feature?.properties?.id}</b><br /> Trip ID: ${feature?.properties?.trip_id}<br />  Distance: ${feature?.properties?.distance} km<br /> Weight: ${feature?.properties?.loaded_cargo_weight} kg<br /> Weight utilization: ${feature?.properties?.weight_utilization} %<br /> Loading meter: ${feature?.properties?.loaded_cargo_loading_meter} m<br /> Loading meter utilization: ${feature?.properties?.loading_meter_utilization} %  <br /> Timestamp origin: ${feature?.properties?.timestamp_origin} <br /> Timestamp destination: ${feature?.properties?.timestamp_destination} <br />`;
 
       if (
         geometry.type !== "GeometryCollection" &&

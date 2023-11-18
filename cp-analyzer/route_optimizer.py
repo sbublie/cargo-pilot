@@ -4,6 +4,7 @@ from geopy.distance import geodesic
 from datetime import timedelta
 from ortools.constraint_solver import routing_enums_pb2
 from ortools.constraint_solver import pywrapcp
+from copy import deepcopy
 
 
 class RouteOptimizer:
@@ -17,158 +18,6 @@ class RouteOptimizer:
         # Convert other objects to dictionaries json.loads(json.dumps(order, default=self.__custom_serializer))
         return obj.__dict__
 
-    def get_optimized_routes_from_orders(self, delivery_config: DeliveryConfig, orders: list[CargoOrder]) -> list[ProjectedTrip]:
-
-        planned_order_ids = set()  # Keep track of orders that have already been planned
-        orders_placed_late = 0
-
-        # --- Step 1: Filter by time and geo coordinates
-        relevant_orders: list[CargoOrder] = []
-        for order in orders:
-            if order.origin.timestamp >= delivery_config.start_time and order.destination.timestamp <= delivery_config.end_time_incl:
-                if order.origin.geo_location.lat and order.destination.geo_location.lat:
-                    relevant_orders.append(order)
-
-        projected_trips: list[ProjectedTrip] = [
-            ProjectedTrip(
-                vehicle=Vehicle(
-                    type="default", stackable=False, max_weight=delivery_config.max_weight, max_loading_meter=delivery_config.max_loading_meter),
-                included_orders=[relevant_orders[0]],
-                start_time=relevant_orders[0].origin.timestamp,
-                trip_sections=[])]
-
-        # --- Step 2: Fill trucks
-        for order in relevant_orders:
-            # Check if the order has not been planned already
-            if order.id not in planned_order_ids:
-                trip_found = False
-                for trip in projected_trips:
-
-                    # Check if there is weight left
-                    if (trip.get_total_weight() + order.cargo_item.weight) < trip.vehicle.max_weight:
-
-                        if order.cargo_item.loading_meter is None:
-                            order.cargo_item.loading_meter = 0
-
-                        # Check if there is loading meter capacity left
-                        if (trip.get_total_loading_meter() + order.cargo_item.loading_meter) < trip.vehicle.max_loading_meter:
-
-                            # Check if the order is within the max waiting time
-                            if abs(order.origin.timestamp - trip.start_time) <= delivery_config.max_waiting_time:
-
-                                for already_planned_order in trip.included_orders:
-
-                                    # Check if the order is close to the origin or destination of an already planned order
-                                    org_org_distance = geodesic(
-                                        (order.origin.geo_location.lat,
-                                         order.origin.geo_location.long),
-                                        (already_planned_order.origin.geo_location.lat, already_planned_order.origin.geo_location.long)).kilometers
-                                    dest_dest_distance = geodesic((order.destination.geo_location.lat, order.destination.geo_location.long), (
-                                        already_planned_order.destination.geo_location.lat, already_planned_order.destination.geo_location.long)).kilometers
-
-                                    # Check if orgin and destination are close to each other
-                                    if org_org_distance < delivery_config.corridor_radius and dest_dest_distance < delivery_config.corridor_radius:
-                                        trip.included_orders.append(order)
-                                        planned_order_ids.add(order.id)
-                                        trip_found = True
-                                        break
-
-                                    # Check if the origin is close to the destination of an already planned order
-                                    org_dest_distance = geodesic((order.origin.geo_location.lat, order.origin.geo_location.long), (
-                                        already_planned_order.destination.geo_location.lat, already_planned_order.destination.geo_location.long)).kilometers
-                                    # Check if the destination is close to the origin of an already planned order
-                                    dest_org_distance = geodesic(
-                                        (order.destination.geo_location.lat,
-                                         order.destination.geo_location.long),
-                                        (already_planned_order.origin.geo_location.lat, already_planned_order.origin.geo_location.long)).kilometers
-
-                                    # Check if the a retrurn trip is possible
-                                    if org_dest_distance < delivery_config.corridor_radius and dest_org_distance < delivery_config.corridor_radius:
-                                        trip.included_orders.append(order)
-                                        planned_order_ids.add(order.id)
-                                        trip_found = True
-                                        break
-
-                if not trip_found:
-                    # If the order cannot be placed in any existing trips, create a new trip
-
-                    # Check if there are any vehicles left
-                    orders_on_the_same_day = sum(
-                        1 for pt in projected_trips if pt.start_time == order.origin.timestamp)
-
-                    if orders_on_the_same_day < delivery_config.num_trucks:
-                        vehicle = Vehicle(
-                            type="default",
-                            stackable=False,
-                            max_weight=delivery_config.max_weight,
-                            max_loading_meter=delivery_config.max_loading_meter
-                        )
-
-                        new_trip = ProjectedTrip(
-                            vehicle=vehicle,
-                            included_orders=[order],
-                            start_time=order.origin.timestamp,
-                            trip_sections=[]
-                        )
-
-                        projected_trips.append(new_trip)
-                        # Add the order ID to the set of planned orders
-                        planned_order_ids.add(order.id)
-
-                    else:
-                        # Find the next available time slot
-                        # You can adjust the time increment as needed
-                        next_available_time = order.origin.timestamp + 86400
-                        while any(pt.start_time == next_available_time for pt in projected_trips):
-                            next_available_time += 86400
-
-                        vehicle = Vehicle(
-                            type="default",
-                            stackable=False,
-                            max_weight=delivery_config.max_weight,
-                            max_loading_meter=delivery_config.max_loading_meter
-                        )
-
-                        new_trip = ProjectedTrip(
-                            vehicle=vehicle,
-                            included_orders=[order],
-                            start_time=next_available_time,
-                            trip_sections=[]
-                        )
-
-                        orders_placed_late += 1
-                        projected_trips.append(new_trip)
-                        # Add the order ID to the set of planned orders
-                        planned_order_ids.add(order.id)
-
-        # Get the total number of kilometers driven
-        total_distance = 0
-        for trip in projected_trips:
-            for order in trip.included_orders:
-                total_distance += order.get_distance()
-
-        # Get the average kilometers driven per trip
-        avg_distance = total_distance / len(projected_trips)
-
-        # get the average utilization of the trucks
-        total_loading_meter = 0
-        total_weight = 0
-        for trip in projected_trips:
-            total_loading_meter += trip.get_weight_utilization()
-            total_weight += trip.get_loading_meter_utilization()
-        avg_weight_utilization = total_weight / len(projected_trips)*100
-        avg_loading_meter_utilization = total_loading_meter / \
-            len(projected_trips)*100
-
-        # Get the number of orders that could not be planned
-        orders_not_placed = len(relevant_orders) - len(planned_order_ids)
-
-        # Get the percentage of orders that were one time
-        orders_on_time_percentage = (
-            len(relevant_orders) - orders_placed_late) / len(relevant_orders)*100
-
-        return {"orders_not_placed": orders_not_placed, "OTD": orders_on_time_percentage, "average_utl_loading_meter": avg_loading_meter_utilization, "average_utl_weight": avg_weight_utilization, "total_km": total_distance, "average_km": avg_distance, "relevant_orders": len(planned_order_ids), "num_trips": len(projected_trips), "trips": [json.loads(json.dumps(ttrip, default=self.__custom_serializer)) for ttrip in projected_trips]}
-
     def compute_distance_matrix(self, locations: list[Location]):
         num_locations = len(locations)
         distance_matrix = [[0] * num_locations for _ in range(num_locations)]
@@ -177,6 +26,16 @@ class RouteOptimizer:
                 distance_matrix[i][j] = geodesic((locations[i].geo_location.lat, locations[i].geo_location.long), (
                     locations[j].geo_location.lat, locations[j].geo_location.long)).kilometers
         return distance_matrix
+
+    def compute_time_matrix(self, locations: list[Location]):
+        num_locations = len(locations)
+        time_matrix = [[0] * num_locations for _ in range(num_locations)]
+        for i in range(num_locations):
+            for j in range(num_locations):
+                distance = geodesic((locations[i].geo_location.lat, locations[i].geo_location.long), (
+                    locations[j].geo_location.lat, locations[j].geo_location.long)).kilometers
+                time_matrix[i][j] = round((distance / 80) * 60, 2)
+        return time_matrix
 
     def solve_vrp(self, delivery_config: DeliveryConfig, orders: list[CargoOrder]):
 
@@ -201,11 +60,14 @@ class RouteOptimizer:
 
         # Step 4: Create a list of all distances between locations
         distance_matrix = self.compute_distance_matrix(locations)
+        time_matrix = self.compute_time_matrix(locations)
 
         # Step 5: Create list of demands
         weight_demands = [0]
         loading_meter_demands = [0]
+        time_windows = [(0, 1440)]
         for order in relevant_orders:
+            time_windows.append((0, 1440))
             if getattr(order.cargo_item, 'loading_meter', None) is not None:
                 weight_demands.append(round(order.cargo_item.weight, 2))
                 weight_demands.append(round(-order.cargo_item.weight, 2))
@@ -221,16 +83,18 @@ class RouteOptimizer:
         weight_capacities = [delivery_config.max_weight for i in range(
             delivery_config.num_trucks)]
 
-        print(loading_meter_demands, flush=True)
-        print(loading_meter_capacities, flush=True)
-
         # Step 6: Create data object
         data = {}
         data["distance_matrix"] = distance_matrix
+        data["time_matrix"] = time_matrix
         data["weight_capacities"] = weight_capacities
         data["loading_meter_capacities"] = loading_meter_capacities
+        data["time_windows"] = time_windows
+        data["vehicle_load_time"] = 10
+        data["vehicle_unload_time"] = 10
         data["num_vehicles"] = delivery_config.num_trucks
         data["depot"] = 0
+        data["depot_capacity"] = 1
         data["pickup_deliveries"] = pickup_deliveries
         data["weight_demands"] = weight_demands
         data["loading_meter_demands"] = loading_meter_demands
@@ -243,7 +107,8 @@ class RouteOptimizer:
         # Create Routing Model.
         routing = pywrapcp.RoutingModel(manager)
 
-        # Define cost of each arc.
+        # -- Create and register a distance contraint dimension --
+
         def distance_callback(from_index, to_index):
             # Returns the manhattan distance between the two nodes.
             # Convert from routing variable Index to distance matrix NodeIndex.
@@ -251,11 +116,97 @@ class RouteOptimizer:
             to_node = manager.IndexToNode(to_index)
             return data["distance_matrix"][from_node][to_node]
 
-        transit_callback_index = routing.RegisterTransitCallback(
+        distance_callback_index = routing.RegisterTransitCallback(
             distance_callback)
-        routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
+        routing.SetArcCostEvaluatorOfAllVehicles(distance_callback_index)
 
-        # Add Capacity constraint.
+        # Add Distance constraint.
+        dimension_name = "Distance"
+        routing.AddDimension(
+            distance_callback_index,
+            0,  # no slack
+            delivery_config.max_travel_distance,  # vehicle maximum travel distance
+            True,  # start cumul to zero
+            dimension_name,
+        )
+        distance_dimension = routing.GetDimensionOrDie(dimension_name)
+        distance_dimension.SetGlobalSpanCostCoefficient(100)
+
+        # -- Create and register a time contraint dimension --
+
+        def time_callback(from_index, to_index):
+            """Returns the travel time between the two nodes."""
+            # Convert from routing variable Index to time matrix NodeIndex.
+            from_node = manager.IndexToNode(from_index)
+            to_node = manager.IndexToNode(to_index)
+            return data["time_matrix"][from_node][to_node]
+
+        time_callback_index = routing.RegisterTransitCallback(time_callback)
+
+        #  # Define cost of each arc.
+        routing.SetArcCostEvaluatorOfAllVehicles(time_callback_index)
+
+        # Add Time Windows constraint.
+        time = "Time"
+        routing.AddDimension(
+            time_callback_index,
+            60,  # allow waiting time
+            2000,  # maximum time per vehicle
+            False,  # Don't force start cumul to zero.
+            time,
+        )
+        time_dimension = routing.GetDimensionOrDie(time)
+
+        # Add time window constraints for each location except depot.
+        for location_idx, time_window in enumerate(data["time_windows"]):
+            if location_idx == 0:
+                continue
+            index = manager.NodeToIndex(location_idx)
+            time_dimension.CumulVar(index).SetRange(
+                time_window[0], time_window[1])
+        # Add time window constraints for each vehicle start node.
+        for vehicle_id in range(data["num_vehicles"]):
+            index = routing.Start(vehicle_id)
+            time_dimension.CumulVar(index).SetRange(
+                data["time_windows"][0][0], data["time_windows"][0][1]
+            )
+
+        # Add resource constraints at the depot.
+        solver = routing.solver()
+        intervals = []
+        for i in range(data["num_vehicles"]):
+            # Add time windows at start of routes
+            intervals.append(
+                solver.FixedDurationIntervalVar(
+                    time_dimension.CumulVar(routing.Start(i)),
+                    data["vehicle_load_time"],
+                    "depot_interval",
+                )
+            )
+            # Add time windows at end of routes.
+            intervals.append(
+                solver.FixedDurationIntervalVar(
+                    time_dimension.CumulVar(routing.End(i)),
+                    data["vehicle_unload_time"],
+                    "depot_interval",
+                )
+            )
+
+        depot_usage = [1 for i in range(len(intervals))]
+        solver.Add(
+            solver.Cumulative(intervals, depot_usage,
+                              data["depot_capacity"], "depot")
+        )
+
+        # Instantiate route start and end times to produce feasible times.
+        for i in range(data["num_vehicles"]):
+            routing.AddVariableMinimizedByFinalizer(
+                time_dimension.CumulVar(routing.Start(i))
+            )
+            routing.AddVariableMinimizedByFinalizer(
+                time_dimension.CumulVar(routing.End(i)))
+
+        # -- Create and register a weight contraint dimension --
         def weight_demand_callback(from_index):
             # Returns the demand of the node.
             # Convert from routing variable Index to demands NodeIndex.
@@ -264,15 +215,16 @@ class RouteOptimizer:
 
         weight_demand_callback_index = routing.RegisterUnaryTransitCallback(
             weight_demand_callback)
+
         routing.AddDimensionWithVehicleCapacity(
             weight_demand_callback_index,
             0,  # null capacity slack
             data["weight_capacities"],  # vehicle maximum capacities
             True,  # start cumul to zero
-            "Capacity",
+            "Weight Capacity",
         )
 
-        # Add Loading Meter capacity constraint.
+        # -- Create and register a loading meter contraint dimension --
         def loading_meter_capacity_callback(from_index):
             # Returns the capacity of the node.
             # Convert from routing variable Index to demands NodeIndex.
@@ -288,18 +240,6 @@ class RouteOptimizer:
             True,  # start cumul to zero
             "Loading Meter Capacity",
         )
-
-        # Add Distance constraint.
-        dimension_name = "Distance"
-        routing.AddDimension(
-            transit_callback_index,
-            0,  # no slack
-            delivery_config.max_travel_distance,  # vehicle maximum travel distance
-            True,  # start cumul to zero
-            dimension_name,
-        )
-        distance_dimension = routing.GetDimensionOrDie(dimension_name)
-        distance_dimension.SetGlobalSpanCostCoefficient(100)
 
         # Allow to drop nodes.
         penalty = 100000
@@ -323,20 +263,20 @@ class RouteOptimizer:
         # Setting first solution heuristic.
         search_parameters = pywrapcp.DefaultRoutingSearchParameters()
         search_parameters.first_solution_strategy = (
-            routing_enums_pb2.FirstSolutionStrategy.PARALLEL_CHEAPEST_INSERTION
+            routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
         )
         search_parameters.local_search_metaheuristic = (
             routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
         )
 
-        search_parameters.time_limit.FromSeconds(5)
+        search_parameters.time_limit.FromSeconds(10)
 
         # Solve the problem.
         solution = routing.SolveWithParameters(search_parameters)
 
         # Print solution on console.
         if solution:
-            self.print_solution(data, manager, routing, solution, locations)
+            # self.print_solution(data, manager, routing, solution, locations)
             return self.construct_solution(data, manager, routing, solution, locations)
         else:
             return {"result": "No solution found"}
@@ -346,8 +286,14 @@ class RouteOptimizer:
         trips = []
         number_trips = 0
         total_distance = 0
+        total_time = 0
+
+        time_dimension = routing.GetDimensionOrDie("Time")
+
         for vehicle_id in range(data["num_vehicles"]):
+
             index = routing.Start(vehicle_id)
+
             vehicle = Vehicle(
                 type="default", stackable=False, max_weight=data["weight_capacities"][0], max_loading_meter=data["loading_meter_capacities"][0])
             trip = ProjectedTrip(
@@ -356,6 +302,7 @@ class RouteOptimizer:
                 included_orders=[],
                 start_time=locations[0].timestamp,
                 trip_sections=[])
+
             route_distance = 0
 
             total_weight = 0
@@ -369,6 +316,13 @@ class RouteOptimizer:
             while not routing.IsEnd(index):
 
                 node_index = manager.IndexToNode(index)
+                org_time_var = time_dimension.CumulVar(index)
+                dest_time_var = time_dimension.CumulVar(solution.Value(
+                    routing.NextVar(index)))
+                print(str(solution.Min(org_time_var)) + " -> " + str(solution.Max(org_time_var)), flush=True)
+
+                org_time = solution.Min(org_time_var)
+                dest_time = solution.Min(dest_time_var)
 
                 distance = geodesic((locations[node_index].geo_location.lat, locations[node_index].geo_location.long), (locations[manager.IndexToNode(solution.Value(
                     routing.NextVar(index)))].geo_location.lat, locations[manager.IndexToNode(solution.Value(routing.NextVar(index)))].geo_location.long)).kilometers
@@ -387,13 +341,25 @@ class RouteOptimizer:
 
                 if vehicle_moved and cargo_was_changed:
                     trip.num_driving_sections += 1
-                    trip.trip_sections.append(MovingSection(id=trip.num_driving_sections, section_type=SectionType.DRIVING.name, origin=locations[manager.IndexToNode(index)], destination=locations[manager.IndexToNode(
-                        solution.Value(routing.NextVar(index)))], vehicle=vehicle, loaded_cargo=CargoItem(weight=current_weight, loading_meter=current_loading_meter, load_carrier=False, load_carrier_nestable=False)))
+
+                    origin_location = locations[manager.IndexToNode(index)]
+                    destination_location = locations[manager.IndexToNode(
+                        solution.Value(routing.NextVar(index)))]
+                    new_origin_location = deepcopy(origin_location)
+                    new_origin_location.timestamp = org_time
+                    new_destination_location = deepcopy(destination_location)
+                    new_destination_location.timestamp = dest_time
+
+                    new_section = MovingSection(id=trip.num_driving_sections, section_type=SectionType.DRIVING.name, origin=new_origin_location, destination=new_destination_location,
+                                                vehicle=vehicle, loaded_cargo=CargoItem(weight=current_weight, loading_meter=current_loading_meter, load_carrier=False, load_carrier_nestable=False))
+                    trip.trip_sections.append(new_section)
+
                     trip.num_loading_sections += 1
                     trip.trip_sections.append(HoldingSection(id=trip.num_loading_sections, num_cargo_changed=1, section_type=SectionType.LOADING.name,
                                               location=locations[manager.IndexToNode(index)], duration=0, changed_weight=new_weight, changed_loading_meter=new_loading_meter))
 
                 elif not vehicle_moved and cargo_was_changed:
+
                     if trip.trip_sections[-1].section_type == SectionType.DRIVING.name:
                         trip.num_loading_sections += 1
                         trip.trip_sections.append(HoldingSection(id=trip.num_loading_sections, num_cargo_changed=1, section_type=SectionType.LOADING.name,
@@ -403,9 +369,20 @@ class RouteOptimizer:
                         trip.trip_sections[-1].changed_loading_meter += new_loading_meter
                         trip.trip_sections[-1].num_cargo_changed += 1
                 elif vehicle_moved and not cargo_was_changed:
+                    
                     trip.num_driving_sections += 1
-                    trip.trip_sections.append(MovingSection(id=trip.num_driving_sections, section_type=SectionType.DRIVING.name, origin=locations[manager.IndexToNode(index)], destination=locations[manager.IndexToNode(
-                        solution.Value(routing.NextVar(index)))], vehicle=vehicle, loaded_cargo=CargoItem(weight=current_weight, loading_meter=current_loading_meter, load_carrier=False, load_carrier_nestable=False)))
+
+                    origin_location = locations[manager.IndexToNode(index)]
+                    destination_location = locations[manager.IndexToNode(
+                        solution.Value(routing.NextVar(index)))]
+                    new_origin_location = deepcopy(origin_location)
+                    new_origin_location.timestamp = org_time
+                    new_destination_location = deepcopy(destination_location)
+                    new_destination_location.timestamp = dest_time
+
+                    new_section = MovingSection(id=trip.num_driving_sections, section_type=SectionType.DRIVING.name, origin=new_origin_location, destination=new_destination_location, vehicle=vehicle, loaded_cargo=CargoItem(weight=current_weight, loading_meter=current_loading_meter, load_carrier=False, load_carrier_nestable=False))
+
+                    trip.trip_sections.append(new_section)
 
                 elif not vehicle_moved and not cargo_was_changed:
                     pass
@@ -421,22 +398,21 @@ class RouteOptimizer:
                     sum_max_loading_meter += vehicle.max_loading_meter * distance
                     total_weight += current_weight * distance
                     sum_max_weight += vehicle.max_weight * distance
-                    
-                
-            
-            if len(trip.trip_sections) > 0:    
-                trip.total_loading_meter_utilization = round((total_loading_meter / sum_max_loading_meter), 2) * 100
-                trip.total_weight_utilization = round((total_weight / sum_max_weight), 2) * 100
 
-                total_distance += route_distance            
-            
+            if len(trip.trip_sections) > 0:
+                trip.total_loading_meter_utilization = round(
+                    (total_loading_meter / sum_max_loading_meter), 2) * 100
+                trip.total_weight_utilization = round(
+                    (total_weight / sum_max_weight), 2) * 100
+
+                total_distance += route_distance
+
                 number_trips += 1
                 trips.append(trip)
 
         avg_distance = 0
         if number_trips > 0:
             avg_distance = total_distance / number_trips
-
 
         dropped_nodes = []
         for node in range(routing.Size()):
@@ -452,7 +428,7 @@ class RouteOptimizer:
         print(f"Objective: {solution.ObjectiveValue()}", flush=True)
         total_distance = 0
         total_load = 0
-        
+
         dropped_nodes = "Dropped nodes:"
         for node in range(routing.Size()):
             if routing.IsStart(node) or routing.IsEnd(node):
