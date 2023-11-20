@@ -70,7 +70,7 @@ export const StatisticsModal: React.FC<StatisticsModalProps> = ({
       overflowY: 'auto'
      }}>
         <b>Total Trips:</b> {trips.result.number_trips}<br/>
-        <b>Number of dropped stops:</b> {trips.result.num_of_dropped_nodes}<br/>
+        <b>Number of dropped cargo deliveries:</b> {(trips.result.num_of_dropped_nodes) / 2}<br/>
         <b>Average distance per trip:</b> {trips.result.average_distance} km<br/>
         <b>Total distance:</b> {trips.result.total_distance} km<br/>
         <br/>
