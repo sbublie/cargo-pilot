@@ -88,11 +88,8 @@ class SectionType(Enum):
     LOADING = 1
     DRIVING = 2
 
-# Change to normal class
-
-
 class MovingSection:
-    def __init__(self, section_type, origin, destination, vehicle: Vehicle, loaded_cargo: CargoItem, id=None):
+    def __init__(self, section_type, origin:Location, destination:Location, vehicle: Vehicle, loaded_cargo: CargoItem, id=None):
         self.section_type = section_type
         self.origin = origin
         self.destination = destination
@@ -101,9 +98,9 @@ class MovingSection:
         self.distance = round(geodesic((self.origin.geo_location.lat, self.origin.geo_location.long), (
             self.destination.geo_location.lat, self.destination.geo_location.long)).kilometers, 2)
         self.loading_meter_utilization = round(
-            self.loaded_cargo.loading_meter / self.vehicle.max_loading_meter, 2)*100
+            (self.loaded_cargo.loading_meter / self.vehicle.max_loading_meter), 2)*100
         self.weight_utilization = round(
-            self.loaded_cargo.weight / self.vehicle.max_weight, 2)*100
+            (self.loaded_cargo.weight / self.vehicle.max_weight), 2)*100
         self.id = id
 
 
@@ -122,10 +119,14 @@ class HoldingSection:
 class ProjectedTrip:
     vehicle: Vehicle
     start_time: int
+    end_time: int
+    total_time: int
     included_orders: list[CargoOrder]
     trip_sections: list
     num_driving_sections: int = 0
     num_loading_sections: int = 0
+    total_distance: float = 0
+    number_of_cargo_orders: int = 0
     id: Optional[int] = None
 
     def get_weight_utilization(self):
@@ -159,15 +160,13 @@ class DeliveryConfig:
     max_weight: int
     num_trucks: int
     cargo_stackable: bool
-    max_waiting_time: int
     focus_area: str
     load_carrier: bool
     load_carrier_nestable: bool
     corridor_radius: int
     allowed_stays: int
-    max_travel_distance: int
+    days_per_trip: int = 1
     delivery_promise: Optional[dict] = None
-
 
 @dataclass
 class DeliveryPromise:
