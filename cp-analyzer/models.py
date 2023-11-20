@@ -88,9 +88,6 @@ class SectionType(Enum):
     LOADING = 1
     DRIVING = 2
 
-# Change to normal class
-
-
 class MovingSection:
     def __init__(self, section_type, origin:Location, destination:Location, vehicle: Vehicle, loaded_cargo: CargoItem, id=None):
         self.section_type = section_type
@@ -122,6 +119,8 @@ class HoldingSection:
 class ProjectedTrip:
     vehicle: Vehicle
     start_time: int
+    end_time: int
+    total_time: int
     included_orders: list[CargoOrder]
     trip_sections: list
     num_driving_sections: int = 0
@@ -159,15 +158,13 @@ class DeliveryConfig:
     max_weight: int
     num_trucks: int
     cargo_stackable: bool
-    max_waiting_time: int
     focus_area: str
     load_carrier: bool
     load_carrier_nestable: bool
     corridor_radius: int
     allowed_stays: int
-    max_travel_distance: int
+    days_per_trip: int = 1
     delivery_promise: Optional[dict] = None
-
 
 @dataclass
 class DeliveryPromise:

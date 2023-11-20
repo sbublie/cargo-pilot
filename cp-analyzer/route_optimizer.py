@@ -82,7 +82,7 @@ class RouteOptimizer:
             delivery_config.max_loading_meter for i in range(delivery_config.num_trucks)]
         weight_capacities = [delivery_config.max_weight for i in range(
             delivery_config.num_trucks)]
-
+        
         # Step 6: Create data object
         data = {}
         data["distance_matrix"] = distance_matrix
@@ -98,6 +98,8 @@ class RouteOptimizer:
         data["pickup_deliveries"] = pickup_deliveries
         data["weight_demands"] = weight_demands
         data["loading_meter_demands"] = loading_meter_demands
+        data["max_time_per_trip"] = delivery_config.days_per_trip * 360
+        data["max_distance_per_trip"] = delivery_config.days_per_trip * 800
 
         # Create the routing index manager.
         manager = pywrapcp.RoutingIndexManager(
@@ -125,7 +127,7 @@ class RouteOptimizer:
         routing.AddDimension(
             distance_callback_index,
             0,  # no slack
-            delivery_config.max_travel_distance,  # vehicle maximum travel distance
+            data["max_distance_per_trip"],  # vehicle maximum travel distance
             True,  # start cumul to zero
             dimension_name,
         )
@@ -151,7 +153,7 @@ class RouteOptimizer:
         routing.AddDimension(
             time_callback_index,
             60,  # allow waiting time
-            2000,  # maximum time per vehicle
+            data["max_time_per_trip"],  # maximum time per vehicle
             False,  # Don't force start cumul to zero.
             time,
         )
@@ -170,33 +172,6 @@ class RouteOptimizer:
             time_dimension.CumulVar(index).SetRange(
                 data["time_windows"][0][0], data["time_windows"][0][1]
             )
-
-        # Add resource constraints at the depot.
-        solver = routing.solver()
-        intervals = []
-        for i in range(data["num_vehicles"]):
-            # Add time windows at start of routes
-            intervals.append(
-                solver.FixedDurationIntervalVar(
-                    time_dimension.CumulVar(routing.Start(i)),
-                    data["vehicle_load_time"],
-                    "depot_interval",
-                )
-            )
-            # Add time windows at end of routes.
-            intervals.append(
-                solver.FixedDurationIntervalVar(
-                    time_dimension.CumulVar(routing.End(i)),
-                    data["vehicle_unload_time"],
-                    "depot_interval",
-                )
-            )
-
-        depot_usage = [1 for i in range(len(intervals))]
-        solver.Add(
-            solver.Cumulative(intervals, depot_usage,
-                              data["depot_capacity"], "depot")
-        )
 
         # Instantiate route start and end times to produce feasible times.
         for i in range(data["num_vehicles"]):
@@ -263,13 +238,13 @@ class RouteOptimizer:
         # Setting first solution heuristic.
         search_parameters = pywrapcp.DefaultRoutingSearchParameters()
         search_parameters.first_solution_strategy = (
-            routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
+            routing_enums_pb2.FirstSolutionStrategy.PARALLEL_CHEAPEST_INSERTION
         )
         search_parameters.local_search_metaheuristic = (
             routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
         )
 
-        search_parameters.time_limit.FromSeconds(10)
+        search_parameters.time_limit.FromSeconds(5)
 
         # Solve the problem.
         solution = routing.SolveWithParameters(search_parameters)
@@ -286,6 +261,7 @@ class RouteOptimizer:
         trips = []
         number_trips = 0
         total_distance = 0
+        total_driving_sections = 0
         total_time = 0
 
         time_dimension = routing.GetDimensionOrDie("Time")
@@ -300,7 +276,9 @@ class RouteOptimizer:
                 id=vehicle_id,
                 vehicle=vehicle,
                 included_orders=[],
-                start_time=locations[0].timestamp,
+                start_time=0,
+                end_time=0,
+                total_time=0,
                 trip_sections=[])
 
             route_distance = 0
@@ -346,8 +324,9 @@ class RouteOptimizer:
                     destination_location = locations[manager.IndexToNode(
                         solution.Value(routing.NextVar(index)))]
                     new_origin_location = deepcopy(origin_location)
-                    new_origin_location.timestamp = org_time
                     new_destination_location = deepcopy(destination_location)
+                    
+                    new_origin_location.timestamp = org_time
                     new_destination_location.timestamp = dest_time
 
                     new_section = MovingSection(id=trip.num_driving_sections, section_type=SectionType.DRIVING.name, origin=new_origin_location, destination=new_destination_location,
@@ -368,6 +347,7 @@ class RouteOptimizer:
                         trip.trip_sections[-1].changed_weight += new_weight
                         trip.trip_sections[-1].changed_loading_meter += new_loading_meter
                         trip.trip_sections[-1].num_cargo_changed += 1
+
                 elif vehicle_moved and not cargo_was_changed:
                     
                     trip.num_driving_sections += 1
@@ -376,8 +356,9 @@ class RouteOptimizer:
                     destination_location = locations[manager.IndexToNode(
                         solution.Value(routing.NextVar(index)))]
                     new_origin_location = deepcopy(origin_location)
-                    new_origin_location.timestamp = org_time
                     new_destination_location = deepcopy(destination_location)
+                   
+                    new_origin_location.timestamp = org_time
                     new_destination_location.timestamp = dest_time
 
                     new_section = MovingSection(id=trip.num_driving_sections, section_type=SectionType.DRIVING.name, origin=new_origin_location, destination=new_destination_location, vehicle=vehicle, loaded_cargo=CargoItem(weight=current_weight, loading_meter=current_loading_meter, load_carrier=False, load_carrier_nestable=False))
@@ -398,13 +379,31 @@ class RouteOptimizer:
                     sum_max_loading_meter += vehicle.max_loading_meter * distance
                     total_weight += current_weight * distance
                     sum_max_weight += vehicle.max_weight * distance
+                    
 
             if len(trip.trip_sections) > 0:
                 trip.total_loading_meter_utilization = round(
                     (total_loading_meter / sum_max_loading_meter), 2) * 100
                 trip.total_weight_utilization = round(
                     (total_weight / sum_max_weight), 2) * 100
-
+                
+                
+                """ last_dest_time = 0
+                for section in trip.trip_sections:
+                    # skip the first section
+                    if section.id == 0:
+                        last_dest_time = section.destination.timestamp
+                        print(last_dest_time, flush=True)
+                    elif section.section_type == SectionType.LOADING.name:
+                        section.duration = 10 * section.num_cargo_changed
+                    elif section.section_type == SectionType.DRIVING.name:
+                        section.origin.timestamp = last_dest_time + 10
+                        section.destination.timestamp += 10
+                        last_dest_time = section.destination.timestamp """
+                
+                trip.start_time = trip.trip_sections[0].origin.timestamp
+                trip.end_time = trip.trip_sections[-2].destination.timestamp
+                trip.total_time = trip.end_time - trip.start_time
                 total_distance += route_distance
 
                 number_trips += 1
@@ -421,7 +420,19 @@ class RouteOptimizer:
             if solution.Value(routing.NextVar(node)) == node:
                 dropped_nodes.append(manager.IndexToNode(node))
 
-        return {"number_trips": number_trips, "total_distance": total_distance, "average_distance": avg_distance, "num_of_dropped_nodes": len(dropped_nodes), "trips": [json.loads(json.dumps(ttrip, default=self.__custom_serializer)) for ttrip in trips]}
+        sum_loading_meter_utilization = 0
+        sum_weight_utilization = 0
+
+        for trip in trips:
+            total_driving_sections += trip.num_driving_sections
+            sum_loading_meter_utilization += trip.total_loading_meter_utilization
+            sum_weight_utilization += trip.total_weight_utilization
+
+        avg_loading_utilization = sum_loading_meter_utilization / len(trips)
+        avg_weight_utilization = sum_weight_utilization / len(trips)
+
+
+        return {"number_trips": number_trips, "total_distance": total_distance, "total_driving_sections": total_driving_sections, "avg_loading_utilization": avg_loading_utilization, "avg_weight_utilization": avg_weight_utilization, "average_distance": avg_distance, "num_of_dropped_nodes": len(dropped_nodes), "trips": [json.loads(json.dumps(ttrip, default=self.__custom_serializer)) for ttrip in trips]}
 
     def print_solution(self, data, manager, routing, solution, locations: list[Location]):
         """Prints solution on console."""

@@ -21,9 +21,8 @@ export interface DeliveryConfig {
   max_loading_meter: number;
   max_weight: number;
   num_trucks: number;
-  max_travel_distance: number;
+  days_per_trip: number;
   cargo_stackable: boolean;
-  max_waiting_time: number;
   focus_area: string;
   load_carrier: boolean;
   load_carrier_nestable: boolean;
@@ -45,9 +44,8 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({ show, onHide, onApplyS
     max_loading_meter: 14,
     max_weight: 24000,
     num_trucks: 5,
-    max_travel_distance: 2000,
+    days_per_trip: 2,
     cargo_stackable: false,
-    max_waiting_time: 86400,
     focus_area: "volume",
     load_carrier: false,
     load_carrier_nestable: false,
@@ -77,6 +75,7 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({ show, onHide, onApplyS
             <Form.Group>
               <Form.Label>Start Time</Form.Label>
               <Form.Control
+                disabled
                 type="number"
                 name="start_time"
                 placeholder="Enter Start Time"
@@ -87,6 +86,7 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({ show, onHide, onApplyS
             <Form.Group>
               <Form.Label>End Time</Form.Label>
               <Form.Control
+                disabled
                 type="number"
                 name="end_time_incl"
                 placeholder="Enter End Time"
@@ -125,34 +125,12 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({ show, onHide, onApplyS
               />
             </Form.Group>
             <Form.Group>
-              <Form.Label>Max Waiting Time</Form.Label>
-              <Form.Control
-                disabled
-                type="number"
-                name="max_waiting_time"
-                placeholder="Enter Max Waiting Time"
-                value={deliveryConfig.max_waiting_time}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
-            <Form.Group>
-              <Form.Label>Max Kilometers per Trip</Form.Label>
+              <Form.Label>Number of Days per Trip</Form.Label>
               <Form.Control
                 type="number"
-                name="max_travel_distance"
-                placeholder="Max Kilometers per Trip"
-                value={deliveryConfig.max_travel_distance}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
-            <Form.Group>
-              <Form.Label>Allowed Stays</Form.Label>
-              <Form.Control
-                disabled
-                type="number"
-                name="allowed_stays"
-                placeholder="Enter Allowed Stays"
-                value={deliveryConfig.allowed_stays}
+                name="days_per_trip"
+                placeholder="Enter Number of days per Trip"
+                value={deliveryConfig.days_per_trip}
                 onChange={handleInputChange}
               />
             </Form.Group>
