@@ -7,6 +7,7 @@ interface TripSection {
   loading_meter_utilization: number;
   changed_loading_meter: number;
   changed_weight: number;
+  num_cargo_changed: number;
   distance: number;
   loaded_cargo: {
     weight: number;
@@ -55,6 +56,8 @@ interface ProjectedTrip {
   trip_sections: TripSection[];
   total_loading_meter_utilization: number;
   total_weight_utilization: number;
+  total_time: number;
+  total_distance: number;
 }
 
 export interface ProjectedTripResult {
@@ -63,6 +66,10 @@ export interface ProjectedTripResult {
     number_trips: number;
     total_distance: number;
     num_of_dropped_nodes: number;
+    avg_loading_utilization: number;
+    avg_weight_utilization: number;
+    total_driving_sections: number;
+    number_of_cargo_orders: number;
     trips: ProjectedTrip[];
   };
 }
@@ -151,7 +158,7 @@ export function getProjectedTripsPointGeoJson(
                 city: section.location.admin_location.city,
                 changed_weight: section.changed_weight,
                 changed_loading_meter: section.changed_loading_meter,
-
+                num_cargo_changed: section.num_cargo_changed,
               },
             };
           }
@@ -238,7 +245,7 @@ export function addProjectedTripsToMap(
       // Assert that geometry is of a type that has coordinates
       const geometry =
         feature.geometry as mapboxgl.MapboxGeoJSONFeature["geometry"];
-      const description = `<b>Location ${feature?.properties?.id}</b><br /> City: ${feature?.properties?.city}<br /> Changed weight: ${feature?.properties?.changed_weight} kg<br /> Changed loading meter: ${feature?.properties?.changed_loading_meter} m<br /`;
+      const description = `<b>Location ${feature?.properties?.id}</b><br /> City: ${feature?.properties?.city}<br /> Changed weight: ${feature?.properties?.changed_weight} kg<br /> Changed loading meter: ${feature?.properties?.changed_loading_meter} m<br /> Number of cargo loaded/unloaded: ${feature?.properties?.num_cargo_changed}<br />`;
 
       if (
         geometry.type !== "GeometryCollection" &&

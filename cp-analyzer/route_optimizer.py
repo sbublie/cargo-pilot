@@ -297,7 +297,7 @@ class RouteOptimizer:
                 org_time_var = time_dimension.CumulVar(index)
                 dest_time_var = time_dimension.CumulVar(solution.Value(
                     routing.NextVar(index)))
-                print(str(solution.Min(org_time_var)) + " -> " + str(solution.Max(org_time_var)), flush=True)
+                #print(str(solution.Min(org_time_var)) + " -> " + str(solution.Max(org_time_var)), flush=True)
 
                 org_time = solution.Min(org_time_var)
                 dest_time = solution.Min(dest_time_var)
@@ -368,11 +368,9 @@ class RouteOptimizer:
                 elif not vehicle_moved and not cargo_was_changed:
                     pass
 
-                previous_index = index
+                
                 index = solution.Value(routing.NextVar(index))
-                route_distance += routing.GetArcCostForVehicle(
-                    previous_index, index, vehicle_id
-                )
+                route_distance += distance
 
                 if vehicle_moved:
                     total_loading_meter += current_loading_meter * distance
@@ -404,7 +402,15 @@ class RouteOptimizer:
                 trip.start_time = trip.trip_sections[0].origin.timestamp
                 trip.end_time = trip.trip_sections[-2].destination.timestamp
                 trip.total_time = trip.end_time - trip.start_time
-                total_distance += route_distance
+                trip.total_distance = round(route_distance, 2)
+                total_distance += round(route_distance, 2)
+
+                for section in trip.trip_sections:
+                    if section.section_type == SectionType.DRIVING.name:
+                        section.weight_utilization = round(section.weight_utilization, 2)
+                        section.loading_meter_utilization = round(section.loading_meter_utilization, 2)
+
+                
 
                 number_trips += 1
                 trips.append(trip)
@@ -424,15 +430,23 @@ class RouteOptimizer:
         sum_weight_utilization = 0
 
         for trip in trips:
+
+            trip.total_loading_meter_utilization = round(
+                trip.total_loading_meter_utilization, 2)
+            trip.total_weight_utilization = round(
+                trip.total_weight_utilization, 2)
+
             total_driving_sections += trip.num_driving_sections
             sum_loading_meter_utilization += trip.total_loading_meter_utilization
             sum_weight_utilization += trip.total_weight_utilization
 
-        avg_loading_utilization = sum_loading_meter_utilization / len(trips)
-        avg_weight_utilization = sum_weight_utilization / len(trips)
+        avg_loading_utilization = round(sum_loading_meter_utilization / len(trips), 2)
+        avg_weight_utilization = round(sum_weight_utilization / len(trips), 2)
 
+        # Get number of cargo orders by the number of nodes and subtract the number of depot nodes (two per trip)
+        number_of_cargo_orders = int((routing.Size() / 2 ) - (number_trips / 2))
 
-        return {"number_trips": number_trips, "total_distance": total_distance, "total_driving_sections": total_driving_sections, "avg_loading_utilization": avg_loading_utilization, "avg_weight_utilization": avg_weight_utilization, "average_distance": avg_distance, "num_of_dropped_nodes": len(dropped_nodes), "trips": [json.loads(json.dumps(ttrip, default=self.__custom_serializer)) for ttrip in trips]}
+        return {"number_trips": number_trips, "number_of_cargo_orders":  number_of_cargo_orders, "total_distance": round(total_distance, 2), "total_driving_sections": total_driving_sections, "avg_loading_utilization": avg_loading_utilization, "avg_weight_utilization": avg_weight_utilization, "average_distance": round(avg_distance, 2), "num_of_dropped_nodes": len(dropped_nodes), "trips": [json.loads(json.dumps(ttrip, default=self.__custom_serializer)) for ttrip in trips]}
 
     def print_solution(self, data, manager, routing, solution, locations: list[Location]):
         """Prints solution on console."""

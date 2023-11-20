@@ -98,9 +98,9 @@ class MovingSection:
         self.distance = round(geodesic((self.origin.geo_location.lat, self.origin.geo_location.long), (
             self.destination.geo_location.lat, self.destination.geo_location.long)).kilometers, 2)
         self.loading_meter_utilization = round(
-            self.loaded_cargo.loading_meter / self.vehicle.max_loading_meter, 2)*100
+            (self.loaded_cargo.loading_meter / self.vehicle.max_loading_meter), 2)*100
         self.weight_utilization = round(
-            self.loaded_cargo.weight / self.vehicle.max_weight, 2)*100
+            (self.loaded_cargo.weight / self.vehicle.max_weight), 2)*100
         self.id = id
 
 
@@ -125,6 +125,8 @@ class ProjectedTrip:
     trip_sections: list
     num_driving_sections: int = 0
     num_loading_sections: int = 0
+    total_distance: float = 0
+    number_of_cargo_orders: int = 0
     id: Optional[int] = None
 
     def get_weight_utilization(self):
