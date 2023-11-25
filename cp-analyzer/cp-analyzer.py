@@ -5,8 +5,17 @@ from statistic_engine import StatisticsEngine
 from threading import Thread
 from database_handler import DatabaseHandler
 from route_optimizer import RouteOptimizer
-from models import DeliveryConfig, CargoOrder
-import json
+from models import DeliveryConfig
+import logging
+
+
+# Configure the logging module
+logging.basicConfig(level=logging.DEBUG,  # Set the logging level
+                    format='%(asctime)s [%(levelname)s] - %(funcName)30s() -> %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
+
+# Create a logger
+logger = logging.getLogger(__name__)
 
 from flask_cors import CORS
 app = Flask(__name__)
@@ -40,8 +49,8 @@ def cluster_locations_from_db():
 def calulate_truck_routes():
     data = request.json
     cargo_orders =  DatabaseHandler().get_cargo_orders()
-    #result = RouteOptimizer().get_optimized_routes_from_orders(delivery_config=DeliveryConfig(**data), orders=cargo_orders)
-    result = RouteOptimizer().solve_vrp(delivery_config=DeliveryConfig(**data), orders=cargo_orders)
+    logger.debug('This is a debug message')
+    result = RouteOptimizer(logger=logger).solve_vrp(delivery_config=DeliveryConfig(**data), orders=cargo_orders)
 
     return {"result": result}
 
