@@ -11,7 +11,7 @@ import logging
 
 # Configure the logging module
 logging.basicConfig(level=logging.DEBUG,  # Set the logging level
-                    format='%(asctime)s [%(levelname)s] - %(funcName)30s() -> %(message)s',
+                    format='%(asctime)s.%(msecs)03d [%(levelname)s] - %(funcName)30s() -> %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
 
 # Create a logger
@@ -47,10 +47,12 @@ def cluster_locations_from_db():
 
 @app.route('/calc-routes', methods=['POST'])
 def calulate_truck_routes():
-    data = request.json
-    cargo_orders =  DatabaseHandler().get_cargo_orders()
-    logger.debug('This is a debug message')
-    result = RouteOptimizer(logger=logger).solve_vrp(delivery_config=DeliveryConfig(**data), orders=cargo_orders)
+    logger.debug('Calc routes API called')
+    delivery_config = request.json
+    logger.debug(f'Config parameter received: {delivery_config}')
+    cargo_orders =  DatabaseHandler(logger=logger).get_cargo_orders()
+    logger.debug('Config parameter and cargo orders ready for route optimization')
+    result = RouteOptimizer(logger=logger).solve_vrp(delivery_config=DeliveryConfig(**delivery_config), orders=cargo_orders)
 
     return {"result": result}
 

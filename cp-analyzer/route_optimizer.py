@@ -29,24 +29,19 @@ class RouteOptimizer:
         # Convert other objects to dictionaries json.loads(json.dumps(order, default=self.__custom_serializer))
         return obj.__dict__
 
-    def compute_distance_matrix(self, locations: list[Location]):
+    def compute_time_distance_matrix(self, locations: list[Location], data):
         num_locations = len(locations)
         distance_matrix = [[0] * num_locations for _ in range(num_locations)]
-        for i in range(num_locations):
-            for j in range(num_locations):
-                distance_matrix[i][j] = geodesic((locations[i].geo_location.lat, locations[i].geo_location.long), (
-                    locations[j].geo_location.lat, locations[j].geo_location.long)).kilometers
-        return distance_matrix
-
-    def compute_time_matrix(self, locations: list[Location]):
-        num_locations = len(locations)
         time_matrix = [[0] * num_locations for _ in range(num_locations)]
         for i in range(num_locations):
             for j in range(num_locations):
                 distance = geodesic((locations[i].geo_location.lat, locations[i].geo_location.long), (
                     locations[j].geo_location.lat, locations[j].geo_location.long)).kilometers
+                distance_matrix[i][j] = distance
                 time_matrix[i][j] = round((distance / 80) * 60, 2)
-        return time_matrix
+
+        data["distance_matrix"] = distance_matrix
+        data["time_matrix"] = time_matrix
 
     def solve_vrp(self, delivery_config: DeliveryConfig, orders: list[CargoOrder]):
         self.logger.debug(f"Enter {self.solve_vrp.__name__}")
@@ -80,15 +75,16 @@ class RouteOptimizer:
             f"Number of pickup and delivery locations: {len(pickup_deliveries)}")
 
         # Step 4: Create a list of all distances between locations
+        data = {}
         self.logger.debug(f"Step 4: Distance and time matrix")
-        distance_matrix = self.compute_distance_matrix(locations)
+        self.compute_time_distance_matrix(locations, data)
         self.logger.debug(
-            f"Dimensions of distance matrix: {len(distance_matrix)}x{len(distance_matrix[0])}")
-        time_matrix = self.compute_time_matrix(locations)
+           f"Dimensions of distance matrix: {len(data['distance_matrix'][0])}x{len(data['distance_matrix'][0])}")
         self.logger.debug(
-            f"Dimensions of time matrix: {len(time_matrix)}x{len(time_matrix[0])}")
+            f"Dimensions of time matrix: {len(data['time_matrix'][0])}x{len(data['time_matrix'][0])}")
 
         # Step 5: Create list of demands
+        self.logger.debug(f"Step 5: Demands")
         weight_demands = [0]  # 0 is the depot
         loading_meter_demands = [0]  # 0 is the depot
         time_windows = [(0, TIME_WINDOW)]
@@ -114,6 +110,7 @@ class RouteOptimizer:
         self.logger.debug(f"Number of time windows: {len(time_windows)}")
 
         # Step 6: Create capacities for the vehicles
+        self.logger.debug(f"Step 6: Capacities")
         loading_meter_capacities = [
             delivery_config.max_loading_meter for i in range(delivery_config.num_trucks)]
         weight_capacities = [delivery_config.max_weight for i in range(
@@ -124,9 +121,7 @@ class RouteOptimizer:
             f"Number of weight capacities: {len(weight_capacities)}")
 
         # Step 7: Create data object
-        data = {}
-        data["distance_matrix"] = distance_matrix
-        data["time_matrix"] = time_matrix
+        self.logger.debug(f"Step 7: Data object")
         data["weight_capacities"] = weight_capacities
         data["loading_meter_capacities"] = loading_meter_capacities
         data["time_windows"] = time_windows
@@ -142,6 +137,7 @@ class RouteOptimizer:
         data["max_distance_per_trip"] = delivery_config.days_per_trip * KM_PER_DAY
 
         # Step 8: Create the routing index manager and Routing Model.
+        self.logger.debug(f"Step 8: Routing index manager and model")
         manager = pywrapcp.RoutingIndexManager(
             len(data["distance_matrix"]), data["num_vehicles"], data["depot"]
         )
@@ -149,6 +145,7 @@ class RouteOptimizer:
 
         # Step 9: Set up the search constraints
         # Create and register a distance constraint dimension
+        self.logger.debug(f"Step 9: Set up the search constraints")
         self.set_distance_constraint(data, manager, routing)
 
         # Create and register a time constraint dimension
@@ -162,6 +159,7 @@ class RouteOptimizer:
 
         # Step 10: Set up the search parameters
         # Allow to drop nodes.
+        self.logger.debug(f"Step 10: Set up the search parameters")
         for node in range(1, len(data["distance_matrix"])):
             routing.AddDisjunction(
                 [manager.NodeToIndex(node)], DROP_NODES_PENALTY)
@@ -172,6 +170,7 @@ class RouteOptimizer:
         search_parameters.time_limit.FromSeconds(CALCULATION_TIME_LIMIT)
 
         # Step 11: Finally solve the problem.
+        self.logger.debug(f"Step 11: Solve the problem")
         solution = routing.SolveWithParameters(search_parameters)
 
         # Step 12: Construct the solution to return it to the frontend
