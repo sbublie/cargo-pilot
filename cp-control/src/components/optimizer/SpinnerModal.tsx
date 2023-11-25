@@ -22,7 +22,7 @@ interface StatisticsModalProps {
 export const SpinnerModal: React.FC<SpinnerModalProps> = ({ show, onHide }) => {
   return (
     <div>
-      <Modal show={show} onHide={onHide} backdrop="static" keyboard={false}>
+      <Modal show={show} onHide={onHide} backdrop="static" keyboard={false} centered>
         <Modal.Body>
           <Row>
             <Col className="d-flex justify-content-start">
@@ -45,7 +45,7 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
 }) => {
   return (
     <div>
-      <Modal show={show} backdrop="static" keyboard={false}>
+      <Modal show={show} backdrop="static" keyboard={false} centered>
         <Modal.Body>{text}</Modal.Body>
         <Modal.Footer>
           <Button variant="primary" onClick={onClose}>
@@ -64,17 +64,17 @@ export const StatisticsModal: React.FC<StatisticsModalProps> = ({
 }) => {
   return (
     <div>
-      <Modal show={show} backdrop="static" keyboard={false}>
+      <Modal show={show} backdrop="static" keyboard={false} centered>
         <Modal.Body style={{
       maxHeight: 'calc(100vh - 210px)',
       overflowY: 'auto'
      }}>
-        <b>Delivered cargo orders:</b> {trips.result.number_of_cargo_orders - (trips.result.num_of_dropped_nodes / 2)} of {trips.result.number_of_cargo_orders}<br/>
-        <b>Average distance per trip:</b> {trips.result.average_distance} km<br/>
+        <b>Delivered cargo orders:</b> {trips.result.number_of_orders - (trips.result.number_of_undelivered_orders)} of {trips.result.number_of_orders}<br/>
+        <b>Average distance per trip:</b> {trips.result.average_distance_per_trip} km<br/>
         <b>Total distance:</b> {trips.result.total_distance} km<br/>
-        <b>Number of sub-trips:</b> {trips.result.total_driving_sections}<br/>
-        <b>Average Loading Meter Utilization:</b> {trips.result.avg_loading_utilization} %<br/>
-        <b>Average Weight Utilization:</b> {trips.result.avg_weight_utilization} %<br/>
+        <b>Number of sub-trips:</b> {trips.result.number_of_driving_sections}<br/>
+        <b>Average Loading Meter Utilization:</b> {trips.result.average_loading_meter_utilization} %<br/>
+        <b>Average Weight Utilization:</b> {trips.result.average_weight_utilization} %<br/>
         <br/>
         {trips.result.trips.map((trip) => (
           <div>
@@ -83,7 +83,7 @@ export const StatisticsModal: React.FC<StatisticsModalProps> = ({
             - Total loading meter utilization: {trip.total_loading_meter_utilization} %<br/>
             - Total weight utilization: {trip.total_weight_utilization} %<br/>
             - Total distance: {trip.total_distance} km<br/>
-            - Total driving time: {trip.total_time} h<br/>
+            - Total driving time: {trip.total_time} min<br/>
             <br/>
           </div>
           

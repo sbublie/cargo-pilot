@@ -148,8 +148,26 @@ class ProjectedTrip:
             if section.section_type == SectionType.LOADING.name:
                 num_loading_sections += 1
         return num_loading_sections
+    
+    def get_total_distance(self):
+        total_distance = 0
+        for section in self.trip_sections:
+            total_distance += section.distance
+        return total_distance
 
-# ---
+
+class VRPResult:
+    def __init__(self, number_of_trips, number_of_orders, number_of_driving_sections, number_of_undelivered_orders, total_distance, average_distance_per_trip, average_loading_meter_utilization, average_weight_utilization, trips):
+        self.number_of_trips = number_of_trips
+        self.number_of_orders = number_of_orders
+        self.number_of_driving_sections = number_of_driving_sections
+        self.number_of_undelivered_orders = number_of_undelivered_orders
+        self.total_distance = total_distance
+        self.average_distance_per_trip = average_distance_per_trip
+        self.average_loading_meter_utilization = average_loading_meter_utilization
+        self.average_weight_utilization = average_weight_utilization
+        self.trips = trips
+
 
 
 @dataclass

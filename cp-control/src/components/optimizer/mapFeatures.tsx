@@ -62,14 +62,15 @@ interface ProjectedTrip {
 
 export interface ProjectedTripResult {
   result: {
-    average_distance: number;
-    number_trips: number;
-    total_distance: number;
+    number_of_trips: number;
+    number_of_orders: number;
+    number_of_driving_sections: number;
     num_of_dropped_nodes: number;
-    avg_loading_utilization: number;
-    avg_weight_utilization: number;
-    total_driving_sections: number;
-    number_of_cargo_orders: number;
+    number_of_undelivered_orders: number;
+    total_distance: number;
+    average_distance_per_trip: number;
+    average_loading_meter_utilization: number;
+    average_weight_utilization: number;
     trips: ProjectedTrip[];
   };
 }

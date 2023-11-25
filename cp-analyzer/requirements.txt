@@ -6,3 +6,4 @@ geopy==2.4.0
 pgeocode
 flask-cors
 ortools
+numpy==1.26.2

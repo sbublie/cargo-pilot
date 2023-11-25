@@ -66,7 +66,7 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({ show, onHide, onApplyS
 
   return (
     <div>
-      <Modal show={show} onHide={onHide} backdrop="static" keyboard={false}>
+      <Modal show={show} onHide={onHide} backdrop="static" keyboard={false} centered>
         <Modal.Header closeButton>
           <Modal.Title>Parameter for Cargo Optimization</Modal.Title>
         </Modal.Header>
