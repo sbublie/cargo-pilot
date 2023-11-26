@@ -29,6 +29,7 @@ const Optimizer: React.FC = () => {
   const [showSpinnerModal, setShowSpinnerModal] = useState(false);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [showStatisticsModal, setShowStatisticsModal] = useState(false);
+  const [notificationText, setNotificationText] = useState("");
 
   const [results, setResults] = useState<any>({
     result: {
@@ -100,6 +101,9 @@ const Optimizer: React.FC = () => {
       const pointGeoJson = getProjectedTripsPointGeoJson(results);
       addProjectedTripsToMap(map, lineGeoJson, pointGeoJson);
     } else if (map && results.result.trips === undefined) {
+      setNotificationText(
+        "no_results"
+      );
       setShowNotificationModal(true);
     }
   }, [map, results]);
@@ -116,6 +120,11 @@ const Optimizer: React.FC = () => {
       })
       .catch((error) => {
         console.error("Error fetching data: ", error);
+        setShowSpinnerModal(false);
+        setNotificationText(
+          "error"
+        );
+        setShowNotificationModal(true);
       });
     // TODO: Show results on Page
   };
@@ -134,7 +143,7 @@ const Optimizer: React.FC = () => {
       <NotificationModal
         show={showNotificationModal}
         onClose={handleCloseNotificationModal}
-        text="No results found!"
+        text={notificationText}
       ></NotificationModal>
       <StatisticsModal
         show={showStatisticsModal}

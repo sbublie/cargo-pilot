@@ -43,10 +43,17 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
   onClose,
   text,
 }) => {
+  let notificationText
+  if (text === "no_results") {
+    notificationText = "No results found!";
+  } else if (text === "error") {
+    notificationText = <div><b>Error while fetching</b><br/>This should not happen!<br/>Please report the error to the developer!</div> ;
+  }
+
   return (
     <div>
       <Modal show={show} backdrop="static" keyboard={false} centered>
-        <Modal.Body>{text}</Modal.Body>
+        <Modal.Body>{notificationText}</Modal.Body>
         <Modal.Footer>
           <Button variant="primary" onClick={onClose}>
             Close
@@ -77,7 +84,7 @@ export const StatisticsModal: React.FC<StatisticsModalProps> = ({
         <b>Average Weight Utilization:</b> {trips.result.average_weight_utilization} %<br/>
         <br/>
         {trips.result.trips.map((trip) => (
-          <div>
+          <div key={trip.id}>
             <b>Trip ID:</b> {trip.id}<br/>
             - Number of driving sections: {trip.number_of_driving_sections}<br/>
             - Total loading meter utilization: {trip.average_loading_meter_utilization} %<br/>
