@@ -50,12 +50,12 @@ interface TripSection {
 
 interface ProjectedTrip {
   id: number;
-  included_orders: number[];
-  num_driving_sections: number;
+  number_of_driving_sections: number;
+  number_of_loading_sections: number;
   start_time: number;
   trip_sections: TripSection[];
-  total_loading_meter_utilization: number;
-  total_weight_utilization: number;
+  average_loading_meter_utilization: number;
+  average_weight_utilization: number;
   total_time: number;
   total_distance: number;
 }

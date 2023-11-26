@@ -7,6 +7,8 @@ from database_handler import DatabaseHandler
 from route_optimizer import RouteOptimizer
 from models import DeliveryConfig
 import logging
+import json
+from dataclasses import asdict
 
 
 # Configure the logging module
@@ -52,9 +54,10 @@ def calulate_truck_routes():
     logger.debug(f'Config parameter received: {delivery_config}')
     cargo_orders =  DatabaseHandler(logger=logger).get_cargo_orders()
     logger.debug('Config parameter and cargo orders ready for route optimization')
-    result = RouteOptimizer(logger=logger).solve_vrp(delivery_config=DeliveryConfig(**delivery_config), orders=cargo_orders)
+    result = RouteOptimizer(logger=logger).get_vrp_result(delivery_config=DeliveryConfig(**delivery_config), orders=cargo_orders)
+    
+    return {"result": json.loads(json.dumps(asdict(result), default=lambda o: o.__dict__, indent=4))}
 
-    return {"result": result}
 
 if __name__ == "__main__":
     app.run(port=5000, host='0.0.0.0')

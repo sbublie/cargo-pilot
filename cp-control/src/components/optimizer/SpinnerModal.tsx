@@ -79,9 +79,9 @@ export const StatisticsModal: React.FC<StatisticsModalProps> = ({
         {trips.result.trips.map((trip) => (
           <div>
             <b>Trip ID:</b> {trip.id}<br/>
-            - Number of driving sections: {trip.num_driving_sections}<br/>
-            - Total loading meter utilization: {trip.total_loading_meter_utilization} %<br/>
-            - Total weight utilization: {trip.total_weight_utilization} %<br/>
+            - Number of driving sections: {trip.number_of_driving_sections}<br/>
+            - Total loading meter utilization: {trip.average_loading_meter_utilization} %<br/>
+            - Total weight utilization: {trip.average_weight_utilization} %<br/>
             - Total distance: {trip.total_distance} km<br/>
             - Total driving time: {trip.total_time} min<br/>
             <br/>

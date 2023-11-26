@@ -1,4 +1,4 @@
-from models import DeliveryConfig, ProjectedTrip, CargoOrder, Vehicle, Location, VRPResult, MovingSection, SectionType, HoldingSection, CargoItem
+from models import DeliveryConfig, ProjectedTrip, CargoOrder, Vehicle, Location, VRPResult, MovingSection, SectionType, HoldingSection, CargoItem, CustomEncoder
 import json
 from geopy.distance import geodesic
 from datetime import timedelta
@@ -6,6 +6,7 @@ from ortools.constraint_solver import routing_enums_pb2
 from ortools.constraint_solver import pywrapcp
 from copy import deepcopy
 from logging import Logger
+from dataclasses import asdict
 
 TIME_WINDOW = 2000
 KM_PER_DAY = 800
@@ -21,13 +22,15 @@ CALCULATION_TIME_LIMIT = 5
 class RouteOptimizer:
     def __init__(self, logger: Logger) -> None:
         self.logger = logger
+        self.undelivered_orders = 0
 
     # Custom serialization function to handle problematic floats and convert objects to dictionaries
     def __custom_serializer(self, obj):
         if isinstance(obj, float) and (obj > 1e15 or obj < -1e15):
             return str(obj)  # Convert large/small floats to strings
-        # Convert other objects to dictionaries json.loads(json.dumps(order, default=self.__custom_serializer))
-        return obj.__dict__
+        
+        return obj
+
 
     def compute_time_distance_matrix(self, locations: list[Location], data):
         num_locations = len(locations)
@@ -43,27 +46,41 @@ class RouteOptimizer:
         data["distance_matrix"] = distance_matrix
         data["time_matrix"] = time_matrix
 
-    def solve_vrp(self, delivery_config: DeliveryConfig, orders: list[CargoOrder]):
-        self.logger.debug(f"Enter {self.solve_vrp.__name__}")
-
-        # Step 1: Filter by time and geo coordinates
-        self.logger.debug(f"Step 1: Filter")
+    def filter_orders(self, delivery_config: DeliveryConfig, orders: list[CargoOrder]):
         relevant_orders: list[CargoOrder] = []
-        self.logger.debug(f"Number of unsorted orders: {len(orders)}")
         for order in orders:
             if order.origin.timestamp >= delivery_config.start_time and order.destination.timestamp <= delivery_config.end_time_incl:
                 if order.origin.geo_location.lat and order.destination.geo_location.lat:
                     relevant_orders.append(order)
+        return relevant_orders
+
+    def get_all_locations(self, orders: list[CargoOrder]):
+        locations = [Location(id=0, geo_location={"lat": 50.26, "long": 10.96}, timestamp=0, admin_location={
+            "city": "COBURG DEPOT", "postal_code": "96450", "country": "DE"})]
+        for order in orders:
+            locations.append(order.origin)
+            locations.append(order.destination)
+        return locations
+
+    def get_vrp_result(self, delivery_config: DeliveryConfig, orders: list[CargoOrder]):
+
+        # Step 1: Filter by time and geo coordinates
+        self.logger.debug(f"Step 1: Filter")
+        relevant_orders = self.filter_orders(delivery_config, orders)
         self.logger.debug(f"Number of sorted orders: {len(relevant_orders)}")
 
         # Step 2: Create a list of all locations
         self.logger.debug(f"Step 2: Location list + depot")
-        locations = [Location(id=0, geo_location={"lat": 50.26, "long": 10.96}, timestamp=0, admin_location={
-                              "city": "COBURG DEPOT", "postal_code": "96450", "country": "DE"})]
-        for order in relevant_orders:
-            locations.append(order.origin)
-            locations.append(order.destination)
+        locations = self.get_all_locations(relevant_orders)
         self.logger.debug(f"Number of locations: {len(locations)}")
+
+        projected_trips = self.solve_vrp(delivery_config, locations, relevant_orders)
+
+        return VRPResult(trips=projected_trips, number_of_orders=len(relevant_orders))
+
+
+    def solve_vrp(self, delivery_config: DeliveryConfig, locations: list[Location], relevant_orders: list[CargoOrder]) -> list[ProjectedTrip]:
+        self.logger.debug(f"Enter {self.solve_vrp.__name__}")
 
         # Step 3: Create a list of the pickup and delivery locations
         self.logger.debug(f"Step 3: Pickup and delivery locations")
@@ -79,7 +96,7 @@ class RouteOptimizer:
         self.logger.debug(f"Step 4: Distance and time matrix")
         self.compute_time_distance_matrix(locations, data)
         self.logger.debug(
-           f"Dimensions of distance matrix: {len(data['distance_matrix'][0])}x{len(data['distance_matrix'][0])}")
+            f"Dimensions of distance matrix: {len(data['distance_matrix'][0])}x{len(data['distance_matrix'][0])}")
         self.logger.debug(
             f"Dimensions of time matrix: {len(data['time_matrix'][0])}x{len(data['time_matrix'][0])}")
 
@@ -175,9 +192,117 @@ class RouteOptimizer:
 
         # Step 12: Construct the solution to return it to the frontend
         if solution:
-            return self.construct_solution(data, manager, routing, solution, locations)
+            self.logger.debug("Solution found.")
+            trips = self.get_trips_from_solution(
+                data, manager, routing, solution, locations)
+            self.logger.debug(f"Number of trips: {len(trips)}")
+            return trips
+
         else:
+            self.logger.error("No solution found.")
             return {"result": "No solution found"}
+
+    def get_trips_from_solution(self, data, manager, routing, solution, locations: list[Location]):
+        self.logger.debug(f"Enter {self.construct_solution.__name__}")
+        trips = []
+
+        time_dimension = routing.GetDimensionOrDie("Time")
+        for vehicle_id in range(data["num_vehicles"]):
+            self.logger.debug(f"Creating trip for vehicle {vehicle_id} starting at {routing.Start(vehicle_id)}")
+            index = routing.Start(vehicle_id)
+
+            vehicle = Vehicle(
+                type="default", stackable=False, max_weight=data["weight_capacities"][0], max_loading_meter=data["loading_meter_capacities"][0])
+            trip = ProjectedTrip(id=vehicle_id, vehicle=vehicle)
+
+            current_weight = 0
+            current_loading_meter = 0
+
+            while not routing.IsEnd(index):
+
+                node_index = manager.IndexToNode(index)
+                self.logger.debug(f"Adding node to trip: {node_index}")
+
+                org_time_var = time_dimension.CumulVar(index)
+                dest_time_var = time_dimension.CumulVar(solution.Value(
+                    routing.NextVar(index)))
+                org_time = solution.Min(org_time_var)
+                dest_time = solution.Min(dest_time_var)
+                self.logger.debug(
+                    f"Org time: {org_time} and dest time: {dest_time}")
+
+                distance = geodesic((locations[node_index].geo_location.lat, locations[node_index].geo_location.long), (locations[manager.IndexToNode(solution.Value(
+                    routing.NextVar(index)))].geo_location.lat, locations[manager.IndexToNode(solution.Value(routing.NextVar(index)))].geo_location.long)).kilometers
+                self.logger.debug(f"Distance: {distance}")
+                new_weight = data["weight_demands"][node_index]
+                self.logger.debug(f"New weight: {new_weight}")
+                new_loading_meter = data["loading_meter_demands"][node_index]
+                self.logger.debug(f"New loading meter: {new_loading_meter}")
+                current_weight += new_weight
+                current_loading_meter += new_loading_meter
+
+                vehicle_moved = False
+                if distance != 0:
+                    vehicle_moved = True
+
+                cargo_was_changed = False
+                if new_weight != 0 or new_loading_meter != 0:
+                    cargo_was_changed = True
+
+                if vehicle_moved and cargo_was_changed:
+                    self.logger.debug(f"Case 1: Vehicle moved and cargo was changed")
+                    origin_location = locations[manager.IndexToNode(index)]
+                    destination_location = locations[manager.IndexToNode(
+                        solution.Value(routing.NextVar(index)))]
+                    new_origin_location = deepcopy(origin_location)
+                    new_destination_location = deepcopy(destination_location)
+
+                    new_origin_location.timestamp = org_time
+                    new_destination_location.timestamp = dest_time
+
+                    new_section = MovingSection(id=trip.number_of_driving_sections, section_type=SectionType.DRIVING.name, origin=new_origin_location, destination=new_destination_location,
+                                                vehicle=vehicle, loaded_cargo=CargoItem(weight=current_weight, loading_meter=current_loading_meter, load_carrier=False, load_carrier_nestable=False))
+                    trip.trip_sections.append(new_section)
+
+                    trip.trip_sections.append(HoldingSection(id=trip.number_of_loading_sections, num_cargo_changed=1, section_type=SectionType.LOADING.name,
+                                              location=locations[manager.IndexToNode(index)], duration=0, changed_weight=new_weight, changed_loading_meter=new_loading_meter))
+
+                elif not vehicle_moved and cargo_was_changed:
+                    self.logger.debug(f"Case 2: Vehicle did not move but cargo was changed")
+                    if trip.trip_sections[-1].section_type == SectionType.DRIVING.name:
+                        trip.trip_sections.append(HoldingSection(id=trip.number_of_loading_sections, num_cargo_changed=1, section_type=SectionType.LOADING.name,
+                                                  location=locations[manager.IndexToNode(index)], duration=0, changed_weight=new_weight, changed_loading_meter=new_loading_meter))
+                    else:
+                        trip.trip_sections[-1].changed_weight += new_weight
+                        trip.trip_sections[-1].changed_loading_meter += new_loading_meter
+                        trip.trip_sections[-1].num_cargo_changed += 1
+
+                elif vehicle_moved and not cargo_was_changed:
+                    self.logger.debug(f"Case 3: Vehicle moved but cargo was not changed")
+                    origin_location = locations[manager.IndexToNode(index)]
+                    destination_location = locations[manager.IndexToNode(
+                        solution.Value(routing.NextVar(index)))]
+                    new_origin_location = deepcopy(origin_location)
+                    new_destination_location = deepcopy(destination_location)
+
+                    new_origin_location.timestamp = org_time
+                    new_destination_location.timestamp = dest_time
+
+                    new_section = MovingSection(id=trip.number_of_driving_sections, section_type=SectionType.DRIVING.name, origin=new_origin_location, destination=new_destination_location,
+                                                vehicle=vehicle, loaded_cargo=CargoItem(weight=current_weight, loading_meter=current_loading_meter, load_carrier=False, load_carrier_nestable=False))
+
+                    trip.trip_sections.append(new_section)
+
+                elif not vehicle_moved and not cargo_was_changed:
+                    self.logger.debug(f"Case 4: Vehicle did not move and cargo was not changed")
+                    pass
+
+                index = solution.Value(routing.NextVar(index))
+                self.logger.debug(f"Next index: {index}")
+
+            trips.append(trip)
+
+        return trips
 
     def construct_solution(self, data, manager, routing, solution, locations: list[Location]):
         self.logger.debug(f"Enter {self.construct_solution.__name__}")
@@ -193,17 +318,16 @@ class RouteOptimizer:
         self.logger.debug(f"Iterating over vehicles/tours")
         # Iterate over vehicles because the number of vehicles is the same as the number of tours
         for vehicle_id in range(data["num_vehicles"]):
-            
+
             index = routing.Start(vehicle_id)
             self.logger.debug(f"Vehicle {vehicle_id} starts at {index}")
 
-            # Create new trip to be 
+            # Create new trip to be
             vehicle = Vehicle(
                 type="default", stackable=False, max_weight=data["weight_capacities"][0], max_loading_meter=data["loading_meter_capacities"][0])
             trip = ProjectedTrip(
                 id=vehicle_id,
                 vehicle=vehicle,
-                included_orders=[],
                 start_time=0,
                 end_time=0,
                 total_time=0,
@@ -229,7 +353,8 @@ class RouteOptimizer:
                     routing.NextVar(index)))
                 org_time = solution.Min(org_time_var)
                 dest_time = solution.Min(dest_time_var)
-                self.logger.debug(f"Org time: {org_time} and dest time: {dest_time}")
+                self.logger.debug(
+                    f"Org time: {org_time} and dest time: {dest_time}")
 
                 distance = geodesic((locations[node_index].geo_location.lat, locations[node_index].geo_location.long), (locations[manager.IndexToNode(solution.Value(
                     routing.NextVar(index)))].geo_location.lat, locations[manager.IndexToNode(solution.Value(routing.NextVar(index)))].geo_location.long)).kilometers
@@ -314,19 +439,6 @@ class RouteOptimizer:
                 trip.total_weight_utilization = round(
                     (total_weight / sum_max_weight), 2) * 100
 
-                """ last_dest_time = 0
-                for section in trip.trip_sections:
-                    # skip the first section
-                    if section.id == 0:
-                        last_dest_time = section.destination.timestamp
-                        print(last_dest_time, flush=True)
-                    elif section.section_type == SectionType.LOADING.name:
-                        section.duration = 10 * section.num_cargo_changed
-                    elif section.section_type == SectionType.DRIVING.name:
-                        section.origin.timestamp = last_dest_time + 10
-                        section.destination.timestamp += 10
-                        last_dest_time = section.destination.timestamp """
-
                 trip.start_time = trip.trip_sections[0].origin.timestamp
                 trip.end_time = trip.trip_sections[-2].destination.timestamp
                 trip.total_time = trip.end_time - trip.start_time
@@ -375,20 +487,23 @@ class RouteOptimizer:
         # Get number of cargo orders by the number of nodes and subtract the number of depot nodes (two per trip)
         number_of_cargo_orders = int((routing.Size() / 2) - (number_trips / 2))
 
-        vrp_result = VRPResult(number_of_trips=number_trips, 
-                                number_of_orders=number_of_cargo_orders, 
-                                number_of_driving_sections=total_driving_sections,
-                                number_of_undelivered_orders=len(dropped_nodes) / 2,
-                                total_distance=round(total_distance, 2),
-                                average_distance_per_trip=round(avg_distance, 2), 
-                                average_loading_meter_utilization=avg_loading_utilization, 
-                                average_weight_utilization=avg_weight_utilization, 
-                                trips=[json.loads(json.dumps(ttrip, default=self.__custom_serializer)) for ttrip in trips])
+        vrp_result = VRPResult(number_of_trips=number_trips,
+                               number_of_orders=number_of_cargo_orders,
+                               number_of_driving_sections=total_driving_sections,
+                               number_of_undelivered_orders=len(
+                                   dropped_nodes) / 2,
+                               total_distance=round(total_distance, 2),
+                               average_distance_per_trip=round(
+                                   avg_distance, 2),
+                               average_loading_meter_utilization=avg_loading_utilization,
+                               average_weight_utilization=avg_weight_utilization,
+                               trips=[json.loads(json.dumps(ttrip, default=self.__custom_serializer)) for ttrip in trips])
 
         return json.loads(json.dumps(vrp_result, default=self.__custom_serializer))
 
     def set_distance_constraint(self, data, manager, routing):
         self.logger.debug(f"Enter {self.set_distance_constraint.__name__}")
+
         def distance_callback(from_index, to_index):
             # Convert from routing variable Index to distance matrix NodeIndex.
             from_node = manager.IndexToNode(from_index)
@@ -427,6 +542,7 @@ class RouteOptimizer:
 
     def set_time_constraint(self, data, manager, routing):
         self.logger.debug(f"Enter {self.set_time_constraint.__name__}")
+
         def time_callback(from_index, to_index):
             """Returns the travel time between the two nodes."""
             # Convert from routing variable Index to time matrix NodeIndex.
@@ -474,6 +590,7 @@ class RouteOptimizer:
 
     def set_weight_constraint(self, data, manager, routing):
         self.logger.debug(f"Enter {self.set_weight_constraint.__name__}")
+
         def weight_demand_callback(from_index):
             # Returns the demand of the node.
             # Convert from routing variable Index to demands NodeIndex.
@@ -492,7 +609,9 @@ class RouteOptimizer:
         )
 
     def set_loading_meter_constraint(self, data, manager, routing):
-        self.logger.debug(f"Enter {self.set_loading_meter_constraint.__name__}")
+        self.logger.debug(
+            f"Enter {self.set_loading_meter_constraint.__name__}")
+
         def loading_meter_capacity_callback(from_index):
             # Returns the capacity of the node.
             # Convert from routing variable Index to demands NodeIndex.

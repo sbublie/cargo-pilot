@@ -1,9 +1,10 @@
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field, asdict
 from typing import Optional
 import json
 from geopy.distance import geodesic
 from enum import Enum
+from typing import List
 
 
 @dataclass
@@ -88,21 +89,42 @@ class SectionType(Enum):
     LOADING = 1
     DRIVING = 2
 
-class MovingSection:
-    def __init__(self, section_type, origin:Location, destination:Location, vehicle: Vehicle, loaded_cargo: CargoItem, id=None):
-        self.section_type = section_type
-        self.origin = origin
-        self.destination = destination
-        self.vehicle = vehicle
-        self.loaded_cargo = loaded_cargo
-        self.distance = round(geodesic((self.origin.geo_location.lat, self.origin.geo_location.long), (
-            self.destination.geo_location.lat, self.destination.geo_location.long)).kilometers, 2)
-        self.loading_meter_utilization = round(
-            (self.loaded_cargo.loading_meter / self.vehicle.max_loading_meter), 2)*100
-        self.weight_utilization = round(
-            (self.loaded_cargo.weight / self.vehicle.max_weight), 2)*100
-        self.id = id
 
+@dataclass
+class MovingSectionDefinition:
+    id: int
+    section_type: SectionType
+    origin: Location
+    destination: Location
+    loaded_cargo: CargoItem
+    vehicle: Vehicle
+    distance: float = field(init=False)
+    loading_meter_utilization: float = field(init=False)
+    weight_utilization: float = field(init=False)
+
+
+class MovingSection(MovingSectionDefinition):
+    id: int
+    section_type: SectionType
+    origin: Location
+    destination: Location
+    loaded_cargo: CargoItem
+    vehicle: Vehicle
+
+    @property
+    def distance(self):
+        return round(geodesic((self.origin.geo_location.lat, self.origin.geo_location.long), (
+            self.destination.geo_location.lat, self.destination.geo_location.long)).kilometers, 2)
+
+    @property
+    def loading_meter_utilization(self):
+        return round(
+            (self.loaded_cargo.loading_meter / self.vehicle.max_loading_meter)*100, 2)
+
+    @property
+    def weight_utilization(self):
+        return round(
+            (self.loaded_cargo.weight / self.vehicle.max_weight)*100, 2)
 
 @dataclass
 class HoldingSection:
@@ -114,60 +136,134 @@ class HoldingSection:
     num_cargo_changed: int
     id: Optional[int] = None
 
-
+# This defintion is needed to include the @properties in ProjectedTrip in the serialized output
 @dataclass
-class ProjectedTrip:
+class ProjectedTripDefinition:
+    id: int
     vehicle: Vehicle
-    start_time: int
-    end_time: int
-    total_time: int
-    included_orders: list[CargoOrder]
-    trip_sections: list
-    num_driving_sections: int = 0
-    num_loading_sections: int = 0
-    total_distance: float = 0
-    number_of_cargo_orders: int = 0
-    id: Optional[int] = None
+    trip_sections: List = field(default_factory=list)
+    start_time: int = field(init=False)
+    end_time: int = field(init=False)
+    total_time: int = field(init=False)
+    number_of_driving_sections: int = field(init=False)
+    number_of_loading_sections: int = field(init=False)
+    total_distance: float = field(init=False)
+    average_loading_meter_utilization: float = field(init=False)
+    average_weight_utilization: float = field(init=False)
 
-    def get_weight_utilization(self):
-        return self.get_total_weight() / self.vehicle.max_weight
+class ProjectedTrip(ProjectedTripDefinition):
+    id: int
+    vehicle: Vehicle
+    trip_sections: List = field(default_factory=list)
 
-    def get_loading_meter_utilization(self):
-        return self.get_total_loading_meter() / self.vehicle.max_loading_meter
+    @property
+    def start_time(self):
+        return self.trip_sections[0].origin.timestamp
+    
+    @property
+    def end_time(self):
+        return self.trip_sections[-2].destination.timestamp
+    
+    @property
+    def total_time(self):
+        return self.end_time - self.start_time
 
-    def get_num_driving_sections(self):
+    @property
+    def number_of_driving_sections(self) -> int:
         num_driving_sections = 0
         for section in self.trip_sections:
             if section.section_type == SectionType.DRIVING.name:
                 num_driving_sections += 1
         return num_driving_sections
 
-    def get_num_loading_sections(self):
+    @property
+    def number_of_loading_sections(self) -> int:
         num_loading_sections = 0
         for section in self.trip_sections:
             if section.section_type == SectionType.LOADING.name:
                 num_loading_sections += 1
         return num_loading_sections
-    
-    def get_total_distance(self):
+
+    @property
+    def total_distance(self) -> float:
         total_distance = 0
         for section in self.trip_sections:
-            total_distance += section.distance
-        return total_distance
+            if section.section_type == SectionType.DRIVING.name:
+                total_distance += section.distance
+        return round(total_distance, 2)
+
+    @property
+    def average_loading_meter_utilization(self) -> float:
+        loading_meter_utilizations = [section.loading_meter_utilization for section in self.trip_sections if hasattr(
+            section, 'loading_meter_utilization') and section.section_type == SectionType.DRIVING.name]
+
+        if loading_meter_utilizations:
+            return round(sum(loading_meter_utilizations) / self.number_of_loading_sections, 2)
+        else:
+            return 0.0  # or any other default value you prefer
+
+    @property
+    def average_weight_utilization(self) -> float:
+        weight_utilizations = [section.weight_utilization for section in self.trip_sections if hasattr(
+            section, 'weight_utilization') and section.section_type == SectionType.DRIVING.name]
+
+        if weight_utilizations:
+            return round(sum(weight_utilizations) / self.number_of_loading_sections, 2)
+        else:
+            return 0.0
 
 
-class VRPResult:
-    def __init__(self, number_of_trips, number_of_orders, number_of_driving_sections, number_of_undelivered_orders, total_distance, average_distance_per_trip, average_loading_meter_utilization, average_weight_utilization, trips):
-        self.number_of_trips = number_of_trips
-        self.number_of_orders = number_of_orders
-        self.number_of_driving_sections = number_of_driving_sections
-        self.number_of_undelivered_orders = number_of_undelivered_orders
-        self.total_distance = total_distance
-        self.average_distance_per_trip = average_distance_per_trip
-        self.average_loading_meter_utilization = average_loading_meter_utilization
-        self.average_weight_utilization = average_weight_utilization
-        self.trips = trips
+@dataclass
+class VRPResultDefinition:
+    trips: List[ProjectedTrip]
+    number_of_orders: int
+    number_of_trips: int = field(init=False)
+    number_of_driving_sections: int = field(init=False)
+    number_of_undelivered_orders: int = field(init=False)
+    total_distance: float = field(init=False)
+    average_distance_per_trip: float = field(init=False)
+    average_loading_meter_utilization: float = field(init=False)
+    average_weight_utilization: float = field(init=False)
 
+
+class VRPResult(VRPResultDefinition):
+    trips: List[ProjectedTrip]
+    number_of_orders: int
+    # number_of_trips: int
+    # number_of_driving_sections : int
+    # number_of_undelivered_orders: int
+    # total_distance: float
+    # average_distance_per_trip: float
+    # average_loading_meter_utilization: float
+    # average_weight_utilization: float
+
+    @property
+    def number_of_trips(self):
+        return len(self.trips)
+
+    @property
+    def number_of_driving_sections(self):
+        return sum([trip.number_of_driving_sections for trip in self.trips])
+
+    @property
+    def number_of_undelivered_orders(self):
+        return self.number_of_orders - sum([sum([section.num_cargo_changed for section in trip.trip_sections if section.section_type == SectionType.LOADING.name]) for trip in self.trips]) / 2
+
+    @property
+    def total_distance(self):
+        return sum([trip.total_distance for trip in self.trips])
+
+    @property
+    def average_distance_per_trip(self):
+        return round(self.total_distance / self.number_of_trips, 2)
+
+    @property
+    def average_loading_meter_utilization(self):
+        return round(sum([trip.average_loading_meter_utilization for trip in self.trips]) / self.number_of_trips, 2)
+
+    @property
+    def average_weight_utilization(self):
+        return round(sum([trip.average_weight_utilization for trip in self.trips]) / self.number_of_trips, 2)
 
 
 @dataclass
@@ -185,6 +281,7 @@ class DeliveryConfig:
     allowed_stays: int
     days_per_trip: int = 1
     delivery_promise: Optional[dict] = None
+
 
 @dataclass
 class DeliveryPromise:
@@ -205,3 +302,11 @@ class Cluster:
     center_lat: float
     center_long: float
     location_ids: list[int]
+
+
+class CustomEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, ProjectedTrip):
+            # Include properties in the serialized output
+            return asdict(obj)
+        return super().default(obj)
