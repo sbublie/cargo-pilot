@@ -78,31 +78,36 @@ class RouteOptimizer:
         self.logger.debug(f"Dropped orders first run: {self.dropped_orders}")
 
         number_runs = 1
-        while len(self.dropped_orders) > 0:
-            number_runs += 1
-            self.logger.debug(f"Starting run {number_runs}")
-            end_times = [trip.end_time for trip in projected_trips if trip.end_time]
-            new_start_time = max(end_times)
-            
-            second_relevant_orders = [ order for index, order in enumerate(orders) if order.id in self.dropped_orders]
-            second_locations = self.get_all_locations(second_relevant_orders)
-            
-            before_dropped_orders = self.dropped_orders.copy()
-            new_trips =self.solve_vrp(delivery_config=delivery_config, locations=second_locations, relevant_orders=second_relevant_orders, time_offset=new_start_time)
+        if delivery_config.reuse_trucks:
+            while len(self.dropped_orders) > 0:
+                number_runs += 1
+                self.logger.debug(f"Starting run {number_runs}")
+                end_times = [trip.end_time for trip in projected_trips if trip.end_time]
+                new_start_time = max(end_times)
+                
+                second_relevant_orders = [ order for index, order in enumerate(orders) if order.id in self.dropped_orders]
+                second_locations = self.get_all_locations(second_relevant_orders)
+                
+                before_dropped_orders = self.dropped_orders.copy()
+                new_trips =self.solve_vrp(delivery_config=delivery_config, locations=second_locations, relevant_orders=second_relevant_orders, time_offset=new_start_time)
 
-            if len(self.dropped_orders) == len(before_dropped_orders):
-                self.logger.debug(f"Number of dropped orders did not change. Stopping.")
-                break
-            if len(new_trips) == 0:
-                break
-            if len(new_trips) == 1 and len(new_trips[0].trip_sections) == 0:
-                break
+                if len(self.dropped_orders) == len(before_dropped_orders):
+                    self.logger.debug(f"Number of dropped orders did not change. Stopping.")
+                    break
+                if len(new_trips) == 0:
+                    break
+                if len(new_trips) == 1 and len(new_trips[0].trip_sections) == 0:
+                    break
 
-            self.logger.debug(f"Adding {len(new_trips)} new trips from run {number_runs}")
-            projected_trips += new_trips
-            self.logger.debug(f"Dropped orders after run {number_runs}: {self.dropped_orders}")
+                self.logger.debug(f"Adding {len(new_trips)} new trips from run {number_runs}")
+                projected_trips += new_trips
+                self.logger.debug(f"Dropped orders after run {number_runs}: {self.dropped_orders}")
 
         self.logger.debug(f"Creating result with total number of trips: {len(projected_trips)}")
+        
+        for index, trip in enumerate(projected_trips):
+            trip.id = index
+        
         result = VRPResult(trips=projected_trips, number_of_orders=len(relevant_orders), start_timestamp=delivery_config.start_time, number_of_tour_starts=number_runs , number_of_undelivered_orders=len(self.dropped_orders))
         return result
 
@@ -340,7 +345,8 @@ class RouteOptimizer:
                 index = solution.Value(routing.NextVar(index))
                 self.logger.debug(f"Next index: {index}")
 
-            trips.append(trip)
+            if len(trip.trip_sections) > 0:
+                trips.append(trip)
         
         self.dropped_orders.clear()
         for node in range(routing.Size()):

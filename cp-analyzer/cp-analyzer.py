@@ -58,7 +58,6 @@ def calulate_truck_routes():
     
     return {"result": json.loads(json.dumps(asdict(result), default=lambda o: o.__dict__, indent=4))}
 
-
 if __name__ == "__main__":
     app.run(port=5000, host='0.0.0.0')
     

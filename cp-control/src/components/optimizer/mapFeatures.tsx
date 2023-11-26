@@ -253,7 +253,7 @@ export function addProjectedTripsToMap(
         geometry.coordinates &&
         description
       ) {
-        console.log(geometry.type);
+       
         if (geometry.type === "Point") {
           let coordinates = geometry.coordinates.slice() as [number, number];
 
@@ -265,6 +265,7 @@ export function addProjectedTripsToMap(
             .setLngLat(coordinates)
             .setHTML(description)
             .addTo(map);
+          // Prevents the dialog from appreaing twice
           e.stopPropagation();
         } else {
           console.error("Geometry type is not a Point");
@@ -288,7 +289,7 @@ export function addProjectedTripsToMap(
         geometry.coordinates &&
         description
       ) {
-        console.log(geometry.type);
+        
         if (geometry.type === "LineString") {
           let coordinates = e.lngLat;
 
@@ -296,6 +297,7 @@ export function addProjectedTripsToMap(
             .setLngLat(coordinates)
             .setHTML(description)
             .addTo(map);
+          // Prevents the dialog from appreaing twice
           e.stopPropagation();
         } else {
           console.error("Geometry type is not a Point");

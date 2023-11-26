@@ -294,6 +294,7 @@ class DeliveryConfig:
     days_per_trip: int
     km_per_day: int
     min_per_day: int
+    reuse_trucks: bool
     penalty_for_dropping_nodes: int
     calculation_time_limit: int
     waiting_time_days: int
