@@ -158,14 +158,20 @@ class ProjectedTrip(ProjectedTripDefinition):
 
     @property
     def start_time(self):
+        if len(self.trip_sections) == 0:
+            return None
         return self.trip_sections[0].origin.timestamp
     
     @property
     def end_time(self):
+        if len(self.trip_sections) == 0:
+            return None
         return self.trip_sections[-2].destination.timestamp
     
     @property
     def total_time(self):
+        if self.start_time is None or self.end_time is None:
+            return None
         return self.end_time - self.start_time
 
     @property
@@ -217,9 +223,11 @@ class ProjectedTrip(ProjectedTripDefinition):
 class VRPResultDefinition:
     trips: List[ProjectedTrip]
     number_of_orders: int
+    start_timestamp: int
+    number_of_tour_starts: int
     number_of_trips: int = field(init=False)
     number_of_driving_sections: int = field(init=False)
-    number_of_undelivered_orders: int = field(init=False)
+    number_of_undelivered_orders: int
     total_distance: float = field(init=False)
     average_distance_per_trip: float = field(init=False)
     average_loading_meter_utilization: float = field(init=False)
@@ -229,9 +237,11 @@ class VRPResultDefinition:
 class VRPResult(VRPResultDefinition):
     trips: List[ProjectedTrip]
     number_of_orders: int
+    start_timestamp: int
+    number_of_tour_starts: int
     # number_of_trips: int
     # number_of_driving_sections : int
-    # number_of_undelivered_orders: int
+    number_of_undelivered_orders: int
     # total_distance: float
     # average_distance_per_trip: float
     # average_loading_meter_utilization: float
@@ -243,26 +253,34 @@ class VRPResult(VRPResultDefinition):
 
     @property
     def number_of_driving_sections(self):
+        if self.trips is None:
+            return 0
+        if len(self.trips) == 0 or len(self.trips[0].trip_sections) == 0:
+            return 0
         return sum([trip.number_of_driving_sections for trip in self.trips])
 
     @property
-    def number_of_undelivered_orders(self):
-        return self.number_of_orders - sum([sum([section.num_cargo_changed for section in trip.trip_sections if section.section_type == SectionType.LOADING.name]) for trip in self.trips]) / 2
-
-    @property
     def total_distance(self):
-        return sum([trip.total_distance for trip in self.trips])
+        if len(self.trips) == 0:
+            return 0
+        return round(sum([trip.total_distance for trip in self.trips]), 2)
 
     @property
     def average_distance_per_trip(self):
+        if len(self.trips) == 0:
+            return 0
         return round(self.total_distance / self.number_of_trips, 2)
 
     @property
     def average_loading_meter_utilization(self):
+        if len(self.trips) == 0:
+            return 0
         return round(sum([trip.average_loading_meter_utilization for trip in self.trips]) / self.number_of_trips, 2)
 
     @property
     def average_weight_utilization(self):
+        if len(self.trips) == 0:
+            return 0
         return round(sum([trip.average_weight_utilization for trip in self.trips]) / self.number_of_trips, 2)
 
 
@@ -273,28 +291,15 @@ class DeliveryConfig:
     max_loading_meter: float
     max_weight: int
     num_trucks: int
-    cargo_stackable: bool
-    focus_area: str
-    load_carrier: bool
-    load_carrier_nestable: bool
-    corridor_radius: int
-    allowed_stays: int
-    days_per_trip: int = 1
-    delivery_promise: Optional[dict] = None
-
-
-@dataclass
-class DeliveryPromise:
-    active: bool
-    radius: int
-    percent_of_cargo: int
-    time_for_remaining_cargo: int
-
-
-@dataclass
-class ReturnCorridor:
-    distance_return_to_start: int
-    allowed_stays: int
+    days_per_trip: int
+    km_per_day: int
+    min_per_day: int
+    penalty_for_dropping_nodes: int
+    calculation_time_limit: int
+    waiting_time_days: int
+    delivery_promise_radius: int
+    delivery_promise_days: int
+    last_stop_distance: int
 
 
 @dataclass
