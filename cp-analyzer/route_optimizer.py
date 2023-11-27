@@ -107,7 +107,7 @@ class RouteOptimizer:
             self.logger.debug(f"Dropped orders first run: {self.dropped_orders}")
             
             if delivery_config.reuse_trucks:
-                while len(self.dropped_orders) > 0:
+                while len(self.dropped_orders) > 0 and len(projected_trips) > 0:
                     number_runs += 1
                     self.logger.debug(f"Starting run {number_runs}")
                     end_times = [trip.end_time for trip in projected_trips if trip.end_time]
@@ -518,3 +518,4 @@ class RouteOptimizer:
             True,  # start cumul to zero
             "Loading Meter Capacity",
         )
+
