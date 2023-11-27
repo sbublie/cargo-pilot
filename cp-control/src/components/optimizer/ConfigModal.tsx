@@ -15,6 +15,7 @@ export interface DeliveryConfig {
   penalty_for_dropping_nodes: number;
   calculation_time_limit: number;
   waiting_time_days: number;
+  waiting: boolean;
   delivery_promise_radius: number;
   delivery_promise_days: number;
   last_stop_distance: number;
@@ -44,6 +45,7 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
     penalty_for_dropping_nodes: 1000000,
     calculation_time_limit: 5,
     waiting_time_days: 3,
+    waiting: false,
     delivery_promise_radius: 300,
     delivery_promise_days: 1,
     last_stop_distance: 50,
@@ -139,18 +141,30 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
                 onChange={handleInputChange}
               />
             </Form.Group>
-            <Form.Group key="reuse_trucks">
-              <Form.Label>Reuse trucks after they all returned to the depot</Form.Label>
+            <Form.Group key="reuse_trucks" className="mt-3">
+              
               <Form.Check
                 type="checkbox"
                 name="reuse_trucks"
                 placeholder="Reuse trucks"
+                label="Reuse trucks after they all returned to the depot"
                 checked={deliveryConfig.reuse_trucks}
                 onChange={handleInputChange}
               />
             </Form.Group>
             <br />
             <h5>S2: Waiting Time</h5>
+            <Form.Group key="waiting" className="mt-3 mb-2">
+              
+              <Form.Check
+                type="checkbox"
+                name="waiting"
+                label="Wait for orders"
+                placeholder="Wait for orders"
+                checked={deliveryConfig.waiting}
+                onChange={handleInputChange}
+              />
+            </Form.Group>
             <Form.Group key="waiting_time_days">
               <Form.Label>Number of waiting days at the depot</Form.Label>
               <Form.Control

@@ -43,7 +43,7 @@ def get_statistics():
     
 @app.route('/cluster', methods=['GET'])
 def cluster_locations_from_db():
-    thread = Thread(target = ClusterHandler().cluster_locations_from_db)
+    thread = Thread(target = ClusterHandler(logger=logger).cluster_locations_from_db)
     thread.start()
     return 'Clustering started'
 

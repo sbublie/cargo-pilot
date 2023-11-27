@@ -58,6 +58,7 @@ interface ProjectedTrip {
   average_weight_utilization: number;
   total_time: number;
   total_distance: number;
+  end_time: number;
 }
 
 export interface ProjectedTripResult {

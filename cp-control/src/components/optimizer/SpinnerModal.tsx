@@ -91,6 +91,8 @@ export const StatisticsModal: React.FC<StatisticsModalProps> = ({
             - Total weight utilization: {trip.average_weight_utilization} %<br/>
             - Total distance: {trip.total_distance} km<br/>
             - Total driving time: {trip.total_time} min<br/>
+            - Start Time: {trip.start_time} min<br/>
+            - End Time: {trip.end_time} min<br/>
             <br/>
           </div>
           

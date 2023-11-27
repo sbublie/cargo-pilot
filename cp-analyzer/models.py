@@ -298,6 +298,7 @@ class DeliveryConfig:
     penalty_for_dropping_nodes: int
     calculation_time_limit: int
     waiting_time_days: int
+    waiting: bool
     delivery_promise_radius: int
     delivery_promise_days: int
     last_stop_distance: int

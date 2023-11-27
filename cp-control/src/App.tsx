@@ -14,13 +14,11 @@ function App() {
       
         <Navbar bg="dark" variant="dark">
           {/* "Link" in brand component since just redirect is needed */}
-          <div>
-            <h5>&nbsp;&nbsp;</h5>
-          </div>
-          <Navbar.Brand as={Link} to="/">
+          
+          <Navbar.Brand as={Link} to="/" className="ms-4">
             Cargo Pilot
           </Navbar.Brand>
-          <Nav>
+          <Nav >
             {/* "NavLink" here since "active" class styling is needed */}
             <Nav.Link as={NavLink} to="/">
               Home
@@ -31,7 +29,15 @@ function App() {
             <Nav.Link as={NavLink} to="/optimizer">
               Cargo Optimizer
             </Nav.Link>
+            
           </Nav>
+          <Nav className="ms-auto">
+          <Nav.Item>
+            <div className="text-light me-4" >
+              v0.5.0
+            </div>
+          </Nav.Item>
+        </Nav>
         </Navbar>
         
           <Routes>
