@@ -10,15 +10,13 @@ function StartPage() {
         <Card>
           <Card.Body>
             <Row
-              className="justify-content-center align-items-center text-center"
+              className="justify-content-center align-items-center "
               style={{ minHeight: "70vh" }}
             >
-              <Col md={8}>
-                <h1 className="text-center">Welcome to Cargo Pilot</h1>
-                <h3 className="text-center mb-20">
-                  This page is currently being updated. Please come back later!
-                </h3>
-                <hr />
+              <Col md={9}>
+                
+                <h1 className="text-center">Welcome to ZDM Cargo Pilot</h1>
+                <br />
                 <h5>
                   Within the research project in cooperation with Universidade
                   de Aveiro
@@ -35,14 +33,17 @@ function StartPage() {
                   companies to increase the utilization of their existing truck
                   fleets in a sustainable way.
                 </h5>
-                <h2>Center for Digitization in Mobility Systems (ZDM)</h2>
-                <h5>
-                  The Center for Digitization in Mobility Systems (ZDM)
-                  specializes in digitization in transportation. Students can
-                  thus deepen their knowledge in the field of automated and
-                  connected driving. For companies, ZDM offers support in the
-                  evaluation and deployment of digitization technologies.
-                </h5>
+                <br />
+                <a href="https://www.ravensburg.dhbw.de/forschung-transfer/kompetenzzentren/zentrum-fuer-digitalisierung-in-mobilitaetssystemen">Zentrum für Digitalisierung in Mobilitätssystemen</a>
+                <br />
+                <b>Prof. Dudek</b>
+                <div className="mt-4 mb-4" >in collaboration with</div>
+                <a href="https://www.ua.pt/">Universidade de Aveiro</a>
+                <br />
+                <b>Prof. Dr. Ana Moura</b>
+                <br />
+                <b>Prof. Dr. Rui Borges</b>
+
               </Col>
             </Row>
           </Card.Body>

@@ -118,6 +118,7 @@ function MapboxMap() {
         <Row>
           <Col className="d-flex justify-content-start">
             <Button
+              disabled
               className="m-3"
               variant="primary"
               onClick={handleShowStatisticsModal}

@@ -22,7 +22,7 @@ interface StatisticsModalProps {
 export const SpinnerModal: React.FC<SpinnerModalProps> = ({ show, onHide }) => {
   return (
     <div>
-      <Modal show={show} onHide={onHide} backdrop="static" keyboard={false}>
+      <Modal show={show} onHide={onHide} backdrop="static" keyboard={false} centered>
         <Modal.Body>
           <Row>
             <Col className="d-flex justify-content-start">
@@ -43,10 +43,17 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
   onClose,
   text,
 }) => {
+  let notificationText
+  if (text === "no_results") {
+    notificationText = "No results found!";
+  } else if (text === "error") {
+    notificationText = <div><b>Error while fetching</b><br/>This should not happen!<br/>Please report the error to the developer!</div> ;
+  }
+
   return (
     <div>
-      <Modal show={show} backdrop="static" keyboard={false}>
-        <Modal.Body>{text}</Modal.Body>
+      <Modal show={show} backdrop="static" keyboard={false} centered>
+        <Modal.Body>{notificationText}</Modal.Body>
         <Modal.Footer>
           <Button variant="primary" onClick={onClose}>
             Close
@@ -64,26 +71,28 @@ export const StatisticsModal: React.FC<StatisticsModalProps> = ({
 }) => {
   return (
     <div>
-      <Modal show={show} backdrop="static" keyboard={false}>
+      <Modal show={show} backdrop="static" keyboard={false} centered>
         <Modal.Body style={{
       maxHeight: 'calc(100vh - 210px)',
       overflowY: 'auto'
      }}>
-        <b>Delivered cargo orders:</b> {trips.result.number_of_cargo_orders - (trips.result.num_of_dropped_nodes / 2)} of {trips.result.number_of_cargo_orders}<br/>
-        <b>Average distance per trip:</b> {trips.result.average_distance} km<br/>
+        <b>Delivered cargo orders:</b> {trips.result.number_of_orders - (trips.result.number_of_undelivered_orders)} of {trips.result.number_of_orders}<br/>
+        <b>Average distance per trip:</b> {trips.result.average_distance_per_trip} km<br/>
         <b>Total distance:</b> {trips.result.total_distance} km<br/>
-        <b>Number of sub-trips:</b> {trips.result.total_driving_sections}<br/>
-        <b>Average Loading Meter Utilization:</b> {trips.result.avg_loading_utilization} %<br/>
-        <b>Average Weight Utilization:</b> {trips.result.avg_weight_utilization} %<br/>
+        <b>Number of sub-trips:</b> {trips.result.number_of_driving_sections}<br/>
+        <b>Average Loading Meter Utilization:</b> {trips.result.average_loading_meter_utilization} %<br/>
+        <b>Average Weight Utilization:</b> {trips.result.average_weight_utilization} %<br/>
         <br/>
         {trips.result.trips.map((trip) => (
-          <div>
+          <div key={trip.id}>
             <b>Trip ID:</b> {trip.id}<br/>
-            - Number of driving sections: {trip.num_driving_sections}<br/>
-            - Total loading meter utilization: {trip.total_loading_meter_utilization} %<br/>
-            - Total weight utilization: {trip.total_weight_utilization} %<br/>
+            - Number of driving sections: {trip.number_of_driving_sections}<br/>
+            - Total loading meter utilization: {trip.average_loading_meter_utilization} %<br/>
+            - Total weight utilization: {trip.average_weight_utilization} %<br/>
             - Total distance: {trip.total_distance} km<br/>
-            - Total driving time: {trip.total_time} h<br/>
+            - Total driving time: {trip.total_time} min<br/>
+            - Start Time: {trip.start_time} min<br/>
+            - End Time: {trip.end_time} min<br/>
             <br/>
           </div>
           

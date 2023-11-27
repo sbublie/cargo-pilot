@@ -1,12 +1,13 @@
 from models import Location, CompletedTrip, Cluster, CargoOrder
 import requests
 import json
-
+from logging import Logger
 
 class DatabaseHandler:
 
-    def __init__(self) -> None:
+    def __init__(self, logger:Logger) -> None:
         self.BASE_URL = "http://cp-db:5000"
+        self.logger = logger
 
     def add_location(self, location: Location) -> int:
         # Convert the Location object to a dict and send it to the DB server
@@ -40,9 +41,11 @@ class DatabaseHandler:
         return locations
 
     def get_cargo_orders(self) -> list[CargoOrder]:
+        self.logger.debug("Getting cargo orders from DB")
         response = requests.get(self.BASE_URL + "/cargo-orders")
         data = response.json()
         orders = [CargoOrder(**order) for order in data]
+        self.logger.debug(f"Got {len(orders)} orders from DB")
 
         return orders
 

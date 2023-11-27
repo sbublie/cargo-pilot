@@ -50,26 +50,28 @@ interface TripSection {
 
 interface ProjectedTrip {
   id: number;
-  included_orders: number[];
-  num_driving_sections: number;
+  number_of_driving_sections: number;
+  number_of_loading_sections: number;
   start_time: number;
   trip_sections: TripSection[];
-  total_loading_meter_utilization: number;
-  total_weight_utilization: number;
+  average_loading_meter_utilization: number;
+  average_weight_utilization: number;
   total_time: number;
   total_distance: number;
+  end_time: number;
 }
 
 export interface ProjectedTripResult {
   result: {
-    average_distance: number;
-    number_trips: number;
-    total_distance: number;
+    number_of_trips: number;
+    number_of_orders: number;
+    number_of_driving_sections: number;
     num_of_dropped_nodes: number;
-    avg_loading_utilization: number;
-    avg_weight_utilization: number;
-    total_driving_sections: number;
-    number_of_cargo_orders: number;
+    number_of_undelivered_orders: number;
+    total_distance: number;
+    average_distance_per_trip: number;
+    average_loading_meter_utilization: number;
+    average_weight_utilization: number;
     trips: ProjectedTrip[];
   };
 }
@@ -252,7 +254,7 @@ export function addProjectedTripsToMap(
         geometry.coordinates &&
         description
       ) {
-        console.log(geometry.type);
+       
         if (geometry.type === "Point") {
           let coordinates = geometry.coordinates.slice() as [number, number];
 
@@ -264,6 +266,7 @@ export function addProjectedTripsToMap(
             .setLngLat(coordinates)
             .setHTML(description)
             .addTo(map);
+          // Prevents the dialog from appreaing twice
           e.stopPropagation();
         } else {
           console.error("Geometry type is not a Point");
@@ -287,7 +290,7 @@ export function addProjectedTripsToMap(
         geometry.coordinates &&
         description
       ) {
-        console.log(geometry.type);
+        
         if (geometry.type === "LineString") {
           let coordinates = e.lngLat;
 
@@ -295,6 +298,7 @@ export function addProjectedTripsToMap(
             .setLngLat(coordinates)
             .setHTML(description)
             .addTo(map);
+          // Prevents the dialog from appreaing twice
           e.stopPropagation();
         } else {
           console.error("Geometry type is not a Point");

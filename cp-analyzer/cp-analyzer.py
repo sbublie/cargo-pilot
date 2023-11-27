@@ -5,8 +5,19 @@ from statistic_engine import StatisticsEngine
 from threading import Thread
 from database_handler import DatabaseHandler
 from route_optimizer import RouteOptimizer
-from models import DeliveryConfig, CargoOrder
+from models import DeliveryConfig
+import logging
 import json
+from dataclasses import asdict
+
+
+# Configure the logging module
+logging.basicConfig(level=logging.DEBUG,  # Set the logging level
+                    format='%(asctime)s.%(msecs)03d [%(levelname)s] - %(funcName)30s() -> %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
+
+# Create a logger
+logger = logging.getLogger(__name__)
 
 from flask_cors import CORS
 app = Flask(__name__)
@@ -32,18 +43,20 @@ def get_statistics():
     
 @app.route('/cluster', methods=['GET'])
 def cluster_locations_from_db():
-    thread = Thread(target = ClusterHandler().cluster_locations_from_db)
+    thread = Thread(target = ClusterHandler(logger=logger).cluster_locations_from_db)
     thread.start()
     return 'Clustering started'
 
 @app.route('/calc-routes', methods=['POST'])
 def calulate_truck_routes():
-    data = request.json
-    cargo_orders =  DatabaseHandler().get_cargo_orders()
-    #result = RouteOptimizer().get_optimized_routes_from_orders(delivery_config=DeliveryConfig(**data), orders=cargo_orders)
-    result = RouteOptimizer().solve_vrp(delivery_config=DeliveryConfig(**data), orders=cargo_orders)
-
-    return {"result": result}
+    logger.debug('Calc routes API called')
+    delivery_config = request.json
+    logger.debug(f'Config parameter received: {delivery_config}')
+    cargo_orders =  DatabaseHandler(logger=logger).get_cargo_orders()
+    logger.debug('Config parameter and cargo orders ready for route optimization')
+    result = RouteOptimizer(logger=logger).get_vrp_result(delivery_config=DeliveryConfig(**delivery_config), orders=cargo_orders)
+    
+    return {"result": json.loads(json.dumps(asdict(result), default=lambda o: o.__dict__, indent=4))}
 
 if __name__ == "__main__":
     app.run(port=5000, host='0.0.0.0')
