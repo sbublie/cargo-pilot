@@ -76,10 +76,10 @@ class RouteOptimizer:
         self.logger.debug(f"Timestamps found: {timestamps}")
 
         waiting_time_days = 1
-        if delivery_config.waiting:
+        if delivery_config.waiting_time_days > 1:
             waiting_time_days = delivery_config.waiting_time_days
         
-        grouped_timestamps = [timestamps[i:i + delivery_config.waiting_time_days] for i in range(0, len(timestamps), waiting_time_days)]
+        grouped_timestamps = [timestamps[i:i + waiting_time_days] for i in range(0, len(timestamps), waiting_time_days)]
 
         self.logger.debug(f"Number of grouped timestamps: {len(grouped_timestamps)}")
         number_runs = 1
@@ -101,7 +101,7 @@ class RouteOptimizer:
             self.logger.debug(f"Number of locations: {len(locations)}")
 
             start_time_this_run = 0
-            if delivery_config.waiting:
+            if delivery_config.waiting_time_days >= 1:
                 start_time_this_run = int((waiting_time_group[-1] - delivery_config.start_time) / 60) + 1440
             projected_trips += self.solve_vrp(delivery_config=delivery_config, locations=locations, relevant_orders=first_run_orders, time_offset=start_time_this_run)
             self.logger.debug(f"Dropped orders first run: {self.dropped_orders}")
