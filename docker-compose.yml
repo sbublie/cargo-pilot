@@ -21,6 +21,8 @@ services:
     container_name: cp-analyzer
     restart: always
     build: ./cp-analyzer
+    volumes:
+      - ./cp-analyzer/logs:/app/logs
   cp-postgres:
     container_name: cp-postgres
     image: postgres
