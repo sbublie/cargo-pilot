@@ -34,7 +34,7 @@ function App() {
           <Nav className="ms-auto">
           <Nav.Item>
             <div className="text-light me-4" >
-              v0.5.0
+              v0.5.1
             </div>
           </Nav.Item>
         </Nav>

@@ -1,6 +1,14 @@
 import React, { useState } from "react";
 import { Modal, Button, Form } from "react-bootstrap";
+import Datetime from "react-datetime";
+import "react-datetime/css/react-datetime.css";
+import moment, { Moment } from "moment";
 
+import "react-datetime/css/react-datetime.css";
+import "moment/dist/locale/de";
+
+// Set default locale to German globally
+moment.locale("de");
 
 export interface DeliveryConfig {
   start_time: number;
@@ -44,7 +52,7 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
     reuse_trucks: true,
     penalty_for_dropping_nodes: 1000000,
     calculation_time_limit: 5,
-    waiting_time_days: 3,
+    waiting_time_days: 0,
     waiting: false,
     delivery_promise_radius: 300,
     delivery_promise_days: 1,
@@ -55,8 +63,27 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
     const { name, value, type } = e.target;
 
     // Check the type of the input
-    const inputValue = type === 'checkbox' ? e.target.checked : parseFloat(value) || 0;
+    const inputValue =
+      type === "checkbox" ? e.target.checked : parseFloat(value) || 0;
     setDeliveryConfig({ ...deliveryConfig, [name]: inputValue });
+  };
+
+  const handleStartTimeChange = (value: string | Moment) => {
+    const momentValue = moment(value);
+    setDeliveryConfig({
+      ...deliveryConfig,
+      start_time: momentValue.toDate().getTime() / 1000,
+    });
+    
+  };
+
+  const handleEndTimeChange = (value: string | Moment) => {
+    const momentValue = moment(value);
+    setDeliveryConfig({
+      ...deliveryConfig,
+      end_time_incl: momentValue.toDate().getTime() / 1000,
+    });
+    
   };
 
   return (
@@ -81,23 +108,21 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
             <h5>S1: Base Parameter</h5>
             <Form.Group key="start_time">
               <Form.Label>Start time for order filter</Form.Label>
-              <Form.Control
-                type="number"
-                name="start_time"
-                placeholder="Enter Start Time"
-                value={deliveryConfig.start_time}
-                onChange={handleInputChange}
-              />
+              <Datetime
+                locale="de"
+                initialValue={moment.unix(deliveryConfig.start_time)}
+                onChange={handleStartTimeChange}
+                
+              ></Datetime>
             </Form.Group>
             <Form.Group key="end_time_incl">
               <Form.Label>End time for order filter</Form.Label>
-              <Form.Control
-                type="number"
-                name="end_time_incl"
-                placeholder="Enter End Time"
-                value={deliveryConfig.end_time_incl}
-                onChange={handleInputChange}
-              />
+              <Datetime
+                locale="de"
+                initialValue={moment.unix(deliveryConfig.end_time_incl)}
+                onChange={handleEndTimeChange}
+                
+              ></Datetime>
             </Form.Group>
             <Form.Group key="max_loading_meter">
               <Form.Label>Max. loading meter</Form.Label>
@@ -107,6 +132,9 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
                 placeholder="Enter Max Loading Meter"
                 value={deliveryConfig.max_loading_meter}
                 onChange={handleInputChange}
+                min={1}
+                step={1}
+                max={14}
               />
             </Form.Group>
             <Form.Group key="max_weight">
@@ -117,6 +145,9 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
                 placeholder="Enter Max Weight"
                 value={deliveryConfig.max_weight}
                 onChange={handleInputChange}
+                min={1}
+                step={1}
+                max={24000}
               />
             </Form.Group>
             <Form.Group key="num_trucks">
@@ -127,6 +158,9 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
                 placeholder="Enter number of trucks driving at the same time"
                 value={deliveryConfig.num_trucks}
                 onChange={handleInputChange}
+                min={1}
+                step={1}
+                max={50}
               />
             </Form.Group>
             <Form.Group key="days_per_trip">
@@ -139,10 +173,12 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
                 placeholder="Enter Number of days per Trip"
                 value={deliveryConfig.days_per_trip}
                 onChange={handleInputChange}
+                min={1}
+                step={1}
+                max={10}
               />
             </Form.Group>
             <Form.Group key="reuse_trucks" className="mt-3">
-              
               <Form.Check
                 type="checkbox"
                 name="reuse_trucks"
@@ -154,17 +190,6 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
             </Form.Group>
             <br />
             <h5>S2: Waiting Time</h5>
-            <Form.Group key="waiting" className="mt-3 mb-2">
-              
-              <Form.Check
-                type="checkbox"
-                name="waiting"
-                label="Wait for orders"
-                placeholder="Wait for orders"
-                checked={deliveryConfig.waiting}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
             <Form.Group key="waiting_time_days">
               <Form.Label>Number of waiting days at the depot</Form.Label>
               <Form.Control
@@ -173,6 +198,9 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
                 placeholder="Enter Number of waiting days"
                 value={deliveryConfig.waiting_time_days}
                 onChange={handleInputChange}
+                min={0}
+                step={1}
+                max={5}
               />
             </Form.Group>
             <br />
@@ -221,12 +249,14 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
             <Form.Group key="calculation_time_limit">
               <Form.Label>Max. calculation time in seconds</Form.Label>
               <Form.Control
-                
                 type="number"
                 name="calculation_time_limit"
                 placeholder="Max. calculation time in seconds"
                 value={deliveryConfig.calculation_time_limit}
                 onChange={handleInputChange}
+                min={1}
+                step={1}
+                max={10}
               />
             </Form.Group>
             <Form.Group key="penalty_for_dropping_nodes">
@@ -237,6 +267,9 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
                 placeholder="Penalty for dropping nodes"
                 value={deliveryConfig.penalty_for_dropping_nodes}
                 onChange={handleInputChange}
+                min={1}
+                step={1}
+                max={1000000}
               />
             </Form.Group>
           </Form>

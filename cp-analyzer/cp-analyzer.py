@@ -9,15 +9,17 @@ from models import DeliveryConfig
 import logging
 import json
 from dataclasses import asdict
-
-
-# Configure the logging module
-logging.basicConfig(level=logging.DEBUG,  # Set the logging level
-                    format='%(asctime)s.%(msecs)03d [%(levelname)s] - %(funcName)30s() -> %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S')
+from logging.handlers import RotatingFileHandler
 
 # Create a logger
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+handler = RotatingFileHandler('./logs/cp-analyser.log', maxBytes=1024*1024, backupCount=5)
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s.%(msecs)03d [%(levelname)s] - %(funcName)30s() -> %(message)s')
+formatter.datefmt = '%Y-%m-%d %H:%M:%S'
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 from flask_cors import CORS
 app = Flask(__name__)
