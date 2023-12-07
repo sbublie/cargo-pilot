@@ -12,8 +12,8 @@ MAX_WEIGHT_PER_TRIP = 25000 #kg
 MAX_LOAD_LENGTH_PER_TRIP = 13.6 #m
 
 class TripHandler:
-    def __init__(self) -> None:
-        self.database_handler = DatabaseHandler()
+    def __init__(self, logger) -> None:
+        self.database_handler = DatabaseHandler(logger=logger)
 
     def get_trips_from_json(self, json_data) -> List[CompletedTrip]:
 

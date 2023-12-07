@@ -39,6 +39,20 @@ class RouteOptimizer:
         data["distance_matrix"] = distance_matrix
         data["time_matrix"] = time_matrix
 
+    def compute_time_distance_matrix_last_stop_limit(self, locations: list[Location], data, delivery_config: DeliveryConfig):
+        num_locations = len(locations)
+        distance_matrix = [[0] * num_locations for _ in range(num_locations)]
+        time_matrix = [[0] * num_locations for _ in range(num_locations)]
+        for i in range(num_locations):
+            for j in range(num_locations):
+                distance = geodesic((locations[i].geo_location.lat, locations[i].geo_location.long), (
+                    locations[j].geo_location.lat, locations[j].geo_location.long)).kilometers
+                time_matrix[i][j] = round((distance / AVG_SPEED) * 60, 2)
+                distance_matrix[0][j] = delivery_config.last_stop_limit
+
+        data["distance_matrix"] = distance_matrix
+        data["time_matrix"] = time_matrix
+
     def filter_orders(self, delivery_config: DeliveryConfig, orders: list[CargoOrder]):
         relevant_orders: list[CargoOrder] = []
         for order in orders:
@@ -155,7 +169,10 @@ class RouteOptimizer:
         # Step 4: Create a list of all distances between locations
         data = {}
         self.logger.debug(f"Step 4: Distance and time matrix")
-        self.compute_time_distance_matrix(locations, data)
+        if delivery_config.last_stop_limit_active:
+            self.compute_time_distance_matrix_last_stop_limit(locations, data)
+        else:
+            self.compute_time_distance_matrix(locations, data)
         self.logger.debug(
             f"Dimensions of distance matrix: {len(data['distance_matrix'][0])}x{len(data['distance_matrix'][0])}")
         self.logger.debug(
@@ -224,7 +241,10 @@ class RouteOptimizer:
         data["weight_demands"] = weight_demands
         data["loading_meter_demands"] = loading_meter_demands
         data["max_time_per_trip"] = delivery_config.days_per_trip * delivery_config.min_per_day
-        data["max_distance_per_trip"] = delivery_config.days_per_trip * delivery_config.km_per_day
+        if delivery_config.last_stop_limit_active:
+            data["max_distance_per_trip"] = delivery_config.last_stop_limit
+        else:
+            data["max_distance_per_trip"] = delivery_config.days_per_trip * delivery_config.km_per_day
 
         # Step 8: Create the routing index manager and Routing Model.
         self.logger.debug(f"Step 8: Routing index manager and model")
@@ -247,6 +267,8 @@ class RouteOptimizer:
         # Create and register a loading meter constraint dimension
         self.set_loading_meter_constraint(data, manager, routing)
 
+        
+
         # Step 10: Set up the search parameters
         # Allow to drop nodes.
         self.logger.debug(f"Step 10: Set up the search parameters")
@@ -258,6 +280,8 @@ class RouteOptimizer:
         search_parameters.first_solution_strategy = (SOLUTION_STRATEGY)
         search_parameters.local_search_metaheuristic = (SEARCH_METAHEURISTIC)
         search_parameters.time_limit.FromSeconds(delivery_config.calculation_time_limit)
+
+
 
         # Step 11: Finally solve the problem.
         self.logger.debug(f"Step 11: Solve the problem")
