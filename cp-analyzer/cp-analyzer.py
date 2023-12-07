@@ -28,15 +28,15 @@ CORS(app)
 @app.route('/upload/trips', methods=['POST'])
 def process_trips_data():
     json_data = request.get_json()  
-    all_trips = TripHandler().get_trips_from_json(json_data)
-    DatabaseHandler().add_trips_to_db(all_trips)
+    all_trips = TripHandler(logger=logger).get_trips_from_json(json_data)
+    DatabaseHandler(logger=logger).add_trips_to_db(all_trips)
     return 'Data received successfully'
 
 @app.route('/upload/cargo-orders', methods=['POST'])
 def process_cargo_orders_data():
     json_data = request.get_json()  
-    all_cargo_orders = TripHandler().get_orders_from_json(json_data)
-    DatabaseHandler().add_cargo_orders_to_db(cargo_orders=all_cargo_orders)
+    all_cargo_orders = TripHandler(logger=logger).get_orders_from_json(json_data)
+    DatabaseHandler(logger=logger).add_cargo_orders_to_db(cargo_orders=all_cargo_orders)
     return {"result": "Data received successfully"}
 
 @app.route('/statistics', methods=['GET'])

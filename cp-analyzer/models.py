@@ -299,9 +299,11 @@ class DeliveryConfig:
     calculation_time_limit: int
     waiting_time_days: int
     waiting: bool
+    delivery_promise_active: bool
     delivery_promise_radius: int
     delivery_promise_days: int
-    last_stop_distance: int
+    last_stop_limit_active: bool
+    last_stop_limit_distance: int
 
 
 @dataclass

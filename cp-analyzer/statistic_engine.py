@@ -4,15 +4,16 @@ import json
 
 class StatisticsEngine:
 
-    def __init__(self) -> None:
+    def __init__(self, logger) -> None:
+        self.logger = logger
         pass
 
     def get_statistics(self):
-        offerings = DatabaseHandler().get_cargo_orders()
+        offerings = DatabaseHandler(logger).get_cargo_orders()
         return {"result": len(offerings)}
 
     def get_statistics_old(self):
-        offerings = DatabaseHandler().get_offerings()
+        offerings = DatabaseHandler(logger=self.logger).get_offerings()
 
         all_origin_zip_codes = [offering['origin']['zip_code'] for offering in offerings]
         all_destination_zip_codes = [offering['destination']['zip_code'] for offering in offerings]

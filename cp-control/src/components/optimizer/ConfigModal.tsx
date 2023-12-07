@@ -24,9 +24,11 @@ export interface DeliveryConfig {
   calculation_time_limit: number;
   waiting_time_days: number;
   waiting: boolean;
+  delivery_promise_active: boolean;
   delivery_promise_radius: number;
   delivery_promise_days: number;
-  last_stop_distance: number;
+  last_stop_limit_distance: number;
+  last_stop_limit_active: boolean;
 }
 
 interface ConfigModalProps {
@@ -54,10 +56,15 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
     calculation_time_limit: 5,
     waiting_time_days: 0,
     waiting: false,
+    delivery_promise_active: false,
     delivery_promise_radius: 300,
     delivery_promise_days: 1,
-    last_stop_distance: 50,
+    last_stop_limit_distance: 50,
+    last_stop_limit_active: false,
   });
+
+  const [isLastStopDisabled, setIsLastStopDisabled] = useState(true);
+  const [isDeliveryPromiseDisabled, setIsDeliveryPromiseDisabled] = useState(true);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
@@ -66,6 +73,13 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
     const inputValue =
       type === "checkbox" ? e.target.checked : parseFloat(value) || 0;
     setDeliveryConfig({ ...deliveryConfig, [name]: inputValue });
+
+    if (name === "last_stop_limit_active") {
+      setIsLastStopDisabled(!e.target.checked);
+    }
+    if (name === "delivery_promise_active") {
+      setIsDeliveryPromiseDisabled(!e.target.checked);
+    }
   };
 
   const handleStartTimeChange = (value: string | Moment) => {
@@ -205,12 +219,23 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
             </Form.Group>
             <br />
             <h5>S3: Delivery promise radius</h5>
-            <Form.Group key="delivery_promise_radius">
+            
+            <Form.Group key="delivery_promise_active" className="mt-3">
+              <Form.Check
+                type="checkbox"
+                name="delivery_promise_active"
+                placeholder="Fulfill delivery promise"
+                label="Fulfill delivery promise"
+                checked={deliveryConfig.delivery_promise_active}
+                onChange={handleInputChange}
+              />
+            </Form.Group>
+            <Form.Group key="delivery_promise_radius" className="mt-3">
               <Form.Label>
                 Radius of the delivery promise around the depot
               </Form.Label>
               <Form.Control
-                disabled
+                disabled={isDeliveryPromiseDisabled}
                 type="number"
                 name="delivery_promise_radius"
                 placeholder="Radius of the delivery promise around the depot"
@@ -221,7 +246,7 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
             <Form.Group key="delivery_promise_days">
               <Form.Label>Delivery promise in days</Form.Label>
               <Form.Control
-                disabled
+                disabled={isDeliveryPromiseDisabled}
                 type="number"
                 name="delivery_promise_days"
                 placeholder="Delivery promise in days"
@@ -231,16 +256,26 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
             </Form.Group>
             <br />
             <h5>S4: Last stop distance</h5>
-            <Form.Group key="last_stop_distance">
+            <Form.Group key="last_stop_limit_active" className="mt-3">
+              <Form.Check
+                type="checkbox"
+                name="last_stop_limit_active"
+                placeholder="Limit the distance from the last stop to the depot"
+                label="Limit the distance from the last stop to the depot"
+                checked={deliveryConfig.last_stop_limit_active}
+                onChange={handleInputChange}
+              />
+            </Form.Group>
+            <Form.Group key="last_stop_limit_distance" className="mt-3">
               <Form.Label>
                 Distance between the last stop and the depot
               </Form.Label>
               <Form.Control
-                disabled
+                disabled={isLastStopDisabled}
                 type="number"
-                name="last_stop_distance"
+                name="last_stop_limit_distance"
                 placeholder="Distance between the last stop and the depot"
-                value={deliveryConfig.last_stop_distance}
+                value={deliveryConfig.last_stop_limit_distance}
                 onChange={handleInputChange}
               />
             </Form.Group>
