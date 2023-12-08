@@ -242,7 +242,7 @@ class RouteOptimizer:
         data["loading_meter_demands"] = loading_meter_demands
         data["max_time_per_trip"] = delivery_config.days_per_trip * delivery_config.min_per_day
         if delivery_config.last_stop_limit_active:
-            data["max_distance_per_trip"] = delivery_config.last_stop_limit
+            data["max_distance_per_trip"] = delivery_config.last_stop_limit_distance
         else:
             data["max_distance_per_trip"] = delivery_config.days_per_trip * delivery_config.km_per_day
 
