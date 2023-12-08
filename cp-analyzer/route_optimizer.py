@@ -170,9 +170,9 @@ class RouteOptimizer:
         data = {}
         self.logger.debug(f"Step 4: Distance and time matrix")
         if delivery_config.last_stop_limit_active:
-            self.compute_time_distance_matrix_last_stop_limit(locations, data)
+            self.compute_time_distance_matrix_last_stop_limit(locations=locations, data=data, delivery_config=delivery_config)
         else:
-            self.compute_time_distance_matrix(locations, data)
+            self.compute_time_distance_matrix(locations=locations, data=data)
         self.logger.debug(
             f"Dimensions of distance matrix: {len(data['distance_matrix'][0])}x{len(data['distance_matrix'][0])}")
         self.logger.debug(
