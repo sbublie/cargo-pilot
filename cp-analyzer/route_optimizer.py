@@ -48,7 +48,7 @@ class RouteOptimizer:
                 distance = geodesic((locations[i].geo_location.lat, locations[i].geo_location.long), (
                     locations[j].geo_location.lat, locations[j].geo_location.long)).kilometers
                 time_matrix[i][j] = round((distance / AVG_SPEED) * 60, 2)
-                distance_matrix[0][j] = delivery_config.last_stop_limit
+                distance_matrix[0][j] = delivery_config.last_stop_limit_distance
 
         data["distance_matrix"] = distance_matrix
         data["time_matrix"] = time_matrix
