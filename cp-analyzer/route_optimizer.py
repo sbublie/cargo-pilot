@@ -20,6 +20,7 @@ SOLUTION_STRATEGY = routing_enums_pb2.FirstSolutionStrategy.PARALLEL_CHEAPEST_IN
 SEARCH_METAHEURISTIC = routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
 CALCULATION_TIME_LIMIT = 5
 
+
 class RouteOptimizer:
     def __init__(self, logger: Logger) -> None:
         self.logger = logger
@@ -69,7 +70,7 @@ class RouteOptimizer:
             locations.append(order.origin)
             self.node_map[len(locations)] = order.id
             locations.append(order.destination)
-        #self.logger.debug(f"Node map: {self.node_map}")
+        # self.logger.debug(f"Node map: {self.node_map}")
         return locations
 
     def get_vrp_result(self, delivery_config: DeliveryConfig, orders: list[CargoOrder]):
@@ -92,22 +93,26 @@ class RouteOptimizer:
         waiting_time_days = 1
         if delivery_config.waiting_time_days > 1:
             waiting_time_days = delivery_config.waiting_time_days
-        
-        grouped_timestamps = [timestamps[i:i + waiting_time_days] for i in range(0, len(timestamps), waiting_time_days)]
 
-        self.logger.debug(f"Number of grouped timestamps: {len(grouped_timestamps)}")
+        grouped_timestamps = [timestamps[i:i + waiting_time_days]
+                              for i in range(0, len(timestamps), waiting_time_days)]
+
+        self.logger.debug(
+            f"Number of grouped timestamps: {len(grouped_timestamps)}")
         number_runs = 1
-        projected_trips:List[ProjectedTrip] = []
+        projected_trips: List[ProjectedTrip] = []
 
         for waiting_time_group in grouped_timestamps:
-            self.logger.debug(f"Starting run for waiting time group {waiting_time_group}")
+            self.logger.debug(
+                f"Starting run for waiting time group {waiting_time_group}")
             first_run_orders = []
             for relevant_order in relevant_orders:
                 for timestamp in waiting_time_group:
                     if relevant_order.origin.timestamp == timestamp:
                         first_run_orders.append(relevant_order)
 
-            self.logger.debug(f"Number of orders in this run: {len(first_run_orders)}")
+            self.logger.debug(
+                f"Number of orders in this run: {len(first_run_orders)}")
 
             # Step 2: Create a list of all locations
             self.logger.debug(f"Step 2: Location list + depot")
@@ -116,43 +121,54 @@ class RouteOptimizer:
 
             start_time_this_run = 0
             if delivery_config.waiting_time_days >= 1:
-                start_time_this_run = int((waiting_time_group[-1] - delivery_config.start_time) / 60) + 1440
-            projected_trips += self.solve_vrp(delivery_config=delivery_config, locations=locations, relevant_orders=first_run_orders, time_offset=start_time_this_run)
-            self.logger.debug(f"Dropped orders first run: {self.dropped_orders}")
-            
+                start_time_this_run = int(
+                    (waiting_time_group[-1] - delivery_config.start_time) / 60) + 1440
+            projected_trips += self.solve_vrp(delivery_config=delivery_config, locations=locations,
+                                              relevant_orders=first_run_orders, time_offset=start_time_this_run)
+            self.logger.debug(
+                f"Dropped orders first run: {self.dropped_orders}")
+
             if delivery_config.reuse_trucks:
                 while len(self.dropped_orders) > 0 and len(projected_trips) > 0:
                     number_runs += 1
                     self.logger.debug(f"Starting run {number_runs}")
-                    end_times = [trip.end_time for trip in projected_trips if trip.end_time]
+                    end_times = [
+                        trip.end_time for trip in projected_trips if trip.end_time]
                     new_start_time = max(end_times)
-                    
-                    second_relevant_orders = [ order for index, order in enumerate(orders) if order.id in self.dropped_orders]
-                    second_locations = self.get_all_locations(second_relevant_orders)
-                    
+
+                    second_relevant_orders = [order for index, order in enumerate(
+                        orders) if order.id in self.dropped_orders]
+                    second_locations = self.get_all_locations(
+                        second_relevant_orders)
+
                     before_dropped_orders = self.dropped_orders.copy()
-                    new_trips =self.solve_vrp(delivery_config=delivery_config, locations=second_locations, relevant_orders=second_relevant_orders, time_offset=new_start_time)
+                    new_trips = self.solve_vrp(delivery_config=delivery_config, locations=second_locations,
+                                               relevant_orders=second_relevant_orders, time_offset=new_start_time)
 
                     if len(self.dropped_orders) == len(before_dropped_orders):
-                        self.logger.debug(f"Number of dropped orders did not change. Stopping.")
+                        self.logger.debug(
+                            f"Number of dropped orders did not change. Stopping.")
                         break
                     if len(new_trips) == 0:
                         break
                     if len(new_trips) == 1 and len(new_trips[0].trip_sections) == 0:
                         break
 
-                    self.logger.debug(f"Adding {len(new_trips)} new trips from run {number_runs}")
+                    self.logger.debug(
+                        f"Adding {len(new_trips)} new trips from run {number_runs}")
                     projected_trips += new_trips
-                    self.logger.debug(f"Dropped orders after run {number_runs}: {self.dropped_orders}")
-        
-        self.logger.debug(f"Creating result with total number of trips: {len(projected_trips)}")
-        
+                    self.logger.debug(
+                        f"Dropped orders after run {number_runs}: {self.dropped_orders}")
+
+        self.logger.debug(
+            f"Creating result with total number of trips: {len(projected_trips)}")
+
         for index, trip in enumerate(projected_trips):
             trip.id = index
-        
-        result = VRPResult(trips=projected_trips, number_of_orders=len(relevant_orders), start_timestamp=delivery_config.start_time, number_of_tour_starts=number_runs , number_of_undelivered_orders=len(self.dropped_orders))
-        return result
 
+        result = VRPResult(trips=projected_trips, number_of_orders=len(relevant_orders), start_timestamp=delivery_config.start_time,
+                           number_of_tour_starts=number_runs, number_of_undelivered_orders=len(self.dropped_orders))
+        return result
 
     def solve_vrp(self, delivery_config: DeliveryConfig, locations: list[Location], relevant_orders: list[CargoOrder], time_offset: int) -> list[ProjectedTrip]:
         self.logger.debug(f"Enter {self.solve_vrp.__name__}")
@@ -170,7 +186,8 @@ class RouteOptimizer:
         data = {}
         self.logger.debug(f"Step 4: Distance and time matrix")
         if delivery_config.last_stop_limit_active:
-            self.compute_time_distance_matrix_last_stop_limit(locations=locations, data=data, delivery_config=delivery_config)
+            self.compute_time_distance_matrix_last_stop_limit(
+                locations=locations, data=data, delivery_config=delivery_config)
         else:
             self.compute_time_distance_matrix(locations=locations, data=data)
         self.logger.debug(
@@ -184,19 +201,40 @@ class RouteOptimizer:
         loading_meter_demands = [0]  # 0 is the depot
 
         end_times = [order.destination.timestamp for order in relevant_orders]
-        
+
         start_time = 0
-        end_time_ts = datetime.fromtimestamp(max(end_times)) + timedelta(days=MAX_DELIVERY_DAYS)
-        end_time = int((end_time_ts.timestamp() - delivery_config.start_time) / 60 )
+        end_time_ts = datetime.fromtimestamp(
+            max(end_times)) + timedelta(days=MAX_DELIVERY_DAYS)
+        end_time = int((end_time_ts.timestamp() -
+                       delivery_config.start_time) / 60)
         time_windows = [(start_time, end_time)]
         self.logger.debug(f"Time window: {time_windows}")
 
         for order in relevant_orders:
-            start_time = int((order.origin.timestamp - delivery_config.start_time) / 60)
-            end_time_ts = datetime.fromtimestamp(order.destination.timestamp) + timedelta(days=MAX_DELIVERY_DAYS)
-            end_time = int((end_time_ts.timestamp() - delivery_config.start_time) / 60)
-            #self.logger.debug(f"Start time: {start_time} and end time: {end_time}")
-            time_windows.append((start_time, end_time))
+            start_time = int(
+                (order.origin.timestamp - delivery_config.start_time) / 60)
+            end_time_ts = datetime.fromtimestamp(
+                order.destination.timestamp) + timedelta(days=MAX_DELIVERY_DAYS)
+            end_time = int((end_time_ts.timestamp() -
+                           delivery_config.start_time) / 60)
+            
+            if delivery_config.delivery_promise_active:
+                orgin_to_depot_distance = geodesic((order.origin.geo_location.lat, order.origin.geo_location.long), (
+                    DEPOT_LOCATION.geo_location.lat, DEPOT_LOCATION.geo_location.long)).kilometers
+                destination_to_depot_distance = geodesic((order.destination.geo_location.lat, order.destination.geo_location.long), (
+                    DEPOT_LOCATION.geo_location.lat, DEPOT_LOCATION.geo_location.long)).kilometers
+
+                if orgin_to_depot_distance <= delivery_config.delivery_promise_radius and destination_to_depot_distance <= delivery_config.delivery_promise_radius:
+                    time_windows.append((0, delivery_config.delivery_promise_days*1440))
+                    self.logger.debug(f"Appended start time: {0} and end time: {delivery_config.delivery_promise_days*1440}")
+
+                else:
+                    time_windows.append((start_time, end_time))
+                    self.logger.debug(f"Appended start time: {start_time} and end time: {end_time}")
+            else:
+                time_windows.append((start_time, end_time))
+                self.logger.debug(f"Appended start time: {start_time} and end time: {end_time}")
+
             if getattr(order.cargo_item, 'loading_meter', None) is not None:
                 weight_demands.append(round(order.cargo_item.weight, 2))
                 weight_demands.append(round(-order.cargo_item.weight, 2))
@@ -240,11 +278,13 @@ class RouteOptimizer:
         data["pickup_deliveries"] = pickup_deliveries
         data["weight_demands"] = weight_demands
         data["loading_meter_demands"] = loading_meter_demands
-        data["max_time_per_trip"] = delivery_config.days_per_trip * delivery_config.min_per_day
+        data["max_time_per_trip"] = delivery_config.days_per_trip * \
+            delivery_config.min_per_day
         if delivery_config.last_stop_limit_active:
             data["max_distance_per_trip"] = delivery_config.last_stop_limit_distance
         else:
-            data["max_distance_per_trip"] = delivery_config.days_per_trip * delivery_config.km_per_day
+            data["max_distance_per_trip"] = delivery_config.days_per_trip * \
+                delivery_config.km_per_day
 
         # Step 8: Create the routing index manager and Routing Model.
         self.logger.debug(f"Step 8: Routing index manager and model")
@@ -267,8 +307,6 @@ class RouteOptimizer:
         # Create and register a loading meter constraint dimension
         self.set_loading_meter_constraint(data, manager, routing)
 
-        
-
         # Step 10: Set up the search parameters
         # Allow to drop nodes.
         self.logger.debug(f"Step 10: Set up the search parameters")
@@ -279,9 +317,8 @@ class RouteOptimizer:
         search_parameters = pywrapcp.DefaultRoutingSearchParameters()
         search_parameters.first_solution_strategy = (SOLUTION_STRATEGY)
         search_parameters.local_search_metaheuristic = (SEARCH_METAHEURISTIC)
-        search_parameters.time_limit.FromSeconds(delivery_config.calculation_time_limit)
-
-
+        search_parameters.time_limit.FromSeconds(
+            delivery_config.calculation_time_limit)
 
         # Step 11: Finally solve the problem.
         self.logger.debug(f"Step 11: Solve the problem")
@@ -305,7 +342,7 @@ class RouteOptimizer:
 
         time_dimension = routing.GetDimensionOrDie("Time")
         for vehicle_id in range(data["num_vehicles"]):
-            #self.logger.debug(f"Creating trip for vehicle {vehicle_id} starting at {routing.Start(vehicle_id)}")
+            # self.logger.debug(f"Creating trip for vehicle {vehicle_id} starting at {routing.Start(vehicle_id)}")
             index = routing.Start(vehicle_id)
 
             vehicle = Vehicle(
@@ -318,23 +355,23 @@ class RouteOptimizer:
             while not routing.IsEnd(index):
 
                 node_index = manager.IndexToNode(index)
-                #self.logger.debug(f"Adding node to trip: {node_index}")
+                # self.logger.debug(f"Adding node to trip: {node_index}")
 
                 org_time_var = time_dimension.CumulVar(index)
                 dest_time_var = time_dimension.CumulVar(solution.Value(
                     routing.NextVar(index)))
                 org_time = solution.Min(org_time_var) + time_offset
                 dest_time = solution.Min(dest_time_var) + time_offset
-                #self.logger.debug(
+                # self.logger.debug(
                 #    f"Org time: {org_time} and dest time: {dest_time}")
 
                 distance = geodesic((locations[node_index].geo_location.lat, locations[node_index].geo_location.long), (locations[manager.IndexToNode(solution.Value(
                     routing.NextVar(index)))].geo_location.lat, locations[manager.IndexToNode(solution.Value(routing.NextVar(index)))].geo_location.long)).kilometers
-                #self.logger.debug(f"Distance: {distance}")
+                # self.logger.debug(f"Distance: {distance}")
                 new_weight = data["weight_demands"][node_index]
-                #self.logger.debug(f"New weight: {new_weight}")
+                # self.logger.debug(f"New weight: {new_weight}")
                 new_loading_meter = data["loading_meter_demands"][node_index]
-                #self.logger.debug(f"New loading meter: {new_loading_meter}")
+                # self.logger.debug(f"New loading meter: {new_loading_meter}")
                 current_weight += new_weight
                 current_loading_meter += new_loading_meter
 
@@ -347,7 +384,7 @@ class RouteOptimizer:
                     cargo_was_changed = True
 
                 if vehicle_moved and cargo_was_changed:
-                    #self.logger.debug(f"Case 1: Vehicle moved and cargo was changed")
+                    # self.logger.debug(f"Case 1: Vehicle moved and cargo was changed")
                     origin_location = locations[manager.IndexToNode(index)]
                     destination_location = locations[manager.IndexToNode(
                         solution.Value(routing.NextVar(index)))]
@@ -365,7 +402,7 @@ class RouteOptimizer:
                                               location=locations[manager.IndexToNode(index)], duration=0, changed_weight=new_weight, changed_loading_meter=new_loading_meter))
 
                 elif not vehicle_moved and cargo_was_changed:
-                    #self.logger.debug(f"Case 2: Vehicle did not move but cargo was changed")
+                    # self.logger.debug(f"Case 2: Vehicle did not move but cargo was changed")
                     if trip.trip_sections[-1].section_type == SectionType.DRIVING.name:
                         trip.trip_sections.append(HoldingSection(id=trip.number_of_loading_sections, num_cargo_changed=1, section_type=SectionType.LOADING.name,
                                                   location=locations[manager.IndexToNode(index)], duration=0, changed_weight=new_weight, changed_loading_meter=new_loading_meter))
@@ -375,7 +412,7 @@ class RouteOptimizer:
                         trip.trip_sections[-1].num_cargo_changed += 1
 
                 elif vehicle_moved and not cargo_was_changed:
-                    #self.logger.debug(f"Case 3: Vehicle moved but cargo was not changed")
+                    # self.logger.debug(f"Case 3: Vehicle moved but cargo was not changed")
                     origin_location = locations[manager.IndexToNode(index)]
                     destination_location = locations[manager.IndexToNode(
                         solution.Value(routing.NextVar(index)))]
@@ -391,30 +428,29 @@ class RouteOptimizer:
                     trip.trip_sections.append(new_section)
 
                 elif not vehicle_moved and not cargo_was_changed:
-                    #self.logger.debug(f"Case 4: Vehicle did not move and cargo was not changed")
+                    # self.logger.debug(f"Case 4: Vehicle did not move and cargo was not changed")
                     pass
 
                 index = solution.Value(routing.NextVar(index))
-                #self.logger.debug(f"Next index: {index}")
+                # self.logger.debug(f"Next index: {index}")
 
             if len(trip.trip_sections) > 0:
                 trips.append(trip)
-        
+
         self.dropped_orders.clear()
         for node in range(routing.Size()):
             if routing.IsStart(node) or routing.IsEnd(node):
                 continue
             if solution.Value(routing.NextVar(node)) == node:
                 order = self.node_map[manager.IndexToNode(node)]
-                #self.logger.debug(f"node {node} was dropped")
-                
+                # self.logger.debug(f"node {node} was dropped")
+
                 self.dropped_orders.append(order)
 
         filtered_list = list(set(self.dropped_orders))
         self.dropped_orders = filtered_list
 
         return trips
-
 
     def set_distance_constraint(self, data, manager, routing):
         self.logger.debug(f"Enter {self.set_distance_constraint.__name__}")
@@ -542,4 +578,3 @@ class RouteOptimizer:
             True,  # start cumul to zero
             "Loading Meter Capacity",
         )
-
