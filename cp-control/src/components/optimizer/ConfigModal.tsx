@@ -64,7 +64,8 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
   });
 
   const [isLastStopDisabled, setIsLastStopDisabled] = useState(true);
-  const [isDeliveryPromiseDisabled, setIsDeliveryPromiseDisabled] = useState(true);
+  const [isDeliveryPromiseDisabled, setIsDeliveryPromiseDisabled] =
+    useState(true);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
@@ -88,7 +89,6 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
       ...deliveryConfig,
       start_time: momentValue.toDate().getTime() / 1000,
     });
-    
   };
 
   const handleEndTimeChange = (value: string | Moment) => {
@@ -97,7 +97,6 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
       ...deliveryConfig,
       end_time_incl: momentValue.toDate().getTime() / 1000,
     });
-    
   };
 
   return (
@@ -126,7 +125,6 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
                 locale="de"
                 initialValue={moment.unix(deliveryConfig.start_time)}
                 onChange={handleStartTimeChange}
-                
               ></Datetime>
             </Form.Group>
             <Form.Group key="end_time_incl">
@@ -135,7 +133,6 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
                 locale="de"
                 initialValue={moment.unix(deliveryConfig.end_time_incl)}
                 onChange={handleEndTimeChange}
-                
               ></Datetime>
             </Form.Group>
             <Form.Group key="max_loading_meter">
@@ -219,7 +216,7 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
             </Form.Group>
             <br />
             <h5>S3: Delivery promise radius</h5>
-            
+
             <Form.Group key="delivery_promise_active" className="mt-3">
               <Form.Check
                 type="checkbox"
