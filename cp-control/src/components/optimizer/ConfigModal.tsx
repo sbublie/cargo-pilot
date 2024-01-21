@@ -49,15 +49,15 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
     max_weight: 24000,
     num_trucks: 10,
     days_per_trip: 3,
-    km_per_day: 800,
-    min_per_day: 360,
-    reuse_trucks: true,
+    km_per_day: 500,
+    min_per_day: 540,
+    reuse_trucks: false,
     penalty_for_dropping_nodes: 1000000,
     calculation_time_limit: 5,
     waiting_time_days: 0,
     waiting: false,
     delivery_promise_active: false,
-    delivery_promise_radius: 300,
+    delivery_promise_radius: 150,
     delivery_promise_days: 1,
     last_stop_limit_distance: 50,
     last_stop_limit_active: false,
@@ -176,7 +176,7 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
             </Form.Group>
             <Form.Group key="days_per_trip">
               <Form.Label>
-                Max. driving days per trip (800km / 6h per day)
+                Max. driving days per trip ({deliveryConfig.km_per_day}km / {deliveryConfig.min_per_day/60}h per day)
               </Form.Label>
               <Form.Control
                 type="number"
