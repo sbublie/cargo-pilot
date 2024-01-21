@@ -50,6 +50,24 @@ class RouteOptimizer:
 
         return distance
 
+
+    def compute_time_distance_matrix_delivery_promise(self, locations: list[Location], data, delivery_config: DeliveryConfig):
+        num_locations = len(locations)
+        distance_matrix = [[0] * num_locations for _ in range(num_locations)]
+        time_matrix = [[0] * num_locations for _ in range(num_locations)]
+        for i in range(num_locations):
+            for j in range(num_locations):
+                distance = self.calculate_distance(
+                    locations[i].geo_location.lat, locations[i].geo_location.long, locations[j].geo_location.lat, locations[j].geo_location.long)
+                distance_matrix[i][j] = distance
+                time_matrix[i][j] = round((distance / AVG_SPEED) * 60, 2)
+
+                if distance_matrix[0][j] <= delivery_config.delivery_promise_radius:
+                    distance_matrix[0][j] = 0
+
+        data["distance_matrix"] = distance_matrix
+        data["time_matrix"] = time_matrix
+
     def compute_time_distance_matrix(self, locations: list[Location], data):
         num_locations = len(locations)
         distance_matrix = [[0] * num_locations for _ in range(num_locations)]
@@ -84,8 +102,6 @@ class RouteOptimizer:
             elif distance_matrix[i][0] > delivery_config.last_stop_limit_distance:
                 distance_matrix[i][0] = 1000
 
-        self.logger.debug(f"Distance matrix{distance_matrix}")
-
         data["distance_matrix"] = distance_matrix
         data["time_matrix"] = time_matrix
 
@@ -113,7 +129,7 @@ class RouteOptimizer:
                     f"There was a faulty order! Location {order.id}")
         # self.logger.debug(f"Node map: {self.node_map}")
         return locations
-
+    
     def get_vrp_result(self, delivery_config: DeliveryConfig, orders: list[CargoOrder]):
 
         # Step 1: Filter by time and geo coordinates
@@ -229,6 +245,9 @@ class RouteOptimizer:
         if delivery_config.last_stop_limit_active:
             self.compute_time_distance_matrix_last_stop_limit(
                 locations=locations, data=data, delivery_config=delivery_config)
+        elif delivery_config.delivery_promise_active:
+            self.compute_time_distance_matrix_delivery_promise(
+                locations=locations, data=data, delivery_config=delivery_config)
         else:
             self.compute_time_distance_matrix(locations=locations, data=data)
         self.logger.debug(
@@ -250,7 +269,8 @@ class RouteOptimizer:
                        delivery_config.start_time) / 60)
         time_windows = [(start_time, end_time)]
         self.logger.debug(f"Time window: {time_windows}")
-
+        
+        limit_counter = 0
         for order in relevant_orders:
             start_time = int(
                 (order.origin.timestamp - delivery_config.start_time) / 60)
@@ -259,25 +279,27 @@ class RouteOptimizer:
             end_time = int((end_time_ts.timestamp() -
                            delivery_config.start_time) / 60)
 
+            
             if delivery_config.delivery_promise_active:
                 orgin_to_depot_distance = geodesic((order.origin.geo_location.lat, order.origin.geo_location.long), (
                     DEPOT_LOCATION.geo_location.lat, DEPOT_LOCATION.geo_location.long)).kilometers
                 destination_to_depot_distance = geodesic((order.destination.geo_location.lat, order.destination.geo_location.long), (
                     DEPOT_LOCATION.geo_location.lat, DEPOT_LOCATION.geo_location.long)).kilometers
 
-                # self.logger.debug(f"Origin Dist: {orgin_to_depot_distance}, Dest Dist: {destination_to_depot_distance}")
-                # self.logger.debug(f"delivery_promise_radius: {delivery_config.delivery_promise_radius}")
+                #self.logger.debug(f"Origin Dist: {orgin_to_depot_distance}, Dest Dist: {destination_to_depot_distance}")
+                #self.logger.debug(f"delivery_promise_radius: {delivery_config.delivery_promise_radius}")
                 if orgin_to_depot_distance <= delivery_config.delivery_promise_radius and destination_to_depot_distance <= delivery_config.delivery_promise_radius:
                     time_windows.append(
                         (0, delivery_config.delivery_promise_days*1440))
-                    # self.logger.debug(f"Delivery Promise applied: Appended start time: {0} and end time: {delivery_config.delivery_promise_days*1440}")
+                    limit_counter += 1
+                    #self.logger.debug(f"Delivery Promise applied: Appended start time: {0} and end time: {delivery_config.delivery_promise_days*1440}")
 
                 else:
                     time_windows.append((start_time, end_time))
-                    # self.logger.debug(f"Delivery Promise not applied: Appended start time: {start_time} and end time: {end_time}")
+                    #self.logger.debug(f"Delivery Promise not applied: Appended start time: {start_time} and end time: {end_time}")
             else:
                 time_windows.append((start_time, end_time))
-                # self.logger.debug(f"No delivery promise: Appended start time: {start_time} and end time: {end_time}")
+                #self.logger.debug(f"No delivery promise: Appended start time: {start_time} and end time: {end_time}")
 
             if getattr(order.cargo_item, 'loading_meter', None) is not None:
                 weight_demands.append(round(order.cargo_item.weight, 2))
@@ -293,6 +315,8 @@ class RouteOptimizer:
                 loading_meter_demands.append(0)
                 self.logger.warning(
                     f"Loading meter is None for order {order.id}")
+                
+        self.logger.debug(f"Delivery promise applied {limit_counter} times")
         self.logger.debug(f"Number of demands: {len(weight_demands)}")
         self.logger.debug(
             f"Number of loading meter demands: {len(loading_meter_demands)}")
@@ -569,6 +593,7 @@ class RouteOptimizer:
             if location_idx == 0:
                 continue
             index = manager.NodeToIndex(location_idx)
+            self.logger.debug(f"The time windows to set are: {time_window[0]} and {time_window[1]}")
             time_dimension.CumulVar(index).SetRange(
                 0, time_window[1])
         # Add time window constraints for each vehicle start node.
