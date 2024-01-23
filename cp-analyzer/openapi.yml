@@ -9,9 +9,10 @@ info:
     email: mail@domain.com
 servers:
   - url: https://cargo-pilot.de/api/analyzer
+  - url: http://cp-analyzer:5000
 
-security:
-  - ApiKeyAuth: []
+#security:
+#  - ApiKeyAuth: []
 
 paths:
   /upload:
@@ -34,6 +35,21 @@ paths:
       tags:
         - "Commands"
       description: "Trigger the clustering of all locations"
+      responses:
+        "200":
+          description: Successful operation
+  /cluster-orders:
+    get:
+      tags:
+        - "Cluster"
+      description: Get clusters of orders
+      requestBody:
+        description: "Cluster time range"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClusterOrderConfig"
       responses:
         "200":
           description: Successful operation
@@ -123,3 +139,28 @@ components:
           type: integer
           format: int32
           example: 1689435073
+
+    ClusterOrderConfig:
+      type: object
+      required:
+        - start_timestamp
+        - end_timestamp
+        - eps
+        - min_samples
+      properties:
+        start_timestamp:
+          type: integer
+          format: int32
+          example: 1689435073
+        end_timestamp:
+          type: integer
+          format: int32
+          example: 1689435073
+        eps:
+          type: number
+          format: float
+          example: 0.01
+        min_samples:
+          type: integer
+          format: int32
+          example: 5
