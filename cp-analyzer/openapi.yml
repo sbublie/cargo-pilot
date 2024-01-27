@@ -39,7 +39,7 @@ paths:
         "200":
           description: Successful operation
   /cluster-orders:
-    get:
+    post:
       tags:
         - "Cluster"
       description: Get clusters of orders

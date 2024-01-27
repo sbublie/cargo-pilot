@@ -1,7 +1,12 @@
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 import Form from "react-bootstrap/Form";
-import { useState, ChangeEvent, FC } from 'react';
+import { useState, ChangeEvent, FC } from "react";
+import Datetime from "react-datetime";
+import moment, { Moment } from "moment";
+
+import "react-datetime/css/react-datetime.css";
+import "moment/dist/locale/de";
 
 import { Settings } from "./MapboxMap";
 
@@ -11,15 +16,33 @@ interface MapSettingsModalProps {
   onApplySettings: (settings: Settings) => void;
 }
 
-const MapSettingsModal: FC<MapSettingsModalProps> = ({ show, onHide, onApplySettings }) => {
+const MapSettingsModal: FC<MapSettingsModalProps> = ({
+  show,
+  onHide,
+  onApplySettings,
+}) => {
   const [settings, setSettings] = useState<Settings>({
     mapMode: "cluster",
     dataSource: "db",
     animateRoutes: false,
+    applyFilter: true,
+    startTimestamp: 1672614000,
+    endTimestamp: 1672700399,
+    showCluster: false,
+    eps: 0.5,
+    minSamples: 5,
   });
 
+  const handleStartTimestampChange = (value: string | Moment) => {
+    const momentValue = moment(value);
+    setSettings({
+      ...settings,
+      startTimestamp: momentValue.toDate().getTime() / 1000,
+    });
+  };
+
   const handleMapModeChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const mapModes: Record<string, Settings['mapMode']> = {
+    const mapModes: Record<string, Settings["mapMode"]> = {
       activity_cluster: "activity_cluster",
       cargo_order: "cargo_order",
       trip: "trip",
@@ -27,7 +50,7 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({ show, onHide, onApplySett
       match: "match",
     };
     const newMapMode = mapModes[event.target.id];
-    
+
     if (newMapMode) {
       setSettings((prevSettings) => ({
         ...prevSettings,
@@ -39,12 +62,12 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({ show, onHide, onApplySett
   };
 
   const handleDataSourceChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const dataSources: Record<string, Settings['dataSource']> = {
+    const dataSources: Record<string, Settings["dataSource"]> = {
       db: "db",
-      transics: "transics"
+      transics: "transics",
     };
     const newDataSource = dataSources[event.target.id];
-    
+
     if (newDataSource) {
       setSettings((prevSettings) => ({
         ...prevSettings,
@@ -55,11 +78,13 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({ show, onHide, onApplySett
     }
   };
 
-  const handleOptionsChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setSettings((prevSettings) => ({
-      ...prevSettings,
-      animateRoutes: event.target.checked,
-    }));
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type } = e.target;
+
+    // Check the type of the input
+    const inputValue =
+      type === "checkbox" ? e.target.checked : parseFloat(value) || 0;
+    setSettings({ ...settings, [name]: inputValue });
   };
 
   return (
@@ -68,8 +93,77 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({ show, onHide, onApplySett
         <Modal.Title>Map Settings</Modal.Title>
       </Modal.Header>
       <Modal.Body>
+        <Form className="mb-3">
+          <h5>Filter</h5>
+          <Form.Check
+            type="checkbox"
+            name="applyFilter"
+            id="applyFilter"
+            label="Apply filter"
+            checked={settings.applyFilter}
+            onChange={handleInputChange}
+          />
+        </Form>
+        {settings.applyFilter && ( // Render DateTime only if applyFilter is true
+          <Form>
+            <Form.Group key="startTimestamp">
+              <Form.Label>Start time for filter</Form.Label>
+              <Datetime
+                locale="de"
+                initialValue={moment.unix(settings.startTimestamp)}
+                onChange={handleStartTimestampChange}
+              ></Datetime>
+            </Form.Group>
+            <Form.Group key="endTimestamp">
+              <Form.Label>End time for filter</Form.Label>
+              <Datetime
+                locale="de"
+                initialValue={moment.unix(settings.endTimestamp)}
+                onChange={handleStartTimestampChange}
+              ></Datetime>
+            </Form.Group>
+          </Form>
+        )}
+
+        <Form className="mt-3">
+          <h5>Cluster</h5>
+          <Form.Check
+            type="checkbox"
+            name="showCluster"
+            id="showCluster"
+            label="Show cluster"
+            checked={settings.showCluster}
+            onChange={handleInputChange}
+          />
+        </Form>
+        {settings.showCluster && (
+          <Form>
+            <Form.Label>Enter eps</Form.Label>
+            <Form.Control
+              type="number"
+              name="eps"
+              placeholder="Enter EPS"
+              value={settings.eps}
+              onChange={handleInputChange}
+              min={0.01}
+              step={0.01}
+              max={10}
+            />
+            <Form.Label>Enter minimum samples</Form.Label>
+            <Form.Control
+              type="number"
+              name="minSamples"
+              placeholder="Enter minimum samples"
+              value={settings.minSamples}
+              onChange={handleInputChange}
+              min={1}
+              step={1}
+              max={10}
+            />
+          </Form>
+        )}
         <Form>
-          <div key="Form1" className="mb-3">
+          <div key="Form1" className="mt-3">
             <h5>Select the Map Mode</h5>
             <Form.Check
               type="radio"
@@ -79,32 +173,11 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({ show, onHide, onApplySett
               onChange={handleMapModeChange}
             />
             <Form.Check
+              disabled
               type="radio"
               id="activity_cluster"
               label="3D-Cluster"
               checked={settings.mapMode === "activity_cluster"}
-              onChange={handleMapModeChange}
-            />
-            <Form.Check
-              type="radio"
-              id="cargo_order"
-              label="Order Locations"
-              checked={settings.mapMode === "cargo_order"}
-              onChange={handleMapModeChange}
-            />
-            <Form.Check
-              type="radio"
-              id="trip"
-              label="Trip Locations"
-              checked={settings.mapMode === "trip"}
-              onChange={handleMapModeChange}
-            />
-            <Form.Check
-            disabled
-              type="radio"
-              id="march"
-              label="Trip Match Mode"
-              checked={settings.mapMode === "match"}
               onChange={handleMapModeChange}
             />
           </div>
@@ -112,7 +185,7 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({ show, onHide, onApplySett
           <div key="Form2" className="mb-3">
             <h5>Select the Data Sources</h5>
             <Form.Check
-            disabled
+              disabled
               type="checkbox"
               id="db"
               label="DB"
@@ -128,17 +201,7 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({ show, onHide, onApplySett
               onChange={handleDataSourceChange}
             />
           </div>
-          <div key="Form3" className="mb-3">
-            <h5>Styling Options</h5>
-            <Form.Check
-              disabled
-              type="checkbox"
-              id="animateRoutes"
-              label="Animate Routes"
-              checked={settings.animateRoutes}
-              onChange={handleOptionsChange}
-            />
-          </div>
+        
         </Form>
       </Modal.Body>
       <Modal.Footer>
@@ -151,6 +214,6 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({ show, onHide, onApplySett
       </Modal.Footer>
     </Modal>
   );
-}
+};
 
 export default MapSettingsModal;

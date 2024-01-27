@@ -1,6 +1,7 @@
 import { Map as MapboxMap, MapMouseEvent } from "mapbox-gl";
 import mapboxgl from "mapbox-gl";
 import { FeatureCollection, Point, Feature } from "geojson";
+import { Settings } from "./MapboxMap";
 
 interface CargoOrder {
   id: number;
@@ -39,14 +40,21 @@ interface CargoOrder {
   }
 }
 
-export const getCargoOrderGeoJson = (cargoOrders: CargoOrder[]) => {
+export const getCargoOrderGeoJson = (cargoOrders: CargoOrder[], settings: Settings) => {
   const cargoOrderMarkerData: FeatureCollection<Point> = {
     type: "FeatureCollection",
     features: [],
   };
+  var minTimestamp = 0
+  var maxTimestamp = 99999999999
+
+  if (settings.applyFilter) {
+    minTimestamp = settings.startTimestamp
+    maxTimestamp = settings.endTimestamp
+  }
 
   cargoOrders.forEach((order) => {
-    if (order.origin.geo_location !== undefined && order.destination.geo_location !== undefined) {
+    if (order.origin.geo_location !== undefined && order.destination.geo_location !== undefined && order.origin.timestamp >= minTimestamp && order.destination.timestamp <= maxTimestamp) {
     const origin_marker: Feature<Point> = {
       type: "Feature",
       properties: {

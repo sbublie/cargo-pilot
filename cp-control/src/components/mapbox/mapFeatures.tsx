@@ -32,10 +32,10 @@ export function setVisibleMapLayers(map: MapboxMap, settings: Settings) {
   if (allLayersSet) {
     const layersByMode = {
       cargo_order: [
-        "cargo_order_markers",
+        "cargo_order_markers", "cluster", "cluster_count",
       ],
       activity_cluster: ["germany_overlay"],
-      trip: ["trip_markers"],
+      trip: ["trip_markers", "cluster", "cluster_count",],
       cluster: ["cluster", "cluster_count", "cargo_order_markers", "trip_markers"],
       match: ["cluster"],
     };

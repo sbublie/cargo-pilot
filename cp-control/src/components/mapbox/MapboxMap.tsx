@@ -21,6 +21,8 @@ import {
   getClusterGeoJson,
   addClusterToMap
 } from "./clusterHandler";
+import { getClusters } from "../ApiHandler";
+import { Cluster } from "./Cluster";
 
 import "./mapbox_style.css";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -32,6 +34,12 @@ export interface Settings {
   mapMode: "activity_cluster" | "cluster" | "cargo_order" | "trip" | "match";
   dataSource: "db" | "transics";
   animateRoutes: boolean;
+  applyFilter: boolean;
+  startTimestamp: number
+  endTimestamp: number
+  showCluster: boolean
+  eps: number
+  minSamples: number
 }
 
 function MapboxMap() {
@@ -39,15 +47,22 @@ function MapboxMap() {
   const [map, setMap] = useState<mapboxgl.Map | null>(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showStatisticsModal, setShowStatisticsModal] = useState(false);
+  const [clustersn, setClusters] = useState<Cluster[]>([]);
   const [settings, setSettings] = useState<Settings>({
     mapMode: "cluster",
     dataSource: "db",
     animateRoutes: false,
+    applyFilter: true,
+    startTimestamp: 1672614000,
+    endTimestamp: 1672700399,
+    showCluster: false,
+    eps: 0.5,
+    minSamples: 5
   });
 
-  const lng = 9.446113815133662;
-  const lat = 47.66559693227496;
-  const zoom = 9;
+  const lng = 9.896523259509264;
+  const lat = 50.49052575476047;
+  const zoom = 6;
 
   const { cargoOrders, trips, clusters, boundaries } = useOfferings();
 
@@ -81,13 +96,14 @@ function MapboxMap() {
 
   useEffect(() => {
     if (map) {
-      const cargoOrderGeoJson = getCargoOrderGeoJson(cargoOrders);
+      const cargoOrderGeoJson = getCargoOrderGeoJson(cargoOrders, settings);
       addCargoOrdersToMap(map, cargoOrderGeoJson);
 
       const tripsGeoJson = getTripsGeoJson(trips);
       addTripsToMap(map, tripsGeoJson);
       
-      const clustersGeoJson = getClusterGeoJson(clusters)
+      const clustersGeoJson = getClusterGeoJson(clustersn)
+      console.log(clustersGeoJson)
       addClusterToMap(map, clustersGeoJson)
 
       setCityBoundariesGeoJson(boundaries, cargoOrders);
@@ -95,11 +111,24 @@ function MapboxMap() {
 
       setVisibleMapLayers(map, settings);
     }
-  }, [map, cargoOrders, trips, clusters, boundaries, settings]);
+  }, [map, cargoOrders, trips, clustersn, boundaries, settings]);
 
 
   const applySettings = (settings: Settings) => {
     setSettings(settings);
+    if (settings.showCluster) {
+    getClusters(settings)
+      .then((clusters) => {
+        
+        setClusters(clusters)
+        
+      }).catch((error) => {
+        console.error("Error fetching data: ", error);
+      });
+    } else {
+      setClusters([])
+    }
+    
     handleCloseSettingsModal();
   };
 

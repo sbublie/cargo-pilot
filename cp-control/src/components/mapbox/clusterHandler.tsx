@@ -1,5 +1,6 @@
 import { FeatureCollection, Point, Feature } from "geojson";
 import { Map as MapboxMap } from "mapbox-gl";
+import { Cluster } from "./Cluster";
 
 interface Offering {
   id: number;
@@ -20,13 +21,6 @@ interface Offering {
     long: number;
     lat: number;
   };
-}
-
-interface Cluster {
-  id: number;
-  center_lat: number;
-  center_long: number;
-  location_ids: [number];
 }
 
 const heightFactor = 500;
@@ -115,7 +109,7 @@ export function addCityBoundariesToMap(
 }
 
 
-export function getClusterGeoJson(clusters: Cluster[]) {
+export function getClusterGeoJson(clusters: Cluster[]): FeatureCollection<Point> {
 
   const clusterMarkerData: FeatureCollection<Point> = {
     type: "FeatureCollection",
@@ -123,10 +117,16 @@ export function getClusterGeoJson(clusters: Cluster[]) {
   };
 
   clusters.forEach((cluster) => {
+
+    var numClusterItems = cluster.location_ids.length
+    if (numClusterItems == 0) {
+      numClusterItems += 1;
+    }
+
     const clusterMarker: Feature<Point> = {
       type: "Feature",
       properties: {
-        numLocations: cluster.location_ids.length,
+        numLocations: numClusterItems,
       },
       geometry: {
         type: "Point",
@@ -172,6 +172,7 @@ export function addClusterToMap(map: MapboxMap, clusters: FeatureCollection) {
       'text-size': 12
       }
       });
-
+  } else {
+    source.setData(clusters);
   }
 }

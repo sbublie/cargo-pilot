@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { useOfferings } from "../contexts/OfferingsContext";
-
+import { Settings } from "./mapbox/MapboxMap";
+import { Cluster } from "./mapbox/Cluster";
+import { error } from "console";
 
 export function getCalcRoutes(settings: any): Promise<any[]> {
   const requestOptions = {
@@ -10,7 +12,10 @@ export function getCalcRoutes(settings: any): Promise<any[]> {
   };
 
   // Return a Promise for the fetch operation
-  return fetch(import.meta.env.VITE_BASE_URL + "api/analyzer/calc-routes", requestOptions)
+  return fetch(
+    import.meta.env.VITE_BASE_URL + "api/analyzer/calc-routes",
+    requestOptions
+  )
     .then((response) => {
       if (!response.ok) {
         throw new Error("Network response was not ok");
@@ -23,6 +28,58 @@ export function getCalcRoutes(settings: any): Promise<any[]> {
       throw error;
     });
 }
+
+export async function getClusters(settings: Settings): Promise<Cluster[]> {
+  var minTimestamp = 1;
+  var maxTimestamp = 2000000000;
+                     
+
+  if (settings.applyFilter) {
+    minTimestamp = settings.startTimestamp;
+    maxTimestamp = settings.endTimestamp;
+  }
+
+  const requestSettings = {
+    start_timestamp: minTimestamp,
+    end_timestamp: maxTimestamp,
+    eps: settings.eps,
+    min_samples: settings.minSamples,
+  };
+
+  const requestOptions = {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(requestSettings),
+  };
+
+  try {
+    const response = await fetch(
+      import.meta.env.VITE_BASE_URL + "api/analyzer/cluster-orders",
+      requestOptions
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        "Network response was not ok: " +
+          response.status +
+          " " +
+          response.statusText
+      );
+    }
+
+    const responseJson = await response.json();
+
+    const clusters = responseJson.result.map((clusterJson: any) =>
+      Cluster.fromJson(clusterJson)
+    );
+    return clusters;
+  } catch (error) {
+    // Handle the error here or rethrow it to be caught later
+    console.error("Error fetching data: ", error);
+    throw error;
+  }
+}
+
 export function ApiHandler() {
   const {
     setNewTrips,

@@ -54,7 +54,7 @@ def cluster_locations_from_db():
     thread.start()
     return 'Clustering started'
 
-@app.route('/cluster-orders', methods=['GET'])
+@app.route('/cluster-orders', methods=['POST'])
 def cluster_orders():
     try:
         openapi_request = FlaskOpenAPIRequest(request)
