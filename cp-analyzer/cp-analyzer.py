@@ -6,10 +6,13 @@ from threading import Thread
 from database_handler import DatabaseHandler
 from route_optimizer import RouteOptimizer
 from models import DeliveryConfig
+
 import logging
 import json
 from dataclasses import asdict
 from logging.handlers import RotatingFileHandler
+from openapi_core import Spec, unmarshal_request
+from openapi_core.contrib.flask import FlaskOpenAPIRequest
 
 # Create a logger
 logger = logging.getLogger(__name__)
@@ -24,6 +27,8 @@ logger.addHandler(handler)
 from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
+
+spec = Spec.from_file_path('openapi.yml')
 
 @app.route('/upload/trips', methods=['POST'])
 def process_trips_data():
@@ -48,6 +53,27 @@ def cluster_locations_from_db():
     thread = Thread(target = ClusterHandler(logger=logger).cluster_locations_from_db)
     thread.start()
     return 'Clustering started'
+
+@app.route('/cluster-orders', methods=['POST'])
+def cluster_orders():
+    try:
+        openapi_request = FlaskOpenAPIRequest(request)
+        result = unmarshal_request(openapi_request, spec=spec)
+        
+        filtered_cargo_orders = []
+        cargo_orders = DatabaseHandler(logger=logger).get_cargo_orders()
+
+        logger.debug(f"Got {len(cargo_orders)}")
+        for cargo_order in cargo_orders:
+            if cargo_order.origin.timestamp >= result.body['start_timestamp'] and cargo_order.destination.timestamp <= result.body['end_timestamp']:
+                filtered_cargo_orders.append(cargo_order)
+        logger.debug(f"Filtered cargo orders: {len(filtered_cargo_orders)}")
+
+        clusters = ClusterHandler(logger=logger, eps=result.body['eps'], min_samples=result.body['min_samples']).get_cluster_from_orders(orders=filtered_cargo_orders)
+
+    except Exception as e:
+        return {"error": str(e), "cause": str(e.__cause__)}, 400
+    return {"result": clusters}
 
 @app.route('/calc-routes', methods=['POST'])
 def calulate_truck_routes():

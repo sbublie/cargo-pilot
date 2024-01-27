@@ -12,6 +12,9 @@ class GeoLocation:
     lat: float
     long: float
 
+    def get_lat_long_list(self):
+        return [self.lat, self.long]
+
 
 @dataclass
 class AdminLocation:

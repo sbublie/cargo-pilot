@@ -7,3 +7,4 @@ pgeocode
 flask-cors
 ortools
 numpy==1.26.2
+openapi-core==0.18.2
