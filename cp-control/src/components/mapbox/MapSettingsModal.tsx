@@ -33,11 +33,12 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({
     minSamples: 5,
   });
 
-  const handleStartTimestampChange = (value: string | Moment) => {
+  const handleTimestampChange = (value: string | Moment, type: 'startTimestamp' | 'endTimestamp') => {
     const momentValue = moment(value);
+  
     setSettings({
       ...settings,
-      startTimestamp: momentValue.toDate().getTime() / 1000,
+      [type]: momentValue.toDate().getTime() / 1000,
     });
   };
 
@@ -111,7 +112,7 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({
               <Datetime
                 locale="de"
                 initialValue={moment.unix(settings.startTimestamp)}
-                onChange={handleStartTimestampChange}
+                onChange={(value: string | Moment) => handleTimestampChange(value, 'startTimestamp')}
               ></Datetime>
             </Form.Group>
             <Form.Group key="endTimestamp">
@@ -119,7 +120,7 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({
               <Datetime
                 locale="de"
                 initialValue={moment.unix(settings.endTimestamp)}
-                onChange={handleStartTimestampChange}
+                onChange={(value: string | Moment) => handleTimestampChange(value, 'endTimestamp')}
               ></Datetime>
             </Form.Group>
           </Form>

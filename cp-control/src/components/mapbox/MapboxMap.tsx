@@ -64,7 +64,7 @@ function MapboxMap() {
   const lat = 50.49052575476047;
   const zoom = 6;
 
-  const { cargoOrders, trips, clusters, boundaries } = useOfferings();
+  const { cargoOrders, trips, boundaries } = useOfferings();
 
   const handleCloseSettingsModal = () => setShowSettingsModal(false);
   const handleShowSettingsModal = () => setShowSettingsModal(true);

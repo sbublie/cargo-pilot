@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { useOfferings } from "../contexts/OfferingsContext";
 import { Settings } from "./mapbox/MapboxMap";
 import { Cluster } from "./mapbox/Cluster";
-import { error } from "console";
 
 export function getCalcRoutes(settings: any): Promise<any[]> {
   const requestOptions = {
