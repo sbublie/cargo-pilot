@@ -39,7 +39,7 @@ class InputConverter:
         else:
             raise ValueError("Invalid file: {}".format(filename))
 
-    def __get_trips_from_df(self, df, source):
+    def __get_trips_from_df(self, df, source:str) -> list[CompletedTrip]:
         trips = []
         for index, row in df.iterrows():
 
@@ -92,22 +92,38 @@ class InputConverter:
         orders = []
         for index, row in df.iterrows():
 
+            origin_postal_code = row[db_data_mapping['origin_postal_code']]
+            origin_city = row[db_data_mapping['origin_city']]
+            origin_country = row[db_data_mapping['origin_country_code']]
+            origin_timestamp = row[db_data_mapping['origin_timestamp']]
+
+            if (pd.isna(origin_postal_code) or pd.isna(origin_city) or pd.isna(origin_country) or pd.isna(origin_timestamp)):
+                continue
+
             origin = Location(
                 admin_location=AdminLocation(
-                    postal_code=row[db_data_mapping['origin_postal_code']],
-                    city=row[db_data_mapping['origin_city']],
-                    country=row[db_data_mapping['origin_country_code']],
+                    postal_code=origin_postal_code,
+                    city=origin_city,
+                    country=origin_country,
                 ), timestamp=self.__convert_timestamp(
-                    timestamp=row[db_data_mapping['origin_timestamp']],
+                    timestamp=origin_timestamp,
                     pattern=db_data_mapping['origin_timestamp_pattern']))
+
+            destination_postal_code = row[db_data_mapping['destination_postal_code']]
+            destination_city = row[db_data_mapping['destination_city']]
+            destination_country = row[db_data_mapping['destination_country_code']]
+            destination_timestamp = row[db_data_mapping['destination_timestamp']]
+
+            if (pd.isna(destination_postal_code) or pd.isna(destination_city) or pd.isna(destination_country) or pd.isna(destination_timestamp)):
+                continue
 
             destination = Location(
                 admin_location=AdminLocation(
-                    postal_code=row[db_data_mapping['destination_postal_code']],
-                    city=row[db_data_mapping['destination_city']],
-                    country=row[db_data_mapping['destination_country_code']],
+                    postal_code=destination_postal_code,
+                    city=destination_city,
+                    country=destination_country,
                 ), timestamp=self.__convert_timestamp(
-                    timestamp=row[db_data_mapping['destination_timestamp']],
+                    timestamp=destination_timestamp,
                     pattern=db_data_mapping['destination_timestamp_pattern']))
             
             loading_meter = row[db_data_mapping['loading_meter']]

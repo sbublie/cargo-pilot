@@ -77,7 +77,7 @@ function MapboxMap() {
     if (mapContainerRef.current) {
       const mapInstance = new mapboxgl.Map({
         container: mapContainerRef.current,
-        style: "mapbox://styles/mapbox/streets-v12",
+        style: "mapbox://styles/sbublies/clrzgt15k00wg01r41xhe7xol",
         center: [lng, lat],
         zoom: zoom,
         pitch: 0,
@@ -103,12 +103,12 @@ function MapboxMap() {
       addTripsToMap(map, tripsGeoJson);
       
       const clustersGeoJson = getClusterGeoJson(clustersn)
-      console.log(clustersGeoJson)
       addClusterToMap(map, clustersGeoJson)
 
       setCityBoundariesGeoJson(boundaries, cargoOrders);
       addCityBoundariesToMap(map, boundaries);
 
+      console.log(settings)
       setVisibleMapLayers(map, settings);
     }
   }, [map, cargoOrders, trips, clustersn, boundaries, settings]);

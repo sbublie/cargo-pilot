@@ -15,29 +15,46 @@ servers:
 #  - ApiKeyAuth: []
 
 paths:
-  /upload:
+  /upload/trips:
     post:
       tags:
-        - Trip
-      description: "Upload trips to the Cargo Pilot instance"
+        - Upload
+      description: "Upload cargo orders to the Cargo Pilot instance"
       requestBody:
         description: A list of available models
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/TripCollection"
+              type: object
+              properties:
+                upload_data:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/CargoOrder"
+      responses:
+        "200":
+          description: Successful operation
+  /upload/cargo-orders:
+    post:
+      tags:
+        - Upload
+      description: "Upload cargo orders to the Cargo Pilot instance"
+      requestBody:
+        description: A list of available models
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                upload_data:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/CargoOrder"
         required: true
       responses:
         "200":
           description: Successful operation
-  /cluster:
-    get:
-      tags:
-        - "Commands"
-      description: "Trigger the clustering of all locations"
-      responses:
-        "200":
-          description: Successful operation
+
   /cluster-orders:
     post:
       tags:
@@ -61,84 +78,53 @@ components:
       in: header
       name: Authorization
   schemas:
-    TripCollection:
+    
+    CompletedTrip:
       type: object
       properties:
-        trips:
-          type: array
-          items:
-            $ref: "#/components/schemas/Trip"
-
-    Trip:
-      type: object
-      properties:
-        type:
+        data_source:
           type: string
-          enum:
-            - standstill
-            - driving
-            - preparing_to_depart
-            - traffic_jam
-            - fuelling
-            - preparing
-            - connect
-            - disconnect
-            - inspection
-            - loading
-            - unloading
-            - break
-            - resting
-            - ferry_train
-            - report
-            - waiting
-            - garage
         origin:
-          $ref: "#/components/schemas/Waypoint"
+          $ref: "#/components/schemas/Location"
         destination:
-          $ref: "#/components/schemas/Waypoint"
-        load:
-          $ref: "#/components/schemas/Load"
-        source:
+          $ref: "#/components/schemas/Location"
+        cargo_item:
+          $ref: "#/components/schemas/CargoItem"
+        id:
+          type: integer
+          nullable: true
+        customer:
           type: string
-        vehicle_id:
-          type: string
-        customer_id:
-          type: string
-        route_waypoints:
+          nullable: true
+        vehicle:
+          $ref: "#/components/schemas/Vehicle"
+        route_locations:
           type: array
           items:
-            $ref: "#/components/schemas/Waypoint"
+            $ref: "#/components/schemas/Location"
+          nullable: true
 
-    Load:
+    Vehicle:
       type: object
+      required:
+        - type
+        - stackable
+        - max_loading_meter
+        - max_weight
       properties:
-        weight:
-          type: integer
+        type: 
+          type: string
+        stackable:
+          type: boolean
+        max_loading_meter:
+          type: number
           format: float
-        loading_meter:
-          type: integer
+        max_weight:
+          type: number
           format: float
-        capacity_percentage:
+        id:
           type: integer
-          format: float
-          example: 12.6
-          description: Load in percent
-
-    Waypoint:
-      type: object
-      properties:
-        lat:
-          type: integer
-          format: float
-          example: 49.43534
-        long:
-          type: integer
-          format: float
-          example: 8.34633
-        timestamp:
-          type: integer
-          format: int32
-          example: 1689435073
+          nullable: true
 
     ClusterOrderConfig:
       type: object
@@ -164,3 +150,163 @@ components:
           type: integer
           format: int32
           example: 5
+
+    GeoLocation:
+      type: object
+      nullable: true
+      properties:
+        lat:
+          type: number
+          format: float
+          nullable: true
+        long:
+          type: number
+          format: float
+          nullable: true
+      example:
+        lat: 12.345
+        long: 67.890
+
+    AdminLocation:
+      type: object
+      nullable: true
+      properties:
+        postal_code:
+          type: string
+          nullable: true
+        city:
+          type: string
+          nullable: true
+        country:
+          type: string
+          nullable: true
+        street:
+          type: string
+          nullable: true
+      example:
+        postal_code: "12345"
+        city: "City"
+        country: "Country"
+        street: "Street"
+
+    CargoItem:
+      type: object
+      properties:
+        load_carrier:
+          type: boolean
+        load_carrier_nestable:
+          type: boolean
+        loading_meter:
+          type: number
+          format: float
+          nullable: true
+        weight:
+          type: number
+          format: float
+          nullable: true
+      example:
+        load_carrier: "Container"
+        load_carrier_nestable: true
+        loading_meter: 10.5
+        weight: 500.0
+
+    Location:
+      type: object
+      properties:
+        id:
+          type: integer
+          nullable: true
+        timestamp:
+          type: integer
+          nullable: true
+        geo_location:
+          nullable: true
+          $ref: "#/components/schemas/GeoLocation"
+          
+        admin_location:
+          $ref: "#/components/schemas/AdminLocation"
+          nullable: true
+      example:
+        timestamp: 1706476224
+        geo_location:
+          lat: 12.345
+          long: 67.890
+        admin_location:
+          postal_code: "12345"
+          city: "City"
+          country: "Country"
+          street: "Street"
+
+    CargoOrder:
+      type: object
+      properties:
+        data_source:
+          type: string
+        origin:
+          $ref: "#/components/schemas/Location"
+        destination:
+          $ref: "#/components/schemas/Location"
+        cargo_item:
+          $ref: "#/components/schemas/CargoItem"
+        id:
+          type: integer
+          nullable: true
+        customer:
+          type: string
+          nullable: true
+        route_locations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Location"
+          nullable: true
+      example:
+        data_source: "Company"
+        origin:
+          timestamp: 1706476224
+          geo_location:
+            lat: 12.345
+            long: 67.890
+          admin_location:
+            postal_code: "12345"
+            city: "City"
+            country: "Country"
+            street: "Street"
+        destination:
+          timestamp: "1706476224"
+          id: "456"
+          geo_location:
+            lat: 23.456
+            long: 45.678
+          admin_location:
+            postal_code: "67890"
+            city: "Another City"
+            country: "Another Country"
+            street: "Another Street"
+        cargo_item:
+          load_carrier: "Container"
+          load_carrier_nestable: true
+          loading_meter: 10.5
+          weight: 500.0
+        id: "789"
+        customer: "John Doe"
+        route_locations:
+          - timestamp: "1706476224"
+            id: "101"
+            geo_location:
+              lat: 12.345
+              long: 67.890
+            admin_location:
+              postal_code: "12345"
+              city: "City"
+              country: "Country"
+              street: "Street"
+          - timestamp: "1706476224"
+            id: "102"
+            geo_location:
+              lat: 23.456
+              long: 45.678
+            admin_location:
+              postal_code: "67890"
+              city: "Another City"
+              country: "Another Country"
+              street: "Another Street"

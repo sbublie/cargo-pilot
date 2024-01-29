@@ -6,6 +6,7 @@ from threading import Thread
 from database_handler import DatabaseHandler
 from route_optimizer import RouteOptimizer
 from models import DeliveryConfig
+from requests.exceptions import RequestException
 
 import logging
 import json
@@ -32,27 +33,34 @@ spec = Spec.from_file_path('openapi.yml')
 
 @app.route('/upload/trips', methods=['POST'])
 def process_trips_data():
-    json_data = request.get_json()  
-    all_trips = TripHandler(logger=logger).get_trips_from_json(json_data)
-    DatabaseHandler(logger=logger).add_trips_to_db(all_trips)
-    return 'Data received successfully'
+    try:
+        openapi_request = FlaskOpenAPIRequest(request)
+        result = unmarshal_request(openapi_request, spec=spec)
+        
+        all_trips = TripHandler(logger=logger).get_trips_from_json(result.body['upload_data'])
+        DatabaseHandler(logger=logger).add_trips_to_db(all_trips)
+
+    except Exception as e:
+        return {"error": str(e), "cause": str(e.__cause__)}, 400
+    return {"result": "Data received successfully"}
 
 @app.route('/upload/cargo-orders', methods=['POST'])
 def process_cargo_orders_data():
-    json_data = request.get_json()  
-    all_cargo_orders = TripHandler(logger=logger).get_orders_from_json(json_data)
-    DatabaseHandler(logger=logger).add_cargo_orders_to_db(cargo_orders=all_cargo_orders)
-    return {"result": "Data received successfully"}
+    try:
+        openapi_request = FlaskOpenAPIRequest(request)
+        result = unmarshal_request(openapi_request, spec=spec)
+
+        all_cargo_orders = TripHandler(logger=logger).get_orders_from_json(result.body['upload_data'])
+        DatabaseHandler(logger=logger).add_cargo_orders_to_db(cargo_orders=all_cargo_orders)
+        return {"result": "Data received successfully"}
+    
+    except Exception as e:
+        return {"error": str(e), "cause": str(e.__cause__)}, 400
+
 
 @app.route('/statistics', methods=['GET'])
 def get_statistics():
     return StatisticsEngine().get_statistics()
-    
-@app.route('/cluster', methods=['GET'])
-def cluster_locations_from_db():
-    thread = Thread(target = ClusterHandler(logger=logger).cluster_locations_from_db)
-    thread.start()
-    return 'Clustering started'
 
 @app.route('/cluster-orders', methods=['POST'])
 def cluster_orders():
@@ -70,10 +78,10 @@ def cluster_orders():
         logger.debug(f"Filtered cargo orders: {len(filtered_cargo_orders)}")
 
         clusters = ClusterHandler(logger=logger, eps=result.body['eps'], min_samples=result.body['min_samples']).get_cluster_from_orders(orders=filtered_cargo_orders)
-
+        return {"result": clusters}
     except Exception as e:
         return {"error": str(e), "cause": str(e.__cause__)}, 400
-    return {"result": clusters}
+    
 
 @app.route('/calc-routes', methods=['POST'])
 def calulate_truck_routes():

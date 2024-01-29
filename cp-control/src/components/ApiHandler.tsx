@@ -32,7 +32,6 @@ export async function getClusters(settings: Settings): Promise<Cluster[]> {
   var minTimestamp = 1;
   var maxTimestamp = 2000000000;
                      
-
   if (settings.applyFilter) {
     minTimestamp = settings.startTimestamp;
     maxTimestamp = settings.endTimestamp;

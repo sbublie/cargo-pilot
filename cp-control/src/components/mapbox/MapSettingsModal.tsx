@@ -174,7 +174,6 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({
               onChange={handleMapModeChange}
             />
             <Form.Check
-              disabled
               type="radio"
               id="activity_cluster"
               label="3D-Cluster"
