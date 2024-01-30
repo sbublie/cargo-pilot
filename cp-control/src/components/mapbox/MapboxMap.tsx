@@ -108,7 +108,6 @@ function MapboxMap() {
       setCityBoundariesGeoJson(boundaries, cargoOrders);
       addCityBoundariesToMap(map, boundaries);
 
-      console.log(settings)
       setVisibleMapLayers(map, settings);
     }
   }, [map, cargoOrders, trips, clustersn, boundaries, settings]);
