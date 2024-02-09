@@ -1,4 +1,13 @@
+import logging
+import json
+from dataclasses import asdict
+from logging.handlers import RotatingFileHandler
+
 from flask import Flask, request
+from flask_cors import CORS
+from openapi_core import Spec, unmarshal_request
+from openapi_core.contrib.flask import FlaskOpenAPIRequest
+
 from trip_handler import TripHandler
 from cluster_handler import ClusterHandler
 from statistic_engine import StatisticsEngine
@@ -8,12 +17,6 @@ from route_optimizer import RouteOptimizer
 from models import DeliveryConfig
 from requests.exceptions import RequestException
 
-import logging
-import json
-from dataclasses import asdict
-from logging.handlers import RotatingFileHandler
-from openapi_core import Spec, unmarshal_request
-from openapi_core.contrib.flask import FlaskOpenAPIRequest
 
 # Create a logger
 logger = logging.getLogger(__name__)
@@ -25,7 +28,6 @@ formatter.datefmt = '%Y-%m-%d %H:%M:%S'
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
@@ -42,7 +44,7 @@ def process_trips_data():
 
     except Exception as e:
         return {"error": str(e), "cause": str(e.__cause__)}, 400
-    return {"result": "Data received successfully"}
+    return {"result": "Data received successfully"}, 200
 
 @app.route('/upload/cargo-orders', methods=['POST'])
 def process_cargo_orders_data():
@@ -60,7 +62,7 @@ def process_cargo_orders_data():
 
 @app.route('/statistics', methods=['GET'])
 def get_statistics():
-    return StatisticsEngine().get_statistics()
+    return StatisticsEngine(logger=logger).get_statistics()
 
 @app.route('/cluster-orders', methods=['POST'])
 def cluster_orders():
