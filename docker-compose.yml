@@ -17,6 +17,12 @@ services:
     container_name: cp-db
     restart: always
     build: ./cp-db
+  cp-db-ng:
+    container_name: cp-db-ng
+    restart: always
+    build: ./cp-db-ng
+    volumes:
+      - ./cp-db-ng/logs:/app/logs
   cp-analyzer:
     container_name: cp-analyzer
     restart: always
@@ -34,7 +40,21 @@ services:
       - POSTGRES_PASSWORD=pdb&3Xif
     volumes:
       - db:/var/lib/postgresql/data
- 
+
+  mongodb:
+    container_name: mongodb
+    restart: always
+    image: mongodb/mongodb-community-server:latest
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=user
+      - MONGO_INITDB_ROOT_PASSWORD=pass
+    ports:
+      - 27017:27017
+    volumes:
+      - db-ng:/data/db
+
 volumes:
   db:
+    driver: local
+  db-ng:
     driver: local
