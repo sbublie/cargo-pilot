@@ -3,7 +3,7 @@ const http = require("http");
 const https = require("https");
 const proxy = require("express-http-proxy");
 const path = require("path");
-
+const fs = require('fs');
 const app = express();
 
 if (process.env.ENABLE_HTTPS === "true") {
