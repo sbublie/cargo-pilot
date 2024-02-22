@@ -8,7 +8,7 @@ import moment, { Moment } from "moment";
 import "react-datetime/css/react-datetime.css";
 import "moment/dist/locale/de";
 
-import { Settings } from "./MapboxMap";
+import { Settings } from "./models/Settings";
 
 interface MapSettingsModalProps {
   show: boolean;
@@ -22,8 +22,8 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({
   onApplySettings,
 }) => {
   const [settings, setSettings] = useState<Settings>({
-    mapMode: "cluster",
-    dataSource: "db",
+    mapMode: "items_cluster",
+    dataSource: ["DB", "Transics"],
     animateRoutes: false,
     applyFilter: true,
     startTimestamp: 1672614000,
@@ -33,26 +33,24 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({
     minSamples: 5,
   });
 
-  const handleStartTimestampChange = (value: string | Moment) => {
+  const handleTimestampChange = (value: string | Moment, type: 'startTimestamp' | 'endTimestamp') => {
     const momentValue = moment(value);
+  
     setSettings({
       ...settings,
-      startTimestamp: momentValue.toDate().getTime() / 1000,
+      [type]: momentValue.toDate().getTime() / 1000,
     });
   };
 
   const handleMapModeChange = (event: ChangeEvent<HTMLInputElement>) => {
     const mapModes: Record<string, Settings["mapMode"]> = {
-      activity_cluster: "activity_cluster",
-      cargo_order: "cargo_order",
-      trip: "trip",
-      cluster: "cluster",
-      match: "match",
+      items_cluster: "items_cluster",
+      bar_map: "bar_map",
     };
     const newMapMode = mapModes[event.target.id];
 
     if (newMapMode) {
-      setSettings((prevSettings) => ({
+      setSettings((prevSettings: Settings) => ({
         ...prevSettings,
         mapMode: newMapMode,
       }));
@@ -62,20 +60,22 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({
   };
 
   const handleDataSourceChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const dataSources: Record<string, Settings["dataSource"]> = {
-      db: "db",
-      transics: "transics",
-    };
-    const newDataSource = dataSources[event.target.id];
-
-    if (newDataSource) {
-      setSettings((prevSettings) => ({
+    const { id, checked } = event.target;
+    
+    setSettings((prevSettings: Settings) => {
+      let updatedDataSource: string[] = [...prevSettings.dataSource]; // Copying the existing data source array
+      
+      if (checked) {
+        updatedDataSource.push(id); // Add the data source to the array if checked
+      } else {
+        updatedDataSource = updatedDataSource.filter(source => source !== id); // Remove the data source from the array if unchecked
+      }
+  
+      return {
         ...prevSettings,
-        dataSource: newDataSource,
-      }));
-    } else {
-      console.error("Invalid data source selected");
-    }
+        dataSource: updatedDataSource,
+      };
+    });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -111,7 +111,7 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({
               <Datetime
                 locale="de"
                 initialValue={moment.unix(settings.startTimestamp)}
-                onChange={handleStartTimestampChange}
+                onChange={(value: string | Moment) => handleTimestampChange(value, 'startTimestamp')}
               ></Datetime>
             </Form.Group>
             <Form.Group key="endTimestamp">
@@ -119,7 +119,7 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({
               <Datetime
                 locale="de"
                 initialValue={moment.unix(settings.endTimestamp)}
-                onChange={handleStartTimestampChange}
+                onChange={(value: string | Moment) => handleTimestampChange(value, 'endTimestamp')}
               ></Datetime>
             </Form.Group>
           </Form>
@@ -167,17 +167,16 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({
             <h5>Select the Map Mode</h5>
             <Form.Check
               type="radio"
-              id="cluster"
+              id="items_cluster"
               label="All Locations + Clusters"
-              checked={settings.mapMode === "cluster"}
+              checked={settings.mapMode === "items_cluster"}
               onChange={handleMapModeChange}
             />
             <Form.Check
-              disabled
               type="radio"
-              id="activity_cluster"
+              id="bar_map"
               label="3D-Cluster"
-              checked={settings.mapMode === "activity_cluster"}
+              checked={settings.mapMode === "bar_map"}
               onChange={handleMapModeChange}
             />
           </div>
@@ -185,20 +184,18 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({
           <div key="Form2" className="mb-3">
             <h5>Select the Data Sources</h5>
             <Form.Check
-              disabled
               type="checkbox"
-              id="db"
+              id="DB"
               label="DB"
-              checked={true}
               onChange={handleDataSourceChange}
+              checked={settings.dataSource.includes("DB")}
             />
             <Form.Check
-              disabled
               type="checkbox"
-              id="transics"
+              id="Transics"
               label="Transics"
-              checked={true}
               onChange={handleDataSourceChange}
+              checked={settings.dataSource.includes("Transics")}
             />
           </div>
         

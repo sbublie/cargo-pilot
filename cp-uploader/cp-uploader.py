@@ -44,7 +44,7 @@ def main():
             source=answers["source"],
             data_type=answers["data_type"])
         
-        APIHandler().upload_data(data=processed_data, data_type=answers["data_type"], instance=answers["instance"])
+        APIHandler().upload_data(data=processed_data, instance=answers["instance"])
 
 
 if __name__ == "__main__":

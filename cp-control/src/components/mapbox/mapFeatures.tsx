@@ -1,5 +1,5 @@
 import mapboxgl, { Map as MapboxMap } from "mapbox-gl";
-import { Settings } from "./MapboxMap";
+import { Settings } from "./models/Settings";
 
 export function addCustomImageToMap(map: MapboxMap) {
   map.loadImage(
@@ -20,8 +20,7 @@ export function addControlsToMap(map: MapboxMap) {
 export function setVisibleMapLayers(map: MapboxMap, settings: Settings) {
   const allLayers = [
     "germany_overlay",
-    "cargo_order_markers",
-    "trip_markers",
+    "transport_items_markers",
     "cluster",
     "cluster_count"
   ];
@@ -31,23 +30,13 @@ export function setVisibleMapLayers(map: MapboxMap, settings: Settings) {
   
   if (allLayersSet) {
     const layersByMode = {
-      cargo_order: [
-        "cargo_order_markers", "cluster", "cluster_count",
+      items_cluster: [
+        "transport_items_markers", "cluster", "cluster_count",
       ],
-      activity_cluster: ["germany_overlay"],
-      trip: ["trip_markers", "cluster", "cluster_count",],
-      cluster: ["cluster", "cluster_count", "cargo_order_markers", "trip_markers"],
-      match: ["cluster"],
+      bar_map: ["germany_overlay"],
     };
 
     const visibleLayers = layersByMode[settings.mapMode] || [];
-
-    if (
-      settings.animateRoutes &&
-      (settings.mapMode === "cargo_order" || settings.mapMode === "trip")
-    ) {
-      visibleLayers.push("line-dashed");
-    }
 
     allLayers.forEach((layer) => {
       map.setLayoutProperty(
@@ -57,12 +46,6 @@ export function setVisibleMapLayers(map: MapboxMap, settings: Settings) {
       );
     });
 
-    if (visibleLayers.includes("line-dashed")) {
-      map.moveLayer("line-dashed", visibleLayers[0]);
-    }
-    if (visibleLayers.includes(settings.mapMode + "_lines")) {
-      map.moveLayer(settings.mapMode + "_lines", visibleLayers[0]);
-    }
   } else {
     console.log("Not all layers are created!");
   }

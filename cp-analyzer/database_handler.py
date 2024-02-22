@@ -1,12 +1,14 @@
-from models import Location, CompletedTrip, Cluster, CargoOrder
+from models.models import Location, CompletedTrip, Cluster, CargoOrder
+from models.transport_item import TransportItem
 import requests
 import json
 from logging import Logger
+from requests.exceptions import RequestException
 
 class DatabaseHandler:
 
     def __init__(self, logger:Logger) -> None:
-        self.BASE_URL = "http://cp-db:5000"
+        self.BASE_URL = "http://cp-db-ng:5000"
         self.logger = logger
 
     def add_location(self, location: Location) -> int:
@@ -48,6 +50,15 @@ class DatabaseHandler:
         self.logger.debug(f"Got {len(orders)} orders from DB")
 
         return orders
+    
+    def get_transport_items(self) -> list[TransportItem]:
+        self.logger.debug("Getting transport items from DB")
+        response = requests.get(self.BASE_URL + "/transport-items", headers={"Authorization": "Basic dXNlcjpwYXNz"})
+        self.logger.debug(f"Response: {response}")
+        data = response.json()['items']
+        transport_items = [TransportItem(**item) for item in data]
+        self.logger.debug(f"Got {len(transport_items)} orders from DB")
+        return transport_items
 
     # Custom serialization function to handle problematic floats and convert objects to dictionaries
     def __custom_serializer(self, obj):
@@ -58,11 +69,12 @@ class DatabaseHandler:
     def add_trips_to_db(self, trips: list[CompletedTrip]):
 
         for trip in trips:
-            response = requests.post(self.BASE_URL + "/trips", json=json.loads(json.dumps(trip, default=self.__custom_serializer)))
-            if response.status_code == 201:
-                print(f"Trips added to data base!")
-            else:
+            try:
+                response = requests.post(self.BASE_URL + "/trips", json=json.loads(json.dumps(trip, default=self.__custom_serializer)))
+                response.raise_for_status()  # This will raise an HTTPError for bad responses (4xx and 5xx)
+            except RequestException as e:
                 print('Failed to send trip to database: ', response.status_code, response.text)
+                raise
 
     def add_clusters(self, clusters: list[Cluster]):
         for cluster in clusters:
@@ -77,6 +89,6 @@ class DatabaseHandler:
             response = requests.post(url=url, json=json.loads(json.dumps(cargo_order, default=self.__custom_serializer)))
 
             if response.status_code == 201:
-                print(f"Cargo orders added to data base!")
+                print(f"Cargo orders added to database!")
             else:
                 print(f"Failed to upload chunk! Status code: {response.status_code}, {response.text}")

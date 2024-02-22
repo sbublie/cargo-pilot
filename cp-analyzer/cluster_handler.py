@@ -2,10 +2,10 @@ import pandas as pd
 import numpy as np
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
-from models import Location, CargoOrder
+from models.transport_item import TransportItem, Location
 
 from database_handler import DatabaseHandler
-from cluster import Cluster
+from models.cluster import Cluster
 
 
 class ClusterHandler:
@@ -39,7 +39,7 @@ class ClusterHandler:
             if cluster_id == -1:  # noise points in DBSCAN are labeled as -1
                 for point in cluster_points:
                     self.logger.debug("Add noise cluster")
-                    clusters.append(Cluster(center_lat=round(point[0], 4), center_long=round(point[1], 4), location_ids=[]))
+                    clusters.append(Cluster(center_lat=round(point[0], 4), center_long=round(point[1], 4), location_ids=[], number_of_locations=1))
                     noise_cluster_id += 1
                 continue
 
@@ -51,31 +51,25 @@ class ClusterHandler:
             self.logger.debug(f"Location IDs for this cluster: {location_ids}")
 
             # Creating the Cluster object
-            new_cluster = Cluster(center_lat=round(centroid[0], 4), center_long=round(centroid[1], 4), location_ids=location_ids)
+            new_cluster = Cluster(center_lat=round(centroid[0], 4), center_long=round(centroid[1], 4), location_ids=location_ids, number_of_locations=len(location_ids))
             clusters.append(new_cluster)
             self.logger.debug(f"Cluster object{new_cluster} created and added to list {len(clusters)}")
 
         self.logger.debug(f"Now returing {len(clusters)} clusters")
         return clusters
 
-    def get_cluster_from_orders(self, orders:list[CargoOrder]) -> list[Cluster]:
+    def get_cluster_from_transport_items(self, transport_items:list[TransportItem]) -> list[Cluster]:
 
         locations = []
-        for order in orders:
-            if order.origin.geo_location.lat != None and order.destination.geo_location.lat != None:
-                locations.append(order.origin)
-                locations.append(order.destination)
+        for transport_item in transport_items:
+            if hasattr(transport_item.origin, 'geo_location') and hasattr(transport_item.destination, 'geo_location'):
+                locations.append(transport_item.origin)
+                locations.append(transport_item.destination)
 
         self.logger.debug(f"{len(locations)} will be clustered!")
         cluster = self.__find_clusters(locations)
 
         return cluster
-            
-    def cluster_locations_from_db(self):
-
-        locations = self.database_handler.get_locations()
-        clusters = self.__find_clusters(locations)
-        self.database_handler.add_clusters(clusters)
 
     def __detect_cluster(self, location_list: list[list[int, int]]):
         if not location_list:

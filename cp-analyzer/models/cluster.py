@@ -5,3 +5,4 @@ class Cluster:
     center_lat: float
     center_long: float
     location_ids: list[int]
+    number_of_locations: int

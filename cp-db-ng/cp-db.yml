@@ -1,0 +1,298 @@
+openapi: 3.0.3
+info:
+  title: Cargo Pilot Database Gateway
+  version: 2.0.0
+servers:
+  - url: https://cargo-pilot.de/api/db-ng
+  - url: http://cp-db-ng:5000
+  - url: http://localhost/api/db-ng
+
+security:
+  - BasicAuth: []
+
+paths:
+  /transport-items:
+    get:
+      summary: Get all items
+      tags:
+        - "Transport"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                  $ref: "#/components/schemas/TransportItemCollectionResult"
+    post:
+      summary: Add new items
+      tags:
+        - "Transport"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransportItemCollection"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransportItem"
+  /transport-items/{id}:
+    get:
+      summary: Get a single item by ID
+      tags:
+        - "Transport"
+      parameters:
+        - name: id
+          in: path
+          description: Item ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransportItem"
+        "404":
+          description: Trip not found
+    put:
+      summary: Modify a item by ID
+      tags:
+        - "Transport"
+      parameters:
+        - name: id
+          in: path
+          description: Trip ID
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransportItem"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransportItem"
+        "404":
+          description: Item not found
+    delete:
+      summary: Delete a item by ID
+      tags:
+        - "Transport"
+      parameters:
+        - name: id
+          in: path
+          description: Item ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+components:
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic
+  schemas:
+    GeoLocation:
+      type: object
+      nullable: true
+      properties:
+        lat:
+          type: number
+          format: float
+          nullable: true
+        long:
+          type: number
+          format: float
+          nullable: true
+      example:
+        lat: 12.345
+        long: 67.890
+
+    AdminLocation:
+      type: object
+      nullable: true
+      properties:
+        postal_code:
+          type: string
+          nullable: true
+        city:
+          type: string
+          nullable: true
+        country:
+          type: string
+          nullable: true
+        street:
+          type: string
+          nullable: true
+      example:
+        postal_code: "12345"
+        city: "City"
+        country: "Country"
+        street: "Street"
+
+    Vehicle:
+      type: object
+      nullable: true
+      properties:
+        id: 
+          type: integer
+        type:
+          type: string
+        max_loading_meter:
+          type: number
+          format: float
+        max_weight:
+          type: integer
+        stackable:
+          type: boolean
+
+
+    CargoItem:
+      type: object
+      properties:
+        load_carrier:
+          type: boolean
+        load_carrier_nestable:
+          type: boolean
+        loading_meter:
+          type: number
+          format: float
+          nullable: true
+        weight:
+          type: number
+          format: float
+          nullable: true
+      example:
+        load_carrier: true
+        load_carrier_nestable: true
+        loading_meter: 10.5
+        weight: 500.0
+
+    Location:
+      type: object
+      properties:
+        id:
+          type: integer
+          nullable: true
+        timestamp:
+          type: integer
+          nullable: true
+        geo_location:
+          nullable: true
+          $ref: "#/components/schemas/GeoLocation"
+        admin_location:
+          $ref: "#/components/schemas/AdminLocation"
+          nullable: true
+      example:
+        timestamp: 1706476224
+        geo_location:
+          lat: 12.345
+          long: 67.890
+        admin_location:
+          postal_code: "12345"
+          city: "City"
+          country: "Country"
+          street: "Street"
+
+    TransportItem:
+      type: object
+      properties:
+        id:
+          type: string
+          nullable: false
+        type:
+          type: string
+          enum: ["order", "recorded_trip", "history_trip"]
+          nullable: false
+        data_source:
+          type: string
+          nullable: false
+        origin:
+          $ref: "#/components/schemas/Location"
+          nullable: false
+        destination:
+          $ref: "#/components/schemas/Location"
+          nullable: false
+        cargo_item:
+          $ref: "#/components/schemas/CargoItem"
+          nullable: true
+        vehicle:
+          $ref: "#/components/schemas/Vehicle"
+          nullable: true
+        customer:
+          type: string
+          nullable: true
+        route_locations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Location"
+          nullable: true
+
+    TransportItemRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: ["order", "recorded_trip", "history_trip"]
+          nullable: false
+        data_source:
+          type: string
+          nullable: false
+        origin:
+          $ref: "#/components/schemas/Location"
+          nullable: false
+        destination:
+          $ref: "#/components/schemas/Location"
+          nullable: false
+        cargo_item:
+          $ref: "#/components/schemas/CargoItem"
+          nullable: true
+        customer:
+          type: string
+          nullable: true
+        route_locations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Location"
+          nullable: true
+
+    TransportItemCollection:
+      type: object
+      properties:
+        transport-items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TransportItem"
+
+    TransportItemCollectionResult:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            id:
+              type: integer
+            $ref: "#/components/schemas/TransportItem"

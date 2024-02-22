@@ -8,18 +8,28 @@ interface Offering {
   load_meter: number;
   load_percentage: number;
   origin: {
+    geo_location: {
+      long: number;
+      lat: number;
+    }
+    admin_location: {
+      postal_code: string;
+      city: string;
+      country: string
+    }
     id: number;
-    zip_code: number;
-    city: string;
-    long: number;
-    lat: number;
   };
   destination: {
+    geo_location: {
+      long: number;
+      lat: number;
+    }
+    admin_location: {
+      postal_code: string;
+      city: string;
+      country: string
+    }
     id: number;
-    zip_code: number;
-    city: string;
-    long: number;
-    lat: number;
   };
 }
 
@@ -36,8 +46,8 @@ export function setCityBoundariesGeoJson(
   };
 
   offerings.forEach((offering) => {
-    incrementCityCodeCount(offering.origin.zip_code);
-    incrementCityCodeCount(offering.destination.zip_code);
+    incrementCityCodeCount(parseInt(offering.origin.admin_location.postal_code));
+    incrementCityCodeCount(parseInt(offering.destination.admin_location.postal_code));
   });
 
   if (boundaries.features) {
@@ -54,7 +64,6 @@ export function setCityBoundariesGeoJson(
         return false;
       }
     });
-
     boundaries.features = newFeatures;
   }
 }
@@ -126,7 +135,7 @@ export function getClusterGeoJson(clusters: Cluster[]): FeatureCollection<Point>
     const clusterMarker: Feature<Point> = {
       type: "Feature",
       properties: {
-        numLocations: numClusterItems,
+        numLocations: cluster.number_of_locations,
       },
       geometry: {
         type: "Point",

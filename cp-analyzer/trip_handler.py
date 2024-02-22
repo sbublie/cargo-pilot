@@ -2,7 +2,7 @@ import json
 import math
 
 from database_handler import DatabaseHandler
-from models import CargoOrder, CompletedTrip
+from models.models import CargoOrder, CompletedTrip
 
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -21,8 +21,8 @@ class TripHandler:
 
         for trip in json_data:
 
-            trip_dict = json.loads(trip)
-            new_trip = CompletedTrip(**trip_dict)
+            new_trip = CompletedTrip(**trip)
+            print(new_trip.vehicle.max_loading_meter, flush=True)
 
             # TODO: Delete temp addition of one year
             dt_object = datetime.fromtimestamp(new_trip.origin.timestamp)
@@ -44,8 +44,8 @@ class TripHandler:
             city_codes = json.load(infile)
 
         for cargo_order in json_data:
-            order_dict = json.loads(cargo_order)
-            new_order = CargoOrder(**order_dict)
+            
+            new_order = CargoOrder(**cargo_order)
 
             # If there are no geo location information but a postal code is available
             if new_order.origin.geo_location.lat is None and new_order.origin.geo_location.long is None and new_order.origin.admin_location.postal_code is not None:
