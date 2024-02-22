@@ -14,7 +14,7 @@ from statistic_engine import StatisticsEngine
 from threading import Thread
 from database_handler import DatabaseHandler
 from route_optimizer import RouteOptimizer
-from models import DeliveryConfig
+from models.models import DeliveryConfig
 from requests.exceptions import RequestException
 
 
@@ -64,24 +64,24 @@ def process_cargo_orders_data():
 def get_statistics():
     return StatisticsEngine(logger=logger).get_statistics()
 
-@app.route('/cluster-orders', methods=['POST'])
-def cluster_orders():
+@app.route('/cluster-transport-items', methods=['POST'])
+def cluster_transport_items():
     try:
         openapi_request = FlaskOpenAPIRequest(request)
         result = unmarshal_request(openapi_request, spec=spec)
         
-        filtered_cargo_orders = []
-        cargo_orders = DatabaseHandler(logger=logger).get_cargo_orders()
+        filtered_transport_items = []
+        transport_items = DatabaseHandler(logger=logger).get_transport_items()
 
-        logger.debug(f"Got {len(cargo_orders)}")
-        for cargo_order in cargo_orders:
-            if cargo_order.origin.timestamp >= result.body['start_timestamp'] and cargo_order.destination.timestamp <= result.body['end_timestamp']:
-                filtered_cargo_orders.append(cargo_order)
-        logger.debug(f"Filtered cargo orders: {len(filtered_cargo_orders)}")
+        for transport_item in transport_items:
+            if transport_item.origin.timestamp >= result.body['start_timestamp'] and transport_item.destination.timestamp <= result.body['end_timestamp']:
+                filtered_transport_items.append(transport_item)
+        logger.debug(f"Filtered cargo orders: {len(filtered_transport_items)}")
 
-        clusters = ClusterHandler(logger=logger, eps=result.body['eps'], min_samples=result.body['min_samples']).get_cluster_from_orders(orders=filtered_cargo_orders)
+        clusters = ClusterHandler(logger=logger, eps=result.body['eps'], min_samples=result.body['min_samples']).get_cluster_from_transport_items(transport_items=filtered_transport_items)
         return {"result": clusters}
     except Exception as e:
+        logging.error(e, exc_info=True)
         return {"error": str(e), "cause": str(e.__cause__)}, 400
     
 
@@ -90,9 +90,15 @@ def calulate_truck_routes():
     logger.debug('Calc routes API called')
     delivery_config = request.json
     logger.debug(f'Config parameter received: {delivery_config}')
-    cargo_orders =  DatabaseHandler(logger=logger).get_cargo_orders()
+    transport_items =  DatabaseHandler(logger=logger).get_transport_items()
     logger.debug('Config parameter and cargo orders ready for route optimization')
-    result = RouteOptimizer(logger=logger).get_vrp_result(delivery_config=DeliveryConfig(**delivery_config), orders=cargo_orders)
+
+    corrected_transport_items = []
+    for item in transport_items:
+        if hasattr(item.origin, "geo_location") and hasattr(item.destination, "geo_location"):
+            corrected_transport_items.append(item)
+
+    result = RouteOptimizer(logger=logger).get_vrp_result(delivery_config=DeliveryConfig(**delivery_config), orders=corrected_transport_items)
     
     return {"result": json.loads(json.dumps(asdict(result), default=lambda o: o.__dict__, indent=4))}
 

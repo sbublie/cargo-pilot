@@ -135,7 +135,7 @@ export function getClusterGeoJson(clusters: Cluster[]): FeatureCollection<Point>
     const clusterMarker: Feature<Point> = {
       type: "Feature",
       properties: {
-        numLocations: numClusterItems,
+        numLocations: cluster.number_of_locations,
       },
       geometry: {
         type: "Point",

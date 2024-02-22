@@ -78,7 +78,7 @@ const Optimizer: React.FC = () => {
     if (mapContainerRef.current) {
       const mapInstance = new mapboxgl.Map({
         container: mapContainerRef.current,
-        style: "mapbox://styles/sbublies/clrzgt15k00wg01r41xhe7xol",
+        style: "mapbox://styles/mapbox/streets-v12",
         center: [lng, lat],
         zoom: zoom,
         pitch: 0,

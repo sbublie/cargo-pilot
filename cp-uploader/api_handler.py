@@ -1,9 +1,9 @@
 import requests
-from env import API_ENDPOINT, REMOTE_CP_INSTANCE_URL, LOCAL_CP_INSTANCE_URL, API_KEY
+from env import DB_ENDPOINT, REMOTE_CP_INSTANCE_URL, LOCAL_CP_INSTANCE_URL, API_KEY
 import json
-import dictfier
+from models import TransportItem
 
-CHUNK_SIZE = 100
+CHUNK_SIZE = 300
 
 
 class APIHandler:
@@ -19,20 +19,14 @@ class APIHandler:
         for i in range(0, len(items), chunk_size):
             yield items[i:i + chunk_size]
 
-    def upload_data(self, data, data_type, instance):
+    def upload_data(self, data:list[TransportItem], instance):
         # TODO: Error handling
-        url = REMOTE_CP_INSTANCE_URL + API_ENDPOINT
+        url = REMOTE_CP_INSTANCE_URL + DB_ENDPOINT + "/transport-items"
         if instance == "Local":
-            url = LOCAL_CP_INSTANCE_URL + API_ENDPOINT
-
-        if data_type == "Cargo Orders":
-            url += "/cargo-orders"
-        elif data_type == "Past Trips":
-            url += "/trips"
+            url = LOCAL_CP_INSTANCE_URL + DB_ENDPOINT + "/transport-items"
 
         num_chunks = -(-len(data) // CHUNK_SIZE)
 
-        
         # Upload the data in chunks to avoid overloading the API server
         for index, chunk in enumerate(self.chunked_items(data)):
             # Iterate over the data items of the list to convert the data models to a json string using thier conversion methods
@@ -40,7 +34,7 @@ class APIHandler:
             for item in chunk:
                 chunk_list.append(item.to_dict())
                 
-            json_data = json.dumps({"upload_data": chunk_list})
+            json_data = json.dumps({"transport-items": chunk_list})
 
             response = requests.post(
                 url=url, data=json_data, headers=self.headers)

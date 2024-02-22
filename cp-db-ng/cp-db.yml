@@ -153,6 +153,23 @@ components:
         country: "Country"
         street: "Street"
 
+    Vehicle:
+      type: object
+      nullable: true
+      properties:
+        id: 
+          type: integer
+        type:
+          type: string
+        max_loading_meter:
+          type: number
+          format: float
+        max_weight:
+          type: integer
+        stackable:
+          type: boolean
+
+
     CargoItem:
       type: object
       properties:
@@ -186,7 +203,6 @@ components:
         geo_location:
           nullable: true
           $ref: "#/components/schemas/GeoLocation"
-
         admin_location:
           $ref: "#/components/schemas/AdminLocation"
           nullable: true
@@ -222,6 +238,9 @@ components:
           nullable: false
         cargo_item:
           $ref: "#/components/schemas/CargoItem"
+          nullable: true
+        vehicle:
+          $ref: "#/components/schemas/Vehicle"
           nullable: true
         customer:
           type: string

@@ -1,7 +1,7 @@
 import { Map as MapboxMap, MapMouseEvent } from "mapbox-gl";
 import mapboxgl from "mapbox-gl";
 import { FeatureCollection, Point, Feature } from "geojson";
-import { Settings } from "./MapboxMap";
+import { Settings } from "./models/Settings";
 
 interface CargoOrder {
   id: number;

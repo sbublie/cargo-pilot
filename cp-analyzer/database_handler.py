@@ -1,4 +1,5 @@
-from models import Location, CompletedTrip, Cluster, CargoOrder
+from models.models import Location, CompletedTrip, Cluster, CargoOrder
+from models.transport_item import TransportItem
 import requests
 import json
 from logging import Logger
@@ -7,7 +8,7 @@ from requests.exceptions import RequestException
 class DatabaseHandler:
 
     def __init__(self, logger:Logger) -> None:
-        self.BASE_URL = "http://cp-db:5000"
+        self.BASE_URL = "http://cp-db-ng:5000"
         self.logger = logger
 
     def add_location(self, location: Location) -> int:
@@ -49,6 +50,15 @@ class DatabaseHandler:
         self.logger.debug(f"Got {len(orders)} orders from DB")
 
         return orders
+    
+    def get_transport_items(self) -> list[TransportItem]:
+        self.logger.debug("Getting transport items from DB")
+        response = requests.get(self.BASE_URL + "/transport-items", headers={"Authorization": "Basic dXNlcjpwYXNz"})
+        self.logger.debug(f"Response: {response}")
+        data = response.json()['items']
+        transport_items = [TransportItem(**item) for item in data]
+        self.logger.debug(f"Got {len(transport_items)} orders from DB")
+        return transport_items
 
     # Custom serialization function to handle problematic floats and convert objects to dictionaries
     def __custom_serializer(self, obj):

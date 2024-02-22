@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { useOfferings } from "../contexts/OfferingsContext";
-import { Settings } from "./mapbox/MapboxMap";
+import { Settings } from "./mapbox/models/Settings";
 import { Cluster } from "./mapbox/Cluster";
+import { TransportItemCollection } from "./mapbox/models/TransportItem";
 
 export function getCalcRoutes(settings: any): Promise<any[]> {
   const requestOptions = {
@@ -13,6 +14,30 @@ export function getCalcRoutes(settings: any): Promise<any[]> {
   // Return a Promise for the fetch operation
   return fetch(
     import.meta.env.VITE_BASE_URL + "api/analyzer/calc-routes",
+    requestOptions
+  )
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return response.json();
+    })
+    .catch((error) => {
+      // Handle the error here or rethrow it to be caught later
+      console.error("Error fetching data: ", error);
+      throw error;
+    });
+}
+
+export function getTransportItems(): Promise<TransportItemCollection> {
+  const requestOptions = {
+    method: "GET",
+    headers: { "Content-Type": "application/json", "Authorization": "Basic dXNlcjpwYXNz" },
+  };
+
+  // Return a Promise for the fetch operation
+  return fetch(
+    import.meta.env.VITE_BASE_URL + "api/db-ng/transport-items",
     requestOptions
   )
     .then((response) => {
@@ -52,7 +77,7 @@ export async function getClusters(settings: Settings): Promise<Cluster[]> {
 
   try {
     const response = await fetch(
-      import.meta.env.VITE_BASE_URL + "api/analyzer/cluster-orders",
+      import.meta.env.VITE_BASE_URL + "api/analyzer/cluster-transport-items",
       requestOptions
     );
 
@@ -83,7 +108,7 @@ export function ApiHandler() {
     setNewTrips,
     setNewCargoOrders,
     setNewClusters,
-    setNewStats,
+    //setNewStats,
     setNewBoundaries,
   } = useOfferings();
 
@@ -124,7 +149,7 @@ export function ApiHandler() {
       }
     };
 
-    const fetchStats = async () => {
+    /* const fetchStats = async () => {
       try {
         const response = await fetch(
           import.meta.env.VITE_BASE_URL + "api/analyzer/statistics"
@@ -135,7 +160,7 @@ export function ApiHandler() {
       } catch (error) {
         console.log("Error:", error);
       }
-    };
+    }; */
 
     const fetchBoundaries = async () => {
       try {
@@ -151,7 +176,7 @@ export function ApiHandler() {
     };
 
     fetchTrips();
-    fetchStats();
+    //fetchStats();
     fetchClusters();
     fetchCargoOrders();
     fetchBoundaries();

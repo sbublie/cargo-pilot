@@ -2,7 +2,7 @@ import json
 import math
 
 from database_handler import DatabaseHandler
-from models import CargoOrder, CompletedTrip
+from models.models import CargoOrder, CompletedTrip
 
 from datetime import datetime
 from dateutil.relativedelta import relativedelta

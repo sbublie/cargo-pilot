@@ -1,4 +1,4 @@
-from models import DeliveryConfig, ProjectedTrip, CargoOrder, Vehicle, Location, VRPResult, MovingSection, SectionType, HoldingSection, CargoItem, CustomEncoder
+from models.models import DeliveryConfig, ProjectedTrip, CargoOrder, Vehicle, Location, VRPResult, MovingSection, SectionType, HoldingSection, CargoItem, CustomEncoder
 import json
 from geopy.distance import geodesic
 from datetime import timedelta, datetime

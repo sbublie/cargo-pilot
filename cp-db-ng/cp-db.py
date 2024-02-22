@@ -2,6 +2,7 @@ import logging
 from functools import wraps
 from logging.handlers import RotatingFileHandler
 from bson import json_util
+import json
 
 from flask import Flask, request, Response, jsonify
 from flask_cors import CORS
@@ -9,8 +10,9 @@ from pymongo import MongoClient
 from openapi_core import Spec, unmarshal_request
 from openapi_core.contrib.flask import FlaskOpenAPIRequest
 
-
-
+from models import TransportItem
+from geo_util import GeoUtil
+from postcode_handler import PostcodeHandler
 
 # MongoDB connection details
 mongo_host = 'mongodb'
@@ -20,7 +22,7 @@ mongo_db_name = 'my_database'
 # Connect to MongoDB
 client = MongoClient(mongo_host, mongo_port, username='user', password='pass')
 db = client[mongo_db_name]
-collection = db['my_collection1']
+collection = db['my_collection2']
 
 # Create a logger
 logger = logging.getLogger(__name__)
@@ -34,6 +36,8 @@ logger.addHandler(handler)
 
 app = Flask(__name__)
 CORS(app)
+
+postcode_handler = PostcodeHandler()
 
 spec = Spec.from_file_path('cp-db.yml')
 
@@ -58,6 +62,11 @@ def authenticate():
         {'WWW-Authenticate': 'Basic realm="Login Required"'}
     )
 
+def __custom_serializer(obj):
+    if isinstance(obj, float) and (obj > 1e15 or obj < -1e15):
+        return str(obj)  # Convert large/small floats to strings
+    return obj.__dict__  # Convert other objects to dictionaries
+
 @app.route('/transport-items', methods=['GET'])
 @requires_auth
 def get_transport_items():
@@ -78,7 +87,8 @@ def get_transport_items():
                 }
             },
 
-        ]))
+        ]))        
+
         return {"items": items}, 200
     except Exception as e:
         return {"error": str(e), "cause": str(e.__cause__)}, 400
@@ -96,11 +106,27 @@ def add_transport_items():
         # Extract relevant data from the result
         transport_items = result.body['transport-items']
 
+        for transport_dict in transport_items:
+            if transport_dict['origin'].get('admin_location'):
+                origin_postal_code = transport_dict['origin'].get('admin_location').get('postal_code')
+                destination_postal_code = transport_dict['destination'].get('admin_location').get('postal_code')
+                origin_country = transport_dict['origin'].get('admin_location').get('country')
+                destination_country = transport_dict['destination'].get('admin_location').get('country')
+                if origin_postal_code and destination_postal_code and origin_country and destination_country:
+                    origin_geo_location = postcode_handler.get_geo_location_from_post_code(origin_postal_code, country=origin_country)
+                    destination_geo_location = postcode_handler.get_geo_location_from_post_code(destination_postal_code, country=destination_country)
+                    logger.debug(f"origin geo location: {origin_geo_location}, destination geo location: {destination_geo_location}")
+                    if origin_geo_location and destination_geo_location:
+                        GeoUtil().add_geo_location_to_transport_dict(transport_dict=transport_dict, origin_geo_location=origin_geo_location, destination_geo_location=destination_geo_location)
+
         collection.insert_many(transport_items)
         
     except Exception as e:
-        return {"error": str(e), "cause": str(e.__cause__)}, 400
+        logger.exception({"error": str(e), "cause": str(e.__cause__)})
+        return {"result": "internal server error"}, 500
     return {"result": "success"}, 200
+
+
 
 if __name__ == "__main__":
     app.run(port=5000, host='0.0.0.0')

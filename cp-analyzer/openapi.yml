@@ -55,18 +55,18 @@ paths:
         "200":
           description: Successful operation
 
-  /cluster-orders:
+  /cluster-transport-items:
     post:
       tags:
         - "Cluster"
-      description: Get clusters of orders
+      description: Get clusters of transport items
       requestBody:
         description: "Cluster time range"
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ClusterOrderConfig"
+              $ref: "#/components/schemas/ClusterItemsConfig"
       responses:
         "200":
           description: Successful operation
@@ -126,7 +126,7 @@ components:
           type: integer
           nullable: true
 
-    ClusterOrderConfig:
+    ClusterItemsConfig:
       type: object
       required:
         - start_timestamp
