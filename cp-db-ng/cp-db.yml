@@ -109,6 +109,29 @@ paths:
                   message:
                     type: string
 
+  /vehicles/{id}:
+    put:
+      summary: Update vehicle resource
+      tags:
+        - "Vehicles"
+      parameters:
+        - name: id
+          in: path
+          description: Item id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VehicleData"
+      responses:
+        "200":
+          description: OK
+
+
 components:
   securitySchemes:
     BasicAuth:
@@ -169,6 +192,58 @@ components:
         stackable:
           type: boolean
 
+    VehicleData:
+        type: object
+        required:
+          - "lat"
+          - "long"
+          - "s0"
+          - "s1"
+          - "s2"
+          - "s3"
+          - "s4"
+          - "s5"
+          - "s6"
+          - "s7"
+        properties:
+          lat:
+            type: number
+            format: float
+          long:
+            type: number
+            format: float
+          s0:
+            type: number
+            format: float
+            description: Sensor 0 load percentage 
+          s1:
+            type: number
+            format: float
+            description: Sensor 1 load percentage 
+          s2:
+            type: number
+            format: float
+            description: Sensor 2 load percentage 
+          s3:
+            type: number
+            format: float
+            description: Sensor 3 load percentage 
+          s4:
+            type: number
+            format: float
+            description: Sensor 4 load percentage 
+          s5:
+            type: number
+            format: float
+            description: Sensor 5 load percentage 
+          s6:
+            type: number
+            format: float
+            description: Sensor 6 load percentage 
+          s7:
+            type: number
+            format: float
+            description: Sensor 7 load percentage 
 
     CargoItem:
       type: object

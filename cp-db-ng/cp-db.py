@@ -120,12 +120,22 @@ def add_transport_items():
                         GeoUtil().add_geo_location_to_transport_dict(transport_dict=transport_dict, origin_geo_location=origin_geo_location, destination_geo_location=destination_geo_location)
 
         collection.insert_many(transport_items)
-        
+                
     except Exception as e:
         logger.exception({"error": str(e), "cause": str(e.__cause__)})
         return {"result": "internal server error"}, 500
     return {"result": "success"}, 200
 
+@app.route('/vehicles/<id>', methods=['PUT'])
+@requires_auth
+def modify_vehicles(id):
+    try:
+        openapi_request = FlaskOpenAPIRequest(request)
+        result = unmarshal_request(openapi_request, spec=spec)
+    except Exception as e:
+        logger.exception({"error": str(e), "cause": str(e.__cause__)})
+        return {"error": str(e), "cause": str(e.__cause__)}, 400
+    return {"result": "success"}, 200
 
 
 if __name__ == "__main__":
