@@ -24,11 +24,7 @@ def main():
                 message="What type of data do you want to upload?",
                 choices=["Past Trips", "Cargo Orders"],
             ),
-            inquirer.List(
-                "source",
-                message="What is the source of the data?",
-                choices=["Transics", "DB"],
-            ),
+            inquirer.Text("source", "Enter the source of the data"),
             inquirer.List(
                 "file",
                 message="Select a file",
@@ -43,8 +39,9 @@ def main():
             filename=file_path,
             source=answers["source"],
             data_type=answers["data_type"])
-        
-        APIHandler().upload_data(data=processed_data, instance=answers["instance"])
+
+        APIHandler().upload_data(data=processed_data,
+                                 instance=answers["instance"])
 
 
 if __name__ == "__main__":
