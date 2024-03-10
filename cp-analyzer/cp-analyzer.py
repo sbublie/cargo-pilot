@@ -11,11 +11,9 @@ from openapi_core.contrib.flask import FlaskOpenAPIRequest
 from trip_handler import TripHandler
 from cluster_handler import ClusterHandler
 from statistic_engine import StatisticsEngine
-from threading import Thread
 from database_handler import DatabaseHandler
 from route_optimizer import RouteOptimizer
 from models.models import DeliveryConfig
-from requests.exceptions import RequestException
 
 
 # Create a logger
@@ -32,33 +30,6 @@ app = Flask(__name__)
 CORS(app)
 
 spec = Spec.from_file_path('openapi.yml')
-
-@app.route('/upload/trips', methods=['POST'])
-def process_trips_data():
-    try:
-        openapi_request = FlaskOpenAPIRequest(request)
-        result = unmarshal_request(openapi_request, spec=spec)
-        
-        all_trips = TripHandler(logger=logger).get_trips_from_json(result.body['upload_data'])
-        DatabaseHandler(logger=logger).add_trips_to_db(all_trips)
-
-    except Exception as e:
-        return {"error": str(e), "cause": str(e.__cause__)}, 400
-    return {"result": "Data received successfully"}, 200
-
-@app.route('/upload/cargo-orders', methods=['POST'])
-def process_cargo_orders_data():
-    try:
-        openapi_request = FlaskOpenAPIRequest(request)
-        result = unmarshal_request(openapi_request, spec=spec)
-
-        all_cargo_orders = TripHandler(logger=logger).get_orders_from_json(result.body['upload_data'])
-        DatabaseHandler(logger=logger).add_cargo_orders_to_db(cargo_orders=all_cargo_orders)
-        return {"result": "Data received successfully"}
-    
-    except Exception as e:
-        return {"error": str(e), "cause": str(e.__cause__)}, 400
-
 
 @app.route('/statistics', methods=['GET'])
 def get_statistics():

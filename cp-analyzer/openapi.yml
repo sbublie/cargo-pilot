@@ -15,46 +15,7 @@ servers:
 #  - ApiKeyAuth: []
 
 paths:
-  /upload/trips:
-    post:
-      tags:
-        - Upload
-      description: "Upload cargo orders to the Cargo Pilot instance"
-      requestBody:
-        description: A list of available models
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                upload_data:
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/CargoOrder"
-      responses:
-        "200":
-          description: Successful operation
-  /upload/cargo-orders:
-    post:
-      tags:
-        - Upload
-      description: "Upload cargo orders to the Cargo Pilot instance"
-      requestBody:
-        description: A list of available models
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                upload_data:
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/CargoOrder"
-        required: true
-      responses:
-        "200":
-          description: Successful operation
-
+  
   /cluster-transport-items:
     post:
       tags:
