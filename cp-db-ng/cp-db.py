@@ -72,10 +72,14 @@ def __custom_serializer(obj):
 def get_transport_items():
     logger.debug(f"/transport-items GET endpoint was called")
     try:
+        
         #logger.debug("Received transport items data: %s", result)
         openapi_request = FlaskOpenAPIRequest(request)
         unmarshal_request(openapi_request, spec=spec)
-        items = list(collection.aggregate([
+
+        data_source = request.args.get('data-source')
+
+        pipeline = [
             {
                 '$addFields': {
                     'id': {'$toString': '$_id'},  # Convert _id to string and create a new field id
@@ -85,9 +89,14 @@ def get_transport_items():
                 '$project': {
                     '_id': 0,  # Exclude the _id field
                 }
-            },
+            }
+        ]
 
-        ]))        
+        # If item_type is provided, add a $match stage to filter by type
+        if data_source:
+            pipeline.insert(0, {'$match': {'data_source': data_source}})
+
+        items = list(collection.aggregate(pipeline))       
 
         return {"items": items}, 200
     except Exception as e:
