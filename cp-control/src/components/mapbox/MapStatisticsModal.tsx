@@ -47,7 +47,7 @@ function MapStatisticsModal({
       <Modal.Body>
         {!settings.showCluster && <>Please enable clustering in settings!</>}
         <Col>
-        {settings.showCluster && <>Origin Cluster -{'>'} Destination Clutser: Number of Trips</>}<br /><br />
+        {settings.showCluster && <>Origin Cluster -{'>'} Destination Cluster: Number of trips</>}<br /><br />
         {sortedClusterRelations.map((clusterRelation) => (
         <React.Fragment key={clusterRelation.origin_cluster + '-' + clusterRelation.destination_cluster}>
           {clusterRelation.origin_cluster + " -> " + clusterRelation.destination_cluster + ": " + clusterRelation.relation_count}
