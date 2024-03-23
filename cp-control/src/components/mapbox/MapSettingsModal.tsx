@@ -8,34 +8,30 @@ import moment, { Moment } from "moment";
 import "react-datetime/css/react-datetime.css";
 import "moment/dist/locale/de";
 
-import { Settings } from "./models/Settings";
+import { Settings, defaultSettings } from "./models/Settings";
 
 interface MapSettingsModalProps {
   show: boolean;
   onHide: () => void;
   onApplySettings: (settings: Settings) => void;
+  allDataSources: string[]
 }
 
 const MapSettingsModal: FC<MapSettingsModalProps> = ({
   show,
   onHide,
   onApplySettings,
+  allDataSources,
 }) => {
-  const [settings, setSettings] = useState<Settings>({
-    mapMode: "items_cluster",
-    dataSource: ["DB", "Transics"],
-    animateRoutes: false,
-    applyFilter: true,
-    startTimestamp: 1672614000,
-    endTimestamp: 1672700399,
-    showCluster: false,
-    eps: 0.5,
-    minSamples: 5,
-  });
+  const [settings, setSettings] = useState<Settings>(defaultSettings);
+  //console.log(allDataSources)
 
-  const handleTimestampChange = (value: string | Moment, type: 'startTimestamp' | 'endTimestamp') => {
+  const handleTimestampChange = (
+    value: string | Moment,
+    type: "startTimestamp" | "endTimestamp"
+  ) => {
     const momentValue = moment(value);
-  
+
     setSettings({
       ...settings,
       [type]: momentValue.toDate().getTime() / 1000,
@@ -61,16 +57,16 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({
 
   const handleDataSourceChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { id, checked } = event.target;
-    
+
     setSettings((prevSettings: Settings) => {
       let updatedDataSource: string[] = [...prevSettings.dataSource]; // Copying the existing data source array
-      
+
       if (checked) {
         updatedDataSource.push(id); // Add the data source to the array if checked
       } else {
-        updatedDataSource = updatedDataSource.filter(source => source !== id); // Remove the data source from the array if unchecked
+        updatedDataSource = updatedDataSource.filter((source) => source !== id); // Remove the data source from the array if unchecked
       }
-  
+
       return {
         ...prevSettings,
         dataSource: updatedDataSource,
@@ -111,7 +107,9 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({
               <Datetime
                 locale="de"
                 initialValue={moment.unix(settings.startTimestamp)}
-                onChange={(value: string | Moment) => handleTimestampChange(value, 'startTimestamp')}
+                onChange={(value: string | Moment) =>
+                  handleTimestampChange(value, "startTimestamp")
+                }
               ></Datetime>
             </Form.Group>
             <Form.Group key="endTimestamp">
@@ -119,7 +117,9 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({
               <Datetime
                 locale="de"
                 initialValue={moment.unix(settings.endTimestamp)}
-                onChange={(value: string | Moment) => handleTimestampChange(value, 'endTimestamp')}
+                onChange={(value: string | Moment) =>
+                  handleTimestampChange(value, "endTimestamp")
+                }
               ></Datetime>
             </Form.Group>
           </Form>
@@ -183,22 +183,17 @@ const MapSettingsModal: FC<MapSettingsModalProps> = ({
 
           <div key="Form2" className="mb-3">
             <h5>Select the Data Sources</h5>
-            <Form.Check
-              type="checkbox"
-              id="DB"
-              label="DB"
-              onChange={handleDataSourceChange}
-              checked={settings.dataSource.includes("DB")}
-            />
-            <Form.Check
-              type="checkbox"
-              id="Transics"
-              label="Transics"
-              onChange={handleDataSourceChange}
-              checked={settings.dataSource.includes("Transics")}
-            />
+            {allDataSources.map((source) => (
+              <Form.Check
+                key={source}
+                type="checkbox"
+                id={source}
+                label={source}
+                onChange={handleDataSourceChange}
+                checked={settings.dataSource.includes(source)}
+              />
+            ))}
           </div>
-        
         </Form>
       </Modal.Body>
       <Modal.Footer>

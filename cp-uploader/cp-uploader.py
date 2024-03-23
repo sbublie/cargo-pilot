@@ -22,14 +22,15 @@ def main():
             inquirer.List(
                 "data_type",
                 message="What type of data do you want to upload?",
-                choices=["Past Trips", "Cargo Orders"],
+                choices=["Transics", "DB", "Manual"],
             ),
-            inquirer.Text("source", "Enter the source of the data"),
+            inquirer.Text("source", "Enter the source name of the data"),
             inquirer.List(
                 "file",
                 message="Select a file",
                 choices=file_names,
             ),
+            inquirer.Text("sheet_number", message="Enter the number of the sheet to be uploaded", validate=lambda _, response: response.isdigit() or "Please enter a valid number"),
         ]
         answers = inquirer.prompt(questions)
 
@@ -38,7 +39,7 @@ def main():
         processed_data = InputConverter().convert_data_from_file(
             filename=file_path,
             source=answers["source"],
-            data_type=answers["data_type"])
+            data_type=answers["data_type"], sheet_number=answers["sheet_number"])
 
         APIHandler().upload_data(data=processed_data,
                                  instance=answers["instance"])

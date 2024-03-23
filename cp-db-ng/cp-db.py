@@ -22,7 +22,7 @@ mongo_db_name = 'my_database'
 # Connect to MongoDB
 client = MongoClient(mongo_host, mongo_port, username='user', password='pass')
 db = client[mongo_db_name]
-collection = db['my_collection2']
+collection = db['my_collection4']
 
 # Create a logger
 logger = logging.getLogger(__name__)
@@ -61,11 +61,6 @@ def authenticate():
         401,
         {'WWW-Authenticate': 'Basic realm="Login Required"'}
     )
-
-def __custom_serializer(obj):
-    if isinstance(obj, float) and (obj > 1e15 or obj < -1e15):
-        return str(obj)  # Convert large/small floats to strings
-    return obj.__dict__  # Convert other objects to dictionaries
 
 @app.route('/transport-items', methods=['GET'])
 @requires_auth

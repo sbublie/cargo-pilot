@@ -6,14 +6,23 @@ from data_mapping import db_data_mapping, transics_data_mapping
 
 class InputConverter:
 
-    def convert_data_from_file(self, filename, source, data_type) -> list[TransportItem]:
+    def convert_data_from_file(self, filename, source, data_type, sheet_number) -> list[TransportItem]:
         '''
         Process a given .csv, .geojson or .xlsc/.xls file and return the extracted data as list of Tour 
         '''
-        df = self.__get_df_from_file(filename=filename, source=source)
-        return self.__get_transport_items_from_df(df=df, source=source)
+        df = self.__get_df_from_file(filename=filename, sheet_number=sheet_number)
+        
+        if data_type == "Transics":
+            return self.__get_transics_data_from_df(df=df, source=source)
 
-    def __get_df_from_file(self, filename, source):
+        if data_type == "DB":
+            return self.__get_db_data_from_df(df=df, source=source)
+
+        if data_type == "Manual":
+            return self.__get_manual_data_from_df(df=df, source=source)
+
+
+    def __get_df_from_file(self, filename, sheet_number):
         _, extension = os.path.splitext(filename)
         if extension:
             extension = extension.lower()
@@ -25,26 +34,13 @@ class InputConverter:
                 raise ValueError("Geojson not yet supported!")
 
             elif extension == '.xls' or extension == '.xlsx':
-                if source == "Manual":
-                    return pd.read_excel(filename, sheet_name=2)
-                return pd.read_excel(filename, sheet_name=0)
+                return pd.read_excel(filename, sheet_name=int(sheet_number))
 
             else:
                 raise ValueError(
                     "Unsupported file format: {}".format(extension))
         else:
             raise ValueError("Invalid file: {}".format(filename))
-
-    def __get_transport_items_from_df(self, df, source: str) -> list[TransportItem]:
-        
-        if source == "Transics":
-            return self.__get_transics_data_from_df(df=df, source=source)
-
-        if source == "DB":
-            return self.__get_db_data_from_df(df=df, source=source)
-
-        if source == "Manual":
-            return self.__get_manual_data_from_df(df=df, source=source)
 
 
     def __get_manual_data_from_df(self, df, source: str) -> list[TransportItem]:

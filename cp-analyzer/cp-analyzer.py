@@ -1,30 +1,18 @@
-import logging
 import json
 from dataclasses import asdict
-from logging.handlers import RotatingFileHandler
-
 from flask import Flask, request
 from flask_cors import CORS
 from openapi_core import Spec, unmarshal_request
 from openapi_core.contrib.flask import FlaskOpenAPIRequest
 
-from trip_handler import TripHandler
+from custom_logger import logger
 from cluster_handler import ClusterHandler
 from statistic_engine import StatisticsEngine
 from database_handler import DatabaseHandler
 from route_optimizer import RouteOptimizer
 from models.models import DeliveryConfig
+from load_analyzer.load_analyzer import LoadAnalyzer
 
-
-# Create a logger
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-handler = RotatingFileHandler('./logs/cp-analyser.log', maxBytes=1024*1024, backupCount=1)
-handler.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s.%(msecs)03d [%(levelname)s] - %(funcName)30s() -> %(message)s')
-formatter.datefmt = '%Y-%m-%d %H:%M:%S'
-handler.setFormatter(formatter)
-logger.addHandler(handler)
 
 app = Flask(__name__)
 CORS(app)
@@ -35,26 +23,50 @@ spec = Spec.from_file_path('openapi.yml')
 def get_statistics():
     return StatisticsEngine(logger=logger).get_statistics()
 
-@app.route('/cluster-transport-items', methods=['POST'])
+@app.route('/cluster/transport-items', methods=['POST'])
 def cluster_transport_items():
+    logger.debug(f"cluster-transport-items endpoint called")
+    
     try:
         openapi_request = FlaskOpenAPIRequest(request)
         result = unmarshal_request(openapi_request, spec=spec)
-        
+        logger.debug(f"Request body: {result.body}")
         filtered_transport_items = []
         transport_items = DatabaseHandler(logger=logger).get_transport_items()
 
         for transport_item in transport_items:
-            if transport_item.origin.timestamp >= result.body['start_timestamp'] and transport_item.destination.timestamp <= result.body['end_timestamp']:
+            if transport_item.origin.timestamp >= result.body['start_timestamp'] and transport_item.destination.timestamp <= result.body['end_timestamp'] and transport_item.data_source in result.body['data_source']:
                 filtered_transport_items.append(transport_item)
         logger.debug(f"Filtered cargo orders: {len(filtered_transport_items)}")
 
         clusters = ClusterHandler(logger=logger, eps=result.body['eps'], min_samples=result.body['min_samples']).get_cluster_from_transport_items(transport_items=filtered_transport_items)
+        logger.debug(f"clusters: {clusters}")
         return {"result": clusters}
     except Exception as e:
-        logging.error(e, exc_info=True)
+        logger.error(e, exc_info=True)
         return {"error": str(e), "cause": str(e.__cause__)}, 400
-    
+
+@app.route('/cluster/transport-items/statistics', methods=['POST'])
+def statistics():
+    try:
+        openapi_request = FlaskOpenAPIRequest(request)
+        result = unmarshal_request(openapi_request, spec=spec)
+        logger.debug(f"Request body: {result.body}")
+        filtered_transport_items = []
+        transport_items = DatabaseHandler(logger=logger).get_transport_items()
+
+        for transport_item in transport_items:
+            if transport_item.origin.timestamp >= result.body['start_timestamp'] and transport_item.destination.timestamp <= result.body['end_timestamp'] and transport_item.data_source in result.body['data_source']:
+                filtered_transport_items.append(transport_item)
+        logger.debug(f"Filtered cargo orders: {len(filtered_transport_items)}")
+        clusters = ClusterHandler(logger=logger, eps=result.body['eps'], min_samples=result.body['min_samples']).get_cluster_from_transport_items(transport_items=filtered_transport_items)
+        relations = LoadAnalyzer().analyze(clusters=clusters, transport_items=filtered_transport_items)
+
+        return {"result": relations}
+        
+    except Exception as e:
+        logger.error(e, exc_info=True)
+        return {"error": str(e), "cause": str(e.__cause__)}, 400
 
 @app.route('/calc-routes', methods=['POST'])
 def calulate_truck_routes():

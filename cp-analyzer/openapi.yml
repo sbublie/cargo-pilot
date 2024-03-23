@@ -16,7 +16,23 @@ servers:
 
 paths:
   
-  /cluster-transport-items:
+  /cluster/transport-items:
+    post:
+      tags:
+        - "Cluster"
+      description: Get clusters of transport items
+      requestBody:
+        description: "Cluster time range"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClusterItemsConfig"
+      responses:
+        "200":
+          description: Successful operation
+
+  /cluster/transport-items/statistics:
     post:
       tags:
         - "Cluster"
@@ -111,6 +127,9 @@ components:
           type: integer
           format: int32
           example: 5
+        data_source:
+          type: array
+          example: ["Manual", "DB"]
 
     GeoLocation:
       type: object
