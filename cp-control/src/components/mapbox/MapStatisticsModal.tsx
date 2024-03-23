@@ -1,12 +1,11 @@
 import React from 'react';
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
-import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import { getClusterRelations } from "../ApiHandler";
 import { Settings } from "./models/Settings";
 import { ClusterRelation } from "./Cluster";
-import { useRef, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 interface MapStatisticsModalProps {
   show: boolean;
