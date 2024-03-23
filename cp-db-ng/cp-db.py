@@ -22,7 +22,7 @@ mongo_db_name = 'my_database'
 # Connect to MongoDB
 client = MongoClient(mongo_host, mongo_port, username='user', password='pass')
 db = client[mongo_db_name]
-collection = db['my_collection2']
+collection = db['my_collection4']
 
 # Create a logger
 logger = logging.getLogger(__name__)
@@ -62,20 +62,19 @@ def authenticate():
         {'WWW-Authenticate': 'Basic realm="Login Required"'}
     )
 
-def __custom_serializer(obj):
-    if isinstance(obj, float) and (obj > 1e15 or obj < -1e15):
-        return str(obj)  # Convert large/small floats to strings
-    return obj.__dict__  # Convert other objects to dictionaries
-
 @app.route('/transport-items', methods=['GET'])
 @requires_auth
 def get_transport_items():
     logger.debug(f"/transport-items GET endpoint was called")
     try:
+        
         #logger.debug("Received transport items data: %s", result)
         openapi_request = FlaskOpenAPIRequest(request)
         unmarshal_request(openapi_request, spec=spec)
-        items = list(collection.aggregate([
+
+        data_source = request.args.get('data-source')
+
+        pipeline = [
             {
                 '$addFields': {
                     'id': {'$toString': '$_id'},  # Convert _id to string and create a new field id
@@ -85,9 +84,14 @@ def get_transport_items():
                 '$project': {
                     '_id': 0,  # Exclude the _id field
                 }
-            },
+            }
+        ]
 
-        ]))        
+        # If item_type is provided, add a $match stage to filter by type
+        if data_source:
+            pipeline.insert(0, {'$match': {'data_source': data_source}})
+
+        items = list(collection.aggregate(pipeline))       
 
         return {"items": items}, 200
     except Exception as e:

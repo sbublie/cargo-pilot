@@ -15,47 +15,24 @@ servers:
 #  - ApiKeyAuth: []
 
 paths:
-  /upload/trips:
+  
+  /cluster/transport-items:
     post:
       tags:
-        - Upload
-      description: "Upload cargo orders to the Cargo Pilot instance"
+        - "Cluster"
+      description: Get clusters of transport items
       requestBody:
-        description: A list of available models
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                upload_data:
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/CargoOrder"
-      responses:
-        "200":
-          description: Successful operation
-  /upload/cargo-orders:
-    post:
-      tags:
-        - Upload
-      description: "Upload cargo orders to the Cargo Pilot instance"
-      requestBody:
-        description: A list of available models
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                upload_data:
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/CargoOrder"
+        description: "Cluster time range"
         required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClusterItemsConfig"
       responses:
         "200":
           description: Successful operation
 
-  /cluster-transport-items:
+  /cluster/transport-items/statistics:
     post:
       tags:
         - "Cluster"
@@ -150,6 +127,9 @@ components:
           type: integer
           format: int32
           example: 5
+        data_source:
+          type: array
+          example: ["Manual", "DB"]
 
     GeoLocation:
       type: object

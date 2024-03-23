@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useOfferings } from "../contexts/OfferingsContext";
 import { Settings } from "./mapbox/models/Settings";
-import { Cluster } from "./mapbox/Cluster";
+import { Cluster, ClusterRelation } from "./mapbox/Cluster";
 import { TransportItemCollection } from "./mapbox/models/TransportItem";
 
 export function getCalcRoutes(settings: any): Promise<any[]> {
@@ -53,6 +53,57 @@ export function getTransportItems(): Promise<TransportItemCollection> {
     });
 }
 
+export async function getClusterRelations(settings:Settings): Promise<ClusterRelation[]> {
+  var minTimestamp = 1;
+  var maxTimestamp = 2000000000;
+                     
+  if (settings.applyFilter) {
+    minTimestamp = settings.startTimestamp;
+    maxTimestamp = settings.endTimestamp;
+  }
+
+  const requestSettings = {
+    start_timestamp: minTimestamp,
+    end_timestamp: maxTimestamp,
+    eps: settings.eps,
+    min_samples: settings.minSamples,
+    data_source: settings.dataSource
+  };
+
+  const requestOptions = {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(requestSettings),
+  };
+
+  try {
+    const response = await fetch(
+      import.meta.env.VITE_BASE_URL + "api/analyzer/cluster/transport-items/statistics",
+      requestOptions
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        "Network response was not ok: " +
+          response.status +
+          " " +
+          response.statusText
+      );
+    }
+
+    const responseJson = await response.json();
+
+    const clusterRelations = responseJson.result.map((clusterRelationJson: any) =>
+      ClusterRelation.fromJson(clusterRelationJson)
+    );
+    return clusterRelations;
+  } catch (error) {
+    // Handle the error here or rethrow it to be caught later
+    console.error("Error fetching data: ", error);
+    throw error;
+  }
+}
+
 export async function getClusters(settings: Settings): Promise<Cluster[]> {
   var minTimestamp = 1;
   var maxTimestamp = 2000000000;
@@ -67,6 +118,7 @@ export async function getClusters(settings: Settings): Promise<Cluster[]> {
     end_timestamp: maxTimestamp,
     eps: settings.eps,
     min_samples: settings.minSamples,
+    data_source: settings.dataSource
   };
 
   const requestOptions = {
@@ -77,7 +129,7 @@ export async function getClusters(settings: Settings): Promise<Cluster[]> {
 
   try {
     const response = await fetch(
-      import.meta.env.VITE_BASE_URL + "api/analyzer/cluster-transport-items",
+      import.meta.env.VITE_BASE_URL + "api/analyzer/cluster/transport-items",
       requestOptions
     );
 

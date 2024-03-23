@@ -14,22 +14,25 @@ import {
   addCityBoundariesToMap,
   setCityBoundariesGeoJson,
   getClusterGeoJson,
-  addClusterToMap
+  addClusterToMap,
 } from "./clusterHandler";
 import { getClusters, getTransportItems } from "../ApiHandler";
-import { getTransportItemGeoJson, addTransportItemsToMap } from "./transportItemHandler";
-
+import {
+  getTransportItemGeoJson,
+  addTransportItemsToMap,
+} from "./transportItemHandler";
 
 import { Cluster } from "./Cluster";
-import { Settings } from "./models/Settings";
+import { Settings, defaultSettings } from "./models/Settings";
 
 import "./mapbox_style.css";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { TransportItem } from "./models/TransportItem";
 
-
 // Set the Mapbox API token from the .env file
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_API_KEY;
+
+const dataSources: string[] = [];
 
 function MapboxMap() {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
@@ -37,18 +40,8 @@ function MapboxMap() {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showStatisticsModal, setShowStatisticsModal] = useState(false);
   const [clustersn, setClusters] = useState<Cluster[]>([]);
-  const [transportItems, setTransportItems] = useState<TransportItem[]>([])
-  const [settings, setSettings] = useState<Settings>({
-    mapMode: "items_cluster",
-    dataSource: ["DB", "Transics"],
-    animateRoutes: false,
-    applyFilter: true,
-    startTimestamp: 1672614000,
-    endTimestamp: 1672700399,
-    showCluster: false,
-    eps: 0.5,
-    minSamples: 5
-  });
+  const [transportItems, setTransportItems] = useState<TransportItem[]>([]);
+  const [settings, setSettings] = useState<Settings>(defaultSettings);
 
   const lng = 9.896523259509264;
   const lat = 50.49052575476047;
@@ -67,7 +60,7 @@ function MapboxMap() {
     if (mapContainerRef.current) {
       const mapInstance = new mapboxgl.Map({
         container: mapContainerRef.current,
-        style: 'mapbox://styles/mapbox/streets-v12',
+        style: "mapbox://styles/mapbox/streets-v12",
         center: [lng, lat],
         zoom: zoom,
         pitch: 0,
@@ -85,21 +78,34 @@ function MapboxMap() {
   }, []);
 
   useEffect(() => {
-    getTransportItems().then((transportItems) => {
-      setTransportItems(transportItems.items)
-    }).catch((error) => {
-      console.error("Error fetching data: ", error);
-    })
-  }, [])
+    getTransportItems()
+      .then((transportItems) => {
+        setTransportItems(transportItems.items);
+
+        transportItems.items.forEach((transportItem) => {
+          if (!dataSources.includes(transportItem.data_source)) {
+            dataSources.push(transportItem.data_source);
+          }
+        });
+        settings.dataSource = dataSources;
+
+      })
+      .catch((error) => {
+        console.error("Error fetching data: ", error);
+      });
+  }, []);
 
   useEffect(() => {
     if (map) {
-
-      const transportItemsGeoJson = getTransportItemGeoJson(transportItems, settings);
-      addTransportItemsToMap(map, transportItemsGeoJson)
       
-      const clustersGeoJson = getClusterGeoJson(clustersn)
-      addClusterToMap(map, clustersGeoJson)
+      const transportItemsGeoJson = getTransportItemGeoJson(
+        transportItems,
+        settings
+      );
+      addTransportItemsToMap(map, transportItemsGeoJson);
+
+      const clustersGeoJson = getClusterGeoJson(clustersn);
+      addClusterToMap(map, clustersGeoJson);
 
       setCityBoundariesGeoJson(boundaries, cargoOrders);
       addCityBoundariesToMap(map, boundaries);
@@ -108,19 +114,19 @@ function MapboxMap() {
     }
   }, [map, transportItems, clustersn, boundaries, settings]);
 
-
   const applySettings = (settings: Settings) => {
     setSettings(settings);
 
     if (settings.showCluster) {
-    getClusters(settings)
-      .then((clusters) => {
-        setClusters(clusters)
-      }).catch((error) => {
-        console.error("Error fetching data: ", error);
-      });
+      getClusters(settings)
+        .then((clusters) => {
+          setClusters(clusters);
+        })
+        .catch((error) => {
+          console.error("Error fetching data: ", error);
+        });
     } else {
-      setClusters([])
+      setClusters([]);
     }
     handleCloseSettingsModal();
   };
@@ -131,16 +137,17 @@ function MapboxMap() {
         show={showSettingsModal}
         onHide={handleCloseSettingsModal}
         onApplySettings={applySettings}
+        allDataSources={dataSources}
       ></MapSettingsModal>
       <MapStatisticsModal
         show={showStatisticsModal}
         onHide={handleCloseStatisticsModal}
+        settings={settings}
       ></MapStatisticsModal>
       <Container fluid>
         <Row>
           <Col className="d-flex justify-content-start">
             <Button
-              disabled
               className="m-3"
               variant="primary"
               onClick={handleShowStatisticsModal}

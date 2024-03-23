@@ -136,6 +136,7 @@ export function getClusterGeoJson(clusters: Cluster[]): FeatureCollection<Point>
       type: "Feature",
       properties: {
         numLocations: cluster.number_of_locations,
+        clusterId: cluster.id
       },
       geometry: {
         type: "Point",
@@ -176,7 +177,7 @@ export function addClusterToMap(map: MapboxMap, clusters: FeatureCollection) {
       type: 'symbol',
       source: 'cluster_data',
       layout: {
-      'text-field': ['get', 'numLocations'],
+      'text-field': ['get', 'clusterId'],
       'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
       'text-size': 12
       }

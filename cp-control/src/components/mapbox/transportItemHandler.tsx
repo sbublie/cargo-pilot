@@ -21,8 +21,10 @@ export function getTransportItemGeoJson(
     minTimestamp = settings.startTimestamp;
     maxTimestamp = settings.endTimestamp;
   }
+  
 
   transportItems.forEach((transportItem) => {
+
     if (
       transportItem.origin.geo_location !== undefined &&
       transportItem.origin.geo_location !== null &&
@@ -31,6 +33,7 @@ export function getTransportItemGeoJson(
       transportItem.origin.timestamp >= minTimestamp &&
       transportItem.destination.timestamp <= maxTimestamp
     ) {
+      
       if (settings.dataSource.includes(transportItem.data_source)) {
         let origin_city = "None";
         if (transportItem.origin.admin_location != null) {

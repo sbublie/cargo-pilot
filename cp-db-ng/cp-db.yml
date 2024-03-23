@@ -16,13 +16,19 @@ paths:
       summary: Get all items
       tags:
         - "Transport"
+      parameters:
+        - in: query
+          name: data-source
+          schema:
+            type: string
+          description: Filter items by data source
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                  $ref: "#/components/schemas/TransportItemCollectionResult"
+                $ref: "#/components/schemas/TransportItemCollectionResult"
     post:
       summary: Add new items
       tags:
