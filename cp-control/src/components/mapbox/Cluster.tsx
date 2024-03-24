@@ -30,18 +30,24 @@ export class ClusterRelation {
   origin_cluster: number;
   destination_cluster: number;
   relation_count: number;
+  average_loading_meter: number;
+  average_weight: number;
 
-  constructor(origin_cluster: number, destination_cluster: number, relation_count: number) {
+  constructor(origin_cluster: number, destination_cluster: number, relation_count: number, average_loading_meter: number, average_weight: number) {
     this.origin_cluster = origin_cluster
     this.destination_cluster = destination_cluster
     this.relation_count = relation_count
+    this.average_loading_meter = average_loading_meter
+    this.average_weight = average_weight
   }
 
   static fromJson(json: any): ClusterRelation {
     return new ClusterRelation (
       json.origin_cluster,
       json.destination_cluster,
-      json.relation_count
+      json.relation_count,
+      json.average_loading_meter,
+      json.average_weight
     )
   }
 }
